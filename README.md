@@ -12,7 +12,8 @@ Using:
 
 RcloneFileWatcher.txt - this is a config file
 
-ConsoleWriter.ON/OFF
+ConsoleWriter.ON/OFF - on or off display some debug information to console.
+
 e:\Shared\,d:\files-from-shared.txt,rclone_livesync_shared.bat - monitoring e:\Shared, filename --files-from, rclone batch run every 30 seconds only when appears any changes.
 
 ...
