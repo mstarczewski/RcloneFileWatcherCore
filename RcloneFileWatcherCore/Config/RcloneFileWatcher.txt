@@ -1,0 +1,3 @@
+ConsoleWriter.ON
+d:\Test\,d:\files-from-test.txt,d:\rclone_Test.bat 
+d:\test1\,d:\files-from-test1.txt,d:\rclone_Test1.bat
