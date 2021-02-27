@@ -14,9 +14,13 @@ RcloneFileWatcher.txt - this is a config file
 
 ConsoleWriter.ON/OFF
 e:\Shared\,d:\files-from-shared.txt,rclone_livesync_shared.bat - monitoring e:\Shared, filename --files-from, rclone batch run every 30 seconds only when appears any changes.
+
 ...
+
 ...
+
 ...
+
 e:\UsersData\,d:\files-from-UsersData.txt,rclone_livesync_UsersData.bat - possibility of monitoring and syncing more directories
 
 An example of a simple script - rclone_livesync_shared.bat:
