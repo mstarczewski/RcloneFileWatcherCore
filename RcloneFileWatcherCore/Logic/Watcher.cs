@@ -1,4 +1,5 @@
 ﻿using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -9,11 +10,11 @@ namespace RcloneFileWatcherCore.Logic
 {
     class Watcher
     {
-        private readonly Logger _logger;
+        private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, FileDTO> _fileList;
-        private readonly List<SyncPathDTO> _FilePathDTO;
+        private readonly List<PathDTO> _FilePathDTO;
         private List<FileSystemWatcher> _fileWatcherList = new List<FileSystemWatcher>();
-        public Watcher(Logger logger, ConcurrentDictionary<string, FileDTO> fileList, List<SyncPathDTO> FilePathDTO)
+        public Watcher(ILogger logger, ConcurrentDictionary<string, FileDTO> fileList, List<PathDTO> FilePathDTO)
         {
             _logger = logger;
             _fileList = fileList;
@@ -64,7 +65,7 @@ namespace RcloneFileWatcherCore.Logic
                                  NotifyFilters = sourceFileWatcher.NotifyFilter,
                                  WatcherChangeTypes = e.ChangeType
                              });
-            _logger.ConsoleWriter($"Action: {e.FullPath.Substring(sourceFileWatcher.Path.Length) + (sourceFileWatcher.NotifyFilter.Equals(NotifyFilters.DirectoryName) ? @"/**" : "")}");
+            _logger.Write($"Action: {e.FullPath.Substring(sourceFileWatcher.Path.Length) + (sourceFileWatcher.NotifyFilter.Equals(NotifyFilters.DirectoryName) ? @"/**" : "")}");
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,10 +12,10 @@ namespace RcloneFileWatcherCore.Logic
     class FilePrepare
     {
         private readonly ConcurrentDictionary<string, FileDTO> _fileList;
-        private readonly List<SyncPathDTO> _syncPathDTO;
-        private readonly Logger _logger;
+        private readonly List<PathDTO> _syncPathDTO;
+        private readonly ILogger _logger;
         
-        public FilePrepare(Logger logger, List<SyncPathDTO> syncPathDTO, ConcurrentDictionary<string, FileDTO> fileList)
+        public FilePrepare(ILogger logger, List<PathDTO> syncPathDTO, ConcurrentDictionary<string, FileDTO> fileList)
         {
             _logger = logger;
             _syncPathDTO = syncPathDTO;
@@ -24,7 +25,7 @@ namespace RcloneFileWatcherCore.Logic
         public string PrepareFilesToSync(string sourcePath)
         {
             FileDTO fileRemovedDTO = new FileDTO();
-            _logger.ConsoleWriter(sourcePath);
+            _logger.Write(sourcePath);
             var rclonePath = _syncPathDTO.Where(x => x.WatchingPath == sourcePath).FirstOrDefault();
             string rcloneBatch = rclonePath.RcloneBatch;
             using (StreamWriter sw = new StreamWriter(rclonePath.RcloneFilesFromPath))
@@ -76,7 +77,7 @@ namespace RcloneFileWatcherCore.Logic
         {
             try
             {
-                _logger.ConsoleWriter($"IsFileReady checking: {filename}");
+                _logger.Write($"IsFileReady checking: {filename}");
                 if (Directory.Exists(filename))
                 {
                     return true;

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace RcloneFileWatcherCore.DTO
 {
-    class SyncPathDTO
+    class PathDTO
     {
         public string WatchingPath { get; set; }
         public string RcloneFilesFromPath { get; set; }

@@ -1,9 +1,5 @@
-﻿using RcloneFileWatcherCore.DTO;
+﻿using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Timers;
 
 namespace RcloneFileWatcherCore.Logic
@@ -11,17 +7,13 @@ namespace RcloneFileWatcherCore.Logic
     class Scheduler
     {
         private System.Timers.Timer _timer;
-        private readonly ProcessLogic _process;
-        private readonly FilePrepare _setUpLogic;
-        private ConcurrentDictionary<string, FileDTO> _fileList;
-        private readonly Logger _logger;
+        private readonly ProcessRunner _processRunner;
+        private readonly ILogger _logger;
 
-        public Scheduler(Logger logger, ProcessLogic process, FilePrepare setUpLogic, ConcurrentDictionary<string, FileDTO> fileList)
+        public Scheduler(ILogger logger, ProcessRunner processRunner)
         {
-            _process = process;
-            _setUpLogic = setUpLogic;
+            _processRunner = processRunner;
             _logger = logger;
-            _fileList = fileList;
         }
         public void SetTimer()
         {
@@ -35,20 +27,12 @@ namespace RcloneFileWatcherCore.Logic
         {
             try
             {
-                var sourePathList = _fileList.Select(x => x.Value.SourcePath).Distinct().ToList();
-                foreach (var sourcePath in sourePathList)
-                {
-                    string rcloneBatch =_setUpLogic.PrepareFilesToSync(sourcePath);
-                    if (!string.IsNullOrWhiteSpace(sourcePath))
-                    {
-                        _process.StartProcess(rcloneBatch);
-                    }
-                }
+                _processRunner.StartProcess();
             }
 
             catch (Exception ex)
             {
-                _logger.ConsoleWriter(ex.ToString());
+                _logger.Write(ex.ToString());
             }
             finally
             {
