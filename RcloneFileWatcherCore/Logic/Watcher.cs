@@ -11,15 +11,14 @@ namespace RcloneFileWatcherCore.Logic
     class Watcher
     {
         private readonly ILogger _logger;
-        private readonly ConcurrentDictionary<string, FileDTO> _fileList;
+        private readonly ConcurrentDictionary<string, FileDTO> _fileDTOs;
         private readonly List<PathDTO> _FilePathDTO;
         private List<FileSystemWatcher> _fileWatcherList = new List<FileSystemWatcher>();
-        public Watcher(ILogger logger, ConcurrentDictionary<string, FileDTO> fileList, List<PathDTO> FilePathDTO)
+        public Watcher(ILogger logger, ConcurrentDictionary<string, FileDTO> fileDTOs, List<PathDTO> FilePathDTO)
         {
             _logger = logger;
-            _fileList = fileList;
+            _fileDTOs = fileDTOs;
             _FilePathDTO = FilePathDTO;
-            Start();
         }
 
         public void Start()
@@ -57,7 +56,7 @@ namespace RcloneFileWatcherCore.Logic
         {
             var sourceFileWatcher = (FileSystemWatcher)source;
             //ConsoleWriter($" File {sourceFileWatcher.NotifyFilter}:  {e.FullPath.Substring(sourceFileWatcher.Path.Length)} {e.ChangeType}");
-            _fileList.TryAdd($@"{sourceFileWatcher.Path};{e.FullPath.Substring(sourceFileWatcher.Path.Length)}",
+            _fileDTOs.TryAdd($@"{sourceFileWatcher.Path};{e.FullPath.Substring(sourceFileWatcher.Path.Length)}",
                              new FileDTO
                              {
                                  SourcePath = sourceFileWatcher.Path,

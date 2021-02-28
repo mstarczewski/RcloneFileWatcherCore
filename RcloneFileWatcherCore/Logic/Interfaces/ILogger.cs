@@ -8,5 +8,6 @@ namespace RcloneFileWatcherCore.Logic.Interfaces
     {
         bool Enable { get; set; }
         void Write(string text);
+        void WriteAlways(string text);
     }
 }

@@ -12,51 +12,26 @@ namespace RcloneFileWatcherCore.Logic
         private ConcurrentDictionary<string, FileDTO> _fileDTOs;
         private List<PathDTO> _pathDTOs;
         private Watcher _watcher;
+        private Config _config;
         private readonly ProcessRunner _processRunner;
         private ILogger _logger;
         private readonly Scheduler _scheduler;
-        public Controller()
+        private const string _configFileName = "RcloneFileWatcherCoreConfig.txt";
+        private const int _exitCodeConfigError = 2;
+        internal Controller()
         {
             _fileDTOs = new ConcurrentDictionary<string, FileDTO>();
-            _pathDTOs = new List<PathDTO>();
-            _logger = new ConsoleLogger(); 
+            _logger = new ConsoleLogger();
+            _config = new Config(_configFileName, _logger);
+            _pathDTOs = _config.LoadConfig();
+            if (_pathDTOs==null || _pathDTOs.Count==0)
+            {
+                Environment.Exit(_exitCodeConfigError);
+            }
             FilePrepare _filePrepare = new FilePrepare(_logger, _pathDTOs, _fileDTOs);
-            _watcher = new Watcher(_logger, _fileDTOs, _pathDTOs);
-            if (!File.Exists("RcloneFileWatcherCoreConfig.txt"))
-            {
-                _logger.Write("Config file missing");
-                Environment.Exit(0);
-            }
-            string[] parameters = File.ReadAllLines("RcloneFileWatcherCoreConfig.txt");
-            foreach (var param in parameters)
-            {
-                if (param.ToUpper().Contains("CONSOLEWRITER.OFF"))
-                {
-                    _logger.Enable = false;
-                }
-                else if (param.ToUpper().Contains("CONSOLEWRITER.ON"))
-                {
-                    _logger.Enable = true;
-                }
-                else
-                {
-                    var item = param.Split(',');
-                    if (item.Length == 3)
-                    {
-                        PathDTO _pathDTO = new PathDTO();
-                        _pathDTO.WatchingPath = item[0];
-                        _pathDTO.RcloneFilesFromPath = item[1];
-                        _pathDTO.RcloneBatch = item[2];
-                        _pathDTOs.Add(_pathDTO);
-                    }
-                    else
-                    {
-                        _logger.Write("Errors in config file. Chceck it.");
-                    }
-                }
-            }
             _processRunner = new ProcessRunner(_logger, _filePrepare, _fileDTOs);
             _scheduler = new Scheduler(_logger, _processRunner);
+            _watcher = new Watcher(_logger, _fileDTOs, _pathDTOs);
             _watcher.Start();
             _scheduler.SetTimer();
             _logger.Write("Started");

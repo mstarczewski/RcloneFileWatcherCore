@@ -3,16 +3,20 @@ using System;
 
 namespace RcloneFileWatcherCore.Logic
 {
-    class ConsoleLogger:ILogger
+    class ConsoleLogger : ILogger
     {
-        public bool Enable { get; set; } = true;
+        public bool Enable { get; set; }
 
         public void Write(string text)
         {
             if (Enable)
             {
-                Console.WriteLine($@"{DateTime.Now} {text}");
+                WriteAlways(text);
             }
+        }
+        public void WriteAlways(string text)
+        {
+            Console.WriteLine($@"{DateTime.Now} {text}");
         }
     }
 }
