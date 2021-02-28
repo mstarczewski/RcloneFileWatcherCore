@@ -1,5 +1,5 @@
 # RcloneFileWatcherCore
-.NET CORE 3.1
+.NET Core 3.1
 
 **Initial version** 
 
