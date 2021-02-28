@@ -10,7 +10,7 @@ Main features:
 
 Using:
 
-RcloneFileWatcher.txt - this is a config file
+RcloneFileWatcherCoreConfig.txt - this is a config file
 
 ConsoleWriter.ON/OFF - on or off display some debug information to console.
 
