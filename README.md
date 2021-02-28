@@ -1,12 +1,13 @@
 # RcloneFileWatcherCore
 .NET CORE 3.1
 
-Initial version. 
+**Initial version** 
 
 ## Main Features:
 1. Monitor filesystem changes (file/directory level)
-2. Generate --include-from file for rclone
-3. Execute rclone batch. Rclone command must contain **--include-from**
+2. Generate ```--include-from``` file for rclone
+3. Execute rclone batch. Rclone command must contain ```--include-from```
+4. Synchronize changes in real time.
 
 ## Usage:
 **RcloneFileWatcherCoreConfig.txt** - config file.
@@ -21,7 +22,7 @@ Initial version.
 
 - ```d:\files-from-shared.txt``` - output path to write --files-from
 
-- ```rclone_livesync_shared.bat``` - run rclone batch every 30 seconds only when appears any changes. Rclone batch must contain **--include-from**
+- ```rclone_livesync_shared.bat``` - run rclone batch every 30 seconds only when appears any changes. Rclone batch must contain ```--include-from```
 
 
 An example of a simple script - rclone_livesync_shared.bat:
@@ -30,4 +31,5 @@ An example of a simple script - rclone_livesync_shared.bat:
 
 Windows users can run it as a service with NSSM - the Non-Sucking Service Manager.
 
-A case of use. Run it and once per a day (to be sure) run full rclone sync via Windows Scheduler/cron.
+### A case of use.
+Run RcloneFileWatcherCore and leave it in background. Once per day (to be sure) run full rclone sync via scheduler/cron - it should pass without any changes.
