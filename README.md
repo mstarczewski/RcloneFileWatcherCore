@@ -3,7 +3,7 @@
 
 **Initial version** 
 
-## Main Features:
+## Main Features
 1. Monitor filesystem changes (file/directory level)
 2. Generate ```--include-from``` file for rclone
 3. Execute rclone batch. Rclone command must contain ```--include-from```
@@ -13,8 +13,7 @@
 1. Install and configure [rclone](https://rclone.org/)
 2. Download [source or binaries](https://github.com/mstarczewski/RcloneFileWatcherCore/releases) RcloneFileWatcherCore.
 
-## Usage:
-
+## Usage
 **RcloneFileWatcherCoreConfig.txt** - config file.
 
 - ```ConsoleWriter.ON/OFF``` - on or off display some debug information to console.
@@ -36,5 +35,5 @@ An example of a simple script - rclone_livesync_shared.bat:
 
 Windows users can run it as a service with NSSM - the Non-Sucking Service Manager.
 
-### A case of use.
+### A case of use
 Run RcloneFileWatcherCore and leave it in background. Once per day (to be sure) run full rclone sync via scheduler/cron - it should pass without any changes.
