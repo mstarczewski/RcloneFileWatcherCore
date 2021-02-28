@@ -5,7 +5,7 @@ namespace RcloneFileWatcherCore.Logic
 {
     class ConsoleLogger:ILogger
     {
-        public bool Enable { get; set; }
+        public bool Enable { get; set; } = true;
 
         public void Write(string text)
         {

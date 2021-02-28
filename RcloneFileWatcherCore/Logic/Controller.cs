@@ -41,18 +41,25 @@ namespace RcloneFileWatcherCore.Logic
                 else
                 {
                     var item = param.Split(',');
-                    PathDTO _pathDTO = new PathDTO();
-                    _pathDTO.WatchingPath = item[0];
-                    _pathDTO.RcloneFilesFromPath = item[1];
-                    _pathDTO.RcloneBatch = item[2];
-                    _pathDTOs.Add(_pathDTO);
+                    if (item.Length == 3)
+                    {
+                        PathDTO _pathDTO = new PathDTO();
+                        _pathDTO.WatchingPath = item[0];
+                        _pathDTO.RcloneFilesFromPath = item[1];
+                        _pathDTO.RcloneBatch = item[2];
+                        _pathDTOs.Add(_pathDTO);
+                    }
+                    else
+                    {
+                        _logger.Write("Errors in config file. Chceck it.");
+                    }
                 }
             }
             _processRunner = new ProcessRunner(_logger, _filePrepare, _fileDTOs);
             _scheduler = new Scheduler(_logger, _processRunner);
-
             _watcher.Start();
             _scheduler.SetTimer();
+            _logger.Write("Started");
         }
     }
 }

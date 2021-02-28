@@ -49,6 +49,7 @@ namespace RcloneFileWatcherCore.Logic
                 _dirWatcher.Deleted += OnChanged;
                 _dirWatcher.Renamed += OnChanged;
                 _fileWatcherList.Add(_dirWatcher);
+                _logger.Write($"Watcher: {item.WatchingPath}");
             }
         }
 
