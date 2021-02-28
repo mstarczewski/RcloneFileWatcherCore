@@ -9,7 +9,12 @@
 3. Execute rclone batch. Rclone command must contain ```--include-from```
 4. Synchronize changes in real time.
 
+## Installation
+1. Install and configure [rclone](https://rclone.org/)
+2. Download [source or binaries](https://github.com/mstarczewski/RcloneFileWatcherCore/releases) RcloneFileWatcherCore.
+
 ## Usage:
+
 **RcloneFileWatcherCoreConfig.txt** - config file.
 
 - ```ConsoleWriter.ON/OFF``` - on or off display some debug information to console.
