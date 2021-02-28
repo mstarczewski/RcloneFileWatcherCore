@@ -22,12 +22,12 @@ namespace RcloneFileWatcherCore.Logic
             _logger = new ConsoleLogger(); 
             FilePrepare _filePrepare = new FilePrepare(_logger, _pathDTOs, _fileDTOs);
             _watcher = new Watcher(_logger, _fileDTOs, _pathDTOs);
-            if (!File.Exists("RcloneFileWatcherCoreConfig"))
+            if (!File.Exists("RcloneFileWatcherCoreConfig.txt"))
             {
                 _logger.Write("Config file missing");
                 Environment.Exit(0);
             }
-            string[] parameters = File.ReadAllLines("RcloneFileWatcherCoreConfig");
+            string[] parameters = File.ReadAllLines("RcloneFileWatcherCoreConfig.txt");
             foreach (var param in parameters)
             {
                 if (param.ToUpper().Contains("CONSOLEWRITER.OFF"))

@@ -24,7 +24,7 @@ namespace RcloneFileWatcherCore.Logic
 
         public string PrepareFilesToSync(string sourcePath)
         {
-            FileDTO fileRemovedDTO = new FileDTO();
+            int removeCount = 0;
             _logger.Write(sourcePath);
             var rclonePath = _syncPathDTO.Where(x => x.WatchingPath == sourcePath).FirstOrDefault();
             string rcloneBatch = rclonePath.RcloneBatch;
@@ -34,7 +34,7 @@ namespace RcloneFileWatcherCore.Logic
                 {
                     if (IsFileToFiltered(item.Value))
                     {
-                        _fileList.TryRemove(item.Key, out fileRemovedDTO);
+                        _fileList.TryRemove(item.Key, out _);
                     }
                     else if (IsFileReady(item.Value.FullPath))
                     {
@@ -44,12 +44,11 @@ namespace RcloneFileWatcherCore.Logic
                             fileNameFinal = fileNameFinal.Substring(1);
                         }
                         sw.WriteLine(fileNameFinal);
-                        _fileList.TryRemove(item.Key, out fileRemovedDTO); //if false do nothing
+                        removeCount += _fileList.TryRemove(item.Key, out _) ? 1 : 0;
                     }
                 }
-                sw.Flush();
             }
-            return rcloneBatch;
+            return removeCount > 0 ? rcloneBatch : null;
         }
 
         private static bool IsFileToFiltered(FileDTO fileDTO)
@@ -64,7 +63,7 @@ namespace RcloneFileWatcherCore.Logic
               || (!fileExists && (!fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted)))
               || (directoryExists && (fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && (watcherChangeTypesCreatedDeletedeRenamed)))
               || (!directoryExists && (fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted))))
-              && !(fileDTO.FullPath.Contains(".tmp.drivedownload")))
+              && !(fileDTO.FullPath.Contains(".tmp.drivedownload"))) //TODO: move to config
             {
                 return false;
             }
