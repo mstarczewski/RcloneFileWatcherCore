@@ -14,20 +14,40 @@
 2. Download [source or binaries](https://github.com/mstarczewski/RcloneFileWatcherCore/releases) RcloneFileWatcherCore.
 
 ## Usage
-**RcloneFileWatcherCoreConfig.txt** - config file.
+**RcloneFileWatcherCoreConfig.cfg** - JSON config file (example below).
+```{
+  "ConsoleWriter": true,
+  "Path": [
+    {
+      "WatchingPath": "e:\\Shared\\",
+      "RcloneFilesFromPath": "d:\\files-from-shared.txt",
+      "RcloneBatch": "d:\\rclone_livesync_shared.bat",
+      "ExcludeContains": [
+        ".tmp",
+        ".drivedownload1"
+      ]
+    },
+    {
+      "WatchingPath": "d:\\test1\\",
+      "RcloneFilesFromPath": "d:\\files-from-test1.txt",
+      "RcloneBatch": "d:\\rclone_Test1.bat",
+      "ExcludeContains": [
+        ".tmp",
+        ".drivedownload"
+      ]
+    }
+  ]
+}```
 
-- ```ConsoleWriter.ON/OFF``` - on or off display some debug information to console.
+- ```"ConsoleWriter": true``` - on or off display some debug information to console.
 
-```e:\Shared\,d:\files-from-shared.txt,rclone_livesync_shared.bat```
+- ```"WatchingPath": "e:\\Shared\\"```  - Watching folder
 
-```e:\UsersData\,d:\files-from-UsersData.txt,rclone_livesync_UsersData.bat```
+- ```"RcloneFilesFromPath": "d:\\files-from-shared.txt"``` - output path to write --files-from (for rclone)
 
-- ```e:\Shared\``` - Monitored folder
+- ```"RcloneBatch": "d:\\files-from-shared.txt" - run rclone script (batch) every 30 seconds only when appears any changes. Rclone script must contain ```--include-from```
 
-- ```d:\files-from-shared.txt``` - output path to write --files-from
-
-- ```rclone_livesync_shared.bat``` - run rclone batch every 30 seconds only when appears any changes. Rclone batch must contain ```--include-from```
-
+-```"ExcludeContains": [".tmp"] - exclude every name wchich contains word ".tmp"
 
 An example of a simple script - rclone_livesync_shared.bat:
 
