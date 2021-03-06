@@ -32,7 +32,7 @@ namespace RcloneFileWatcherCore.Logic
             {
                 foreach (var item in _fileList.Where(x => x.Value.SourcePath == sourcePath))
                 {
-                    if (IsFileToFiltered(item.Value))
+                    if (IsFileToFiltered(item.Value, rclonePath.ExcludeContains))
                     {
                         _fileList.TryRemove(item.Key, out _);
                     }
@@ -51,7 +51,7 @@ namespace RcloneFileWatcherCore.Logic
             return removeCount > 0 ? rcloneBatch : null;
         }
 
-        private static bool IsFileToFiltered(FileDTO fileDTO)
+        private static bool IsFileToFiltered(FileDTO fileDTO, List<string> excludeContains)
         {
             bool fileExists = File.Exists(fileDTO.FullPath);
             bool directoryExists = Directory.Exists(fileDTO.FullPath);
@@ -63,7 +63,7 @@ namespace RcloneFileWatcherCore.Logic
               || (!fileExists && (!fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted)))
               || (directoryExists && (fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && (watcherChangeTypesCreatedDeletedeRenamed)))
               || (!directoryExists && (fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted))))
-              && !(fileDTO.FullPath.Contains(".tmp.drivedownload"))) //TODO: move to config
+              && !(excludeContains.Any(x=>fileDTO.FullPath.Contains(x)))) 
             {
                 return false;
             }

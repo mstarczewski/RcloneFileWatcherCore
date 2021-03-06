@@ -4,6 +4,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.Json;
 
 namespace RcloneFileWatcherCore.Logic
 {
@@ -16,7 +18,7 @@ namespace RcloneFileWatcherCore.Logic
         private readonly ProcessRunner _processRunner;
         private ILogger _logger;
         private readonly Scheduler _scheduler;
-        private const string _configFileName = "RcloneFileWatcherCoreConfig.txt";
+        private const string _configFileName = "RcloneFileWatcherCoreConfig.cfg";
         private const int _exitCodeConfigError = 2;
         internal Controller()
         {
@@ -24,7 +26,7 @@ namespace RcloneFileWatcherCore.Logic
             _logger = new ConsoleLogger();
             _config = new Config(_configFileName, _logger);
             _pathDTOs = _config.LoadConfig();
-            if (_pathDTOs==null || _pathDTOs.Count==0)
+            if (!_pathDTOs?.Any() ?? true)
             {
                 Environment.Exit(_exitCodeConfigError);
             }

@@ -3,10 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using RcloneFileWatcherCore.DTO;
+using System.Linq;
+using System.Text.Json;
 
 namespace RcloneFileWatcherCore.Logic
 {
-
     class Config
     {
         private readonly string _configFileName;
@@ -21,42 +22,15 @@ namespace RcloneFileWatcherCore.Logic
         {
             try
             {
-                List<PathDTO> pathDTOs = new List<PathDTO>();
                 if (!File.Exists(_configFileName))
                 {
                     _logger.WriteAlways("Config file is missing");
                     return null;
                 }
-                string[] parameters = File.ReadAllLines(_configFileName);
-                foreach (var param in parameters)
-                {
-                    if (param.ToUpper().Contains("CONSOLEWRITER.OFF"))
-                    {
-                        _logger.Enable = false;
-                    }
-                    else if (param.ToUpper().Contains("CONSOLEWRITER.ON"))
-                    {
-                        _logger.Enable = true;
-                    }
-                    else
-                    {
-                        var item = param.Split(',');
-                        if (item.Length == 3)
-                        {
-                            PathDTO pathDTO = new PathDTO();
-                            pathDTO.WatchingPath = item[0];
-                            pathDTO.RcloneFilesFromPath = item[1];
-                            pathDTO.RcloneBatch = item[2];
-                            pathDTOs.Add(pathDTO);
-                        }
-                        else
-                        {
-                            _logger.WriteAlways("Error in config file.");
-                            return null;
-                        }
-                    }
-                }
-                return pathDTOs;
+
+                var _config = JsonSerializer.Deserialize<ConfigDTO>(File.ReadAllText(_configFileName));
+                _logger.Enable = _config.ConsoleWriter;
+                return _config.Path;
             }
             catch (Exception ex)
             {
