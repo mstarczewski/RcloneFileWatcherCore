@@ -13,7 +13,7 @@
 1. Install and configure [rclone](https://rclone.org/)
 2. Download [source or binaries](https://github.com/mstarczewski/RcloneFileWatcherCore/releases) RcloneFileWatcherCore.
 
-## Usage
+## Setup and Usage
 **RcloneFileWatcherCoreConfig.cfg** - JSON config file (example below).
 ```{
   "ConsoleWriter": true,
@@ -47,7 +47,7 @@
 
 - ```"RcloneBatch": "d:\\files-from-shared.txt" - run rclone script (batch) every 30 seconds only when appears any changes. Rclone script must contain ```--include-from```
 
--```"ExcludeContains": [".tmp"] - exclude every name wchich contains word ".tmp"
+-```"ExcludeContains": [".tmp"]``` - exclude every name wchich contains word ".tmp"
 
 An example of a simple script - rclone_livesync_shared.bat:
 
