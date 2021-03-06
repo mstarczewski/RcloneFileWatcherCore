@@ -45,7 +45,7 @@
 
 - ```"RcloneFilesFromPath": "d:\\files-from-shared.txt"``` - output path to write --files-from (for rclone)
 
-- ```"RcloneBatch": "d:\\files-from-shared.txt" - run rclone script (batch) every 30 seconds only when appears any changes. Rclone script must contain ```--include-from```
+- ```"RcloneBatch": "d:\\files-from-shared.txt"``` - run rclone script (batch) every 30 seconds only when appears any changes. Rclone script must contain ```--include-from```
 
 -```"ExcludeContains": [".tmp"]``` - exclude every name wchich contains word ".tmp"
 
