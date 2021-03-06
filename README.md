@@ -37,8 +37,8 @@
       ]
     }
   ]
-}```
-
+}
+```
 - ```"ConsoleWriter": true``` - on or off display some debug information to console.
 
 - ```"WatchingPath": "e:\\Shared\\"```  - Watching folder
