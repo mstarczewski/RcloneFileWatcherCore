@@ -1,10 +1,8 @@
 ﻿using RcloneFileWatcherCore.DTO;
 using RcloneFileWatcherCore.Logic.Interfaces;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace RcloneFileWatcherCore.Logic
 {

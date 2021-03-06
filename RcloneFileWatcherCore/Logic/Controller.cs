@@ -3,9 +3,7 @@ using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
 
 namespace RcloneFileWatcherCore.Logic
 {
@@ -22,6 +20,7 @@ namespace RcloneFileWatcherCore.Logic
         private const int _exitCodeConfigError = 2;
         internal Controller()
         {
+            //new ConfigGenerator(@"d:\RcloneFileWatcherCoreConfig").GenerateConfig(); //Example JSON config generator
             _fileDTOs = new ConcurrentDictionary<string, FileDTO>();
             _logger = new ConsoleLogger();
             _config = new Config(_configFileName, _logger);

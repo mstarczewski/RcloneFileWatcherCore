@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using RcloneFileWatcherCore.DTO;
-using System.Linq;
 using System.Text.Json;
 
 namespace RcloneFileWatcherCore.Logic
@@ -34,6 +33,7 @@ namespace RcloneFileWatcherCore.Logic
             }
             catch (Exception ex)
             {
+                _logger.WriteAlways("Config file error");
                 _logger.WriteAlways(ex.ToString());
                 return null;
             }
