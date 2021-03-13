@@ -1,4 +1,4 @@
-# RcloneFileWatcherCore 0.2
+# RcloneFileWatcherCore 0.3
 .NET Core 3.1
 
 ## Main Features
