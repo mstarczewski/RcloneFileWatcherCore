@@ -53,16 +53,17 @@ namespace RcloneFileWatcherCore.Logic
         private void OnChanged(object source, FileSystemEventArgs e)
         {
             var sourceFileWatcher = (FileSystemWatcher)source;
-            //ConsoleWriter($" File {sourceFileWatcher.NotifyFilter}:  {e.FullPath.Substring(sourceFileWatcher.Path.Length)} {e.ChangeType}");
-            _fileDTOs.TryAdd($@"{sourceFileWatcher.Path};{e.FullPath.Substring(sourceFileWatcher.Path.Length)}",
+            long currentTimeSamp = Globals.TimeStamp.GetTimestampTicks();
+            _fileDTOs.TryAdd($@"{sourceFileWatcher.Path};{e.FullPath.Substring(sourceFileWatcher.Path.Length)};{currentTimeSamp}",
                              new FileDTO
                              {
                                  SourcePath = sourceFileWatcher.Path,
                                  PathPreparedToSync = e.FullPath.Substring(sourceFileWatcher.Path.Length) + (sourceFileWatcher.NotifyFilter == NotifyFilters.DirectoryName ? @"/**" : ""),
                                  FullPath = e.FullPath,
                                  NotifyFilters = sourceFileWatcher.NotifyFilter,
-                                 WatcherChangeTypes = e.ChangeType
-                             });
+                                 WatcherChangeTypes = e.ChangeType,
+                                 TimeStampTicks = currentTimeSamp
+                             }) ;
             _logger.Write($"Action: {e.FullPath.Substring(sourceFileWatcher.Path.Length) + (sourceFileWatcher.NotifyFilter.Equals(NotifyFilters.DirectoryName) ? @"/**" : "")}");
         }
     }

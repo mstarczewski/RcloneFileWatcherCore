@@ -21,7 +21,7 @@ namespace RcloneFileWatcherCore.Logic
             _fileList = fileList;
         }
 
-        public string PrepareFilesToSync(string sourcePath)
+        public string PrepareFilesToSync(string sourcePath, long lastTimeStamp)
         {
             int removeCount = 0;
             _logger.Write(sourcePath);
@@ -29,7 +29,7 @@ namespace RcloneFileWatcherCore.Logic
             string rcloneBatch = rclonePath.RcloneBatch;
             using (StreamWriter sw = new StreamWriter(rclonePath.RcloneFilesFromPath))
             {
-                foreach (var item in _fileList.Where(x => x.Value.SourcePath == sourcePath))
+                foreach (var item in _fileList.Where(x => x.Value.SourcePath == sourcePath && x.Value.TimeStampTicks <= lastTimeStamp))
                 {
                     if (IsFileToFiltered(item.Value, rclonePath.ExcludeContains))
                     {

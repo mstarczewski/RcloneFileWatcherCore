@@ -19,10 +19,12 @@ namespace RcloneFileWatcherCore.Logic
         }
         public void StartProcess()
         {
-            var sourePathList = _fileDTOs.Select(x => x.Value.SourcePath).Distinct().ToList();
+            long lastTimeStamp = Globals.TimeStamp.GetTimestampTicks();
+            Globals.TimeStamp.SetTimestampTicks();
+            var sourePathList = _fileDTOs.Where(x => x.Value.TimeStampTicks <= lastTimeStamp).Select(x => x.Value.SourcePath).Distinct().ToList();
             foreach (var sourcePath in sourePathList)
             {
-                string rcloneBatch = _filePrepare.PrepareFilesToSync(sourcePath);
+                string rcloneBatch = _filePrepare.PrepareFilesToSync(sourcePath, lastTimeStamp);
                 if (!string.IsNullOrWhiteSpace(sourcePath))
                 {
                     Process process = new Process();

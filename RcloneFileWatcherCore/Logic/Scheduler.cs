@@ -6,9 +6,10 @@ namespace RcloneFileWatcherCore.Logic
 {
     class Scheduler
     {
-        private System.Timers.Timer _timer;
+        private Timer _timer;
         private readonly ProcessRunner _processRunner;
         private readonly ILogger _logger;
+        private const int timeOut = 1000 * 30;
 
         public Scheduler(ILogger logger, ProcessRunner processRunner)
         {
@@ -17,7 +18,7 @@ namespace RcloneFileWatcherCore.Logic
         }
         public void SetTimer()
         {
-            _timer = new System.Timers.Timer(30000);
+            _timer = new Timer(timeOut);
             _timer.Elapsed += OnTimedEvent;
             _timer.AutoReset = false;
             _timer.Enabled = true;

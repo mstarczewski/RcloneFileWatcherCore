@@ -9,5 +9,6 @@ namespace RcloneFileWatcherCore.DTO
         public string FullPath { get; set; }
         public NotifyFilters NotifyFilters { get; set; }
         public WatcherChangeTypes WatcherChangeTypes { get; set; }
+        public long TimeStampTicks { get; set; }
     }
 }
