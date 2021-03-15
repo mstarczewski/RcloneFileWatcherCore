@@ -1,5 +1,7 @@
-﻿using RcloneFileWatcherCore.Logic.Interfaces;
+﻿using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Timers;
 
 namespace RcloneFileWatcherCore.Logic
@@ -7,14 +9,16 @@ namespace RcloneFileWatcherCore.Logic
     class Scheduler
     {
         private Timer _timer;
-        private readonly ProcessRunner _processRunner;
         private readonly ILogger _logger;
         private const int timeOut = 1000 * 30;
-
-        public Scheduler(ILogger logger, ProcessRunner processRunner)
+        private DateTime dateTimeUpdate = DateTime.Now;
+        private readonly ConfigDTO _configDTO;
+        private readonly Dictionary<Enums.ProcessCode, IProcess> _processDictionary;
+        public Scheduler(ILogger logger, Dictionary<Enums.ProcessCode, IProcess> processDictionary, ConfigDTO configDTO)
         {
-            _processRunner = processRunner;
+            _processDictionary = processDictionary;
             _logger = logger;
+            _configDTO = configDTO;
         }
         public void SetTimer()
         {
@@ -28,7 +32,12 @@ namespace RcloneFileWatcherCore.Logic
         {
             try
             {
-                _processRunner.StartProcess();
+                if ((_configDTO?.UpdateRclone?.Update ?? false) && dateTimeUpdate.AddHours(_configDTO.UpdateRclone.ChceckUpdateHours) < DateTime.Now)
+                {
+                    dateTimeUpdate = DateTime.Now;
+                    _processDictionary[Enums.ProcessCode.UpdateRclone].Start(_configDTO);
+                }
+                _processDictionary[Enums.ProcessCode.SyncRclone].Start(_configDTO);
             }
 
             catch (Exception ex)

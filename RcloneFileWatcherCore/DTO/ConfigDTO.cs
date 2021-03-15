@@ -6,5 +6,6 @@ namespace RcloneFileWatcherCore.DTO
     {
         public bool ConsoleWriter { get; set; }
         public List<PathDTO> Path { get; set; }
+        public UpdateRcloneDTO UpdateRclone { get; set; }
     }
 }

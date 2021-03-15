@@ -17,7 +17,7 @@ namespace RcloneFileWatcherCore.Logic
             _logger = logger;
         }
 
-        internal List<PathDTO> LoadConfig()
+        internal ConfigDTO LoadConfig()
         {
             try
             {
@@ -29,7 +29,7 @@ namespace RcloneFileWatcherCore.Logic
 
                 var _config = JsonSerializer.Deserialize<ConfigDTO>(File.ReadAllText(_configFileName));
                 _logger.Enable = _config.ConsoleWriter;
-                return _config.Path;
+                return _config;
             }
             catch (Exception ex)
             {
