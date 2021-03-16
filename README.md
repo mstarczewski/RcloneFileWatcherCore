@@ -1,4 +1,4 @@
-# RcloneFileWatcherCore 0.2
+# RcloneFileWatcherCore 0.4
 .NET Core 3.1
 
 ## Main Features
@@ -34,7 +34,13 @@
         ".drivedownload"
       ]
     }
-  ]
+   ],
+    "UpdateRclone": {
+      "Update": true,
+      "RclonePath": ".\\rclone.exe",
+      "RcloneWebsiteCurrentVersionAddress": "https://downloads.rclone.org/rclone-current-windows-amd64.zip",
+      "ChceckUpdateHours": 1
+  },
 }
 ```
 - ```"ConsoleWriter": true``` - on or off display some debug information to console.
@@ -45,7 +51,18 @@
 
 - ```"RcloneBatch": "d:\\files-from-shared.txt"``` - run rclone script (batch) every 30 seconds only when appears any changes. Rclone script must contain ```--include-from```
 
--```"ExcludeContains": [".tmp"]``` - exclude every path which contains ".tmp"
+- ```"ExcludeContains": [".tmp"]``` - exclude every path which contains ".tmp"
+
+- ``` "UpdateRclone"``` - auto update rclone to latest stable version
+
+- ```"Update": true``` - enable auto update
+
+- ```"RclonePath": ".\\rclone.exe"``` - path to eclone
+
+- ```"RcloneWebsiteCurrentVersionAddress": "https://downloads.rclone.org/rclone-current-windows-amd64.zip"``` - current rclone version
+
+- ```"ChceckUpdateHours": 1``` - check for update every numbers of hours
+
 
 An example of a simple script - rclone_livesync_shared.bat:
 
