@@ -51,17 +51,17 @@
 
 - ```"RcloneBatch": "d:\\files-from-shared.txt"``` - run rclone script (batch) every 30 seconds only when appears any changes. Rclone script must contain ```--include-from```
 
--```"ExcludeContains": [".tmp"]``` - exclude every path which contains ".tmp"
+- ```"ExcludeContains": [".tmp"]``` - exclude every path which contains ".tmp"
 
--``` "UpdateRclone"``` - auto update rclone to latest stable version
+- ``` "UpdateRclone"``` - auto update rclone to latest stable version
 
--```"Update": true``` - enable auto update
+- ```"Update": true``` - enable auto update
 
--```"RclonePath": ".\\rclone.exe"``` - path to eclone
+- ```"RclonePath": ".\\rclone.exe"``` - path to eclone
 
--```"RcloneWebsiteCurrentVersionAddress": "https://downloads.rclone.org/rclone-current-windows-amd64.zip"``` - current rclone version
+- ```"RcloneWebsiteCurrentVersionAddress": "https://downloads.rclone.org/rclone-current-windows-amd64.zip"``` - current rclone version
 
--```"ChceckUpdateHours": 1``` - check for update every numbers of hours
+- ```"ChceckUpdateHours": 1``` - check for update every numbers of hours
 
 
 An example of a simple script - rclone_livesync_shared.bat:
