@@ -27,26 +27,25 @@ namespace RcloneFileWatcherCore.Logic
             _logger.Write(sourcePath);
             var rclonePath = _syncPathDTO.Where(x => x.WatchingPath == sourcePath).FirstOrDefault();
             string rcloneBatch = rclonePath.RcloneBatch;
-            using (StreamWriter sw = new StreamWriter(rclonePath.RcloneFilesFromPath))
+            HashSet<string> filesToWrite = new HashSet<string>();
+            foreach (var item in _fileList.Where(x => x.Value.SourcePath == sourcePath && x.Value.TimeStampTicks <= lastTimeStamp))
             {
-                foreach (var item in _fileList.Where(x => x.Value.SourcePath == sourcePath && x.Value.TimeStampTicks <= lastTimeStamp))
+                if (IsFileToFiltered(item.Value, rclonePath.ExcludeContains))
                 {
-                    if (IsFileToFiltered(item.Value, rclonePath.ExcludeContains))
+                    _fileList.TryRemove(item.Key, out _);
+                }
+                else if (IsFileReady(item.Value.FullPath))
+                {
+                    string fileNameFinal = (item.Value.PathPreparedToSync.Replace(@"\\", @"/").Replace(@"\", @"/"));
+                    if (fileNameFinal.Length > 0 && fileNameFinal[0] == '/')
                     {
-                        _fileList.TryRemove(item.Key, out _);
+                        fileNameFinal = fileNameFinal.Substring(1);
                     }
-                    else if (IsFileReady(item.Value.FullPath))
-                    {
-                        string fileNameFinal = (item.Value.PathPreparedToSync.Replace(@"\\", @"/").Replace(@"\", @"/"));
-                        if (fileNameFinal.Length > 0 && fileNameFinal[0] == '/')
-                        {
-                            fileNameFinal = fileNameFinal.Substring(1);
-                        }
-                        sw.WriteLine(fileNameFinal);
-                        removeCount += _fileList.TryRemove(item.Key, out _) ? 1 : 0;
-                    }
+                    filesToWrite.Add(fileNameFinal);
+                    removeCount += _fileList.TryRemove(item.Key, out _) ? 1 : 0;
                 }
             }
+            File.WriteAllLines(rclonePath.RcloneFilesFromPath, filesToWrite);
             return removeCount > 0 ? rcloneBatch : null;
         }
 

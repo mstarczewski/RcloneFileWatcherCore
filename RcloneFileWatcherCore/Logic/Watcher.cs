@@ -54,7 +54,8 @@ namespace RcloneFileWatcherCore.Logic
         {
             var sourceFileWatcher = (FileSystemWatcher)source;
             long currentTimeSamp = Globals.TimeStamp.GetTimestampTicks();
-            _fileDTOs.TryAdd($@"{sourceFileWatcher.Path};{e.FullPath.Substring(sourceFileWatcher.Path.Length)};{currentTimeSamp}",
+            var changeCategory = (e.ChangeType == WatcherChangeTypes.Deleted) ? "Delete" : "Edit/Create";
+            _fileDTOs.TryAdd($@"{sourceFileWatcher.Path};{e.FullPath.Substring(sourceFileWatcher.Path.Length)};{currentTimeSamp};{changeCategory}",
                              new FileDTO
                              {
                                  SourcePath = sourceFileWatcher.Path,
