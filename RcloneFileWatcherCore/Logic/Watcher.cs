@@ -32,6 +32,7 @@ namespace RcloneFileWatcherCore.Logic
                 _fileWatcher.Changed += OnChanged;
                 _fileWatcher.Created += OnChanged;
                 _fileWatcher.Deleted += OnChanged;
+                _fileWatcher.Renamed += OnRenamed;
                 _fileWatcher.Renamed += OnChanged;
 
                 _fileWatcherList.Add(_fileWatcher);
@@ -44,18 +45,42 @@ namespace RcloneFileWatcherCore.Logic
                 _dirWatcher.InternalBufferSize = 8192 * 8;
                 _dirWatcher.Created += OnChanged;
                 _dirWatcher.Deleted += OnChanged;
+                _dirWatcher.Renamed += OnRenamed;
                 _dirWatcher.Renamed += OnChanged;
                 _fileWatcherList.Add(_dirWatcher);
                 _logger.Write($"Watcher: {item.WatchingPath}");
             }
         }
 
-        private void OnChanged(object source, FileSystemEventArgs e)
+        private void OnRenamed(object sender, RenamedEventArgs e)
         {
-            var sourceFileWatcher = (FileSystemWatcher)source;
-            long currentTimeSamp = Globals.TimeStamp.GetTimestampTicks();
-            var changeCategory = (e.ChangeType == WatcherChangeTypes.Deleted) ? "Delete" : "Edit/Create";
-            _fileDTOs.TryAdd($@"{sourceFileWatcher.Path};{e.FullPath.Substring(sourceFileWatcher.Path.Length)};{currentTimeSamp};{changeCategory}",
+            AddRenamedOldPathToCollection(e, (FileSystemWatcher)sender, Globals.TimeStamp.GetTimestampTicks());
+        }
+
+        private void OnChanged(object sender, FileSystemEventArgs e)
+        {
+            AddChangesToCollection(e, (FileSystemWatcher)sender, Globals.TimeStamp.GetTimestampTicks());
+        }
+
+        private void AddRenamedOldPathToCollection(RenamedEventArgs e, FileSystemWatcher sourceFileWatcher, long currentTimeSamp)
+        {
+            var changeDeleted = WatcherChangeTypes.Deleted;
+            _fileDTOs.TryAdd($@"{sourceFileWatcher.Path};{e.FullPath.Substring(sourceFileWatcher.Path.Length)};{currentTimeSamp};{changeDeleted}",
+                             new FileDTO
+                             {
+                                 SourcePath = sourceFileWatcher.Path,
+                                 PathPreparedToSync = e.OldFullPath.Substring(sourceFileWatcher.Path.Length) + (sourceFileWatcher.NotifyFilter == NotifyFilters.DirectoryName ? @"/**" : ""),
+                                 FullPath = e.OldFullPath,
+                                 NotifyFilters = sourceFileWatcher.NotifyFilter,
+                                 WatcherChangeTypes = changeDeleted,
+                                 TimeStampTicks = currentTimeSamp
+                             });
+            _logger.Write($"Action:{changeDeleted} - {e.OldFullPath.Substring(sourceFileWatcher.Path.Length) + (sourceFileWatcher.NotifyFilter.Equals(NotifyFilters.DirectoryName) ? @"/**" : "")}");
+        }
+
+        private void AddChangesToCollection(FileSystemEventArgs e, FileSystemWatcher sourceFileWatcher, long currentTimeSamp)
+        {
+            _fileDTOs.TryAdd($@"{sourceFileWatcher.Path};{e.FullPath.Substring(sourceFileWatcher.Path.Length)};{currentTimeSamp};{e.ChangeType}",
                              new FileDTO
                              {
                                  SourcePath = sourceFileWatcher.Path,
@@ -64,8 +89,8 @@ namespace RcloneFileWatcherCore.Logic
                                  NotifyFilters = sourceFileWatcher.NotifyFilter,
                                  WatcherChangeTypes = e.ChangeType,
                                  TimeStampTicks = currentTimeSamp
-                             }) ;
-            _logger.Write($"Action: {e.FullPath.Substring(sourceFileWatcher.Path.Length) + (sourceFileWatcher.NotifyFilter.Equals(NotifyFilters.DirectoryName) ? @"/**" : "")}");
+                             });
+            _logger.Write($"Action:{e.ChangeType} - {e.FullPath.Substring(sourceFileWatcher.Path.Length) + (sourceFileWatcher.NotifyFilter.Equals(NotifyFilters.DirectoryName) ? @"/**" : "")}");
         }
     }
 }
