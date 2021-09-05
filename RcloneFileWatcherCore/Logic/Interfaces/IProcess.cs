@@ -1,4 +1,5 @@
 ﻿using RcloneFileWatcherCore.DTO;
+using System.Diagnostics;
 
 namespace RcloneFileWatcherCore.Logic.Interfaces
 {

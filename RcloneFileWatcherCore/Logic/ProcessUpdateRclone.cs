@@ -11,80 +11,106 @@ namespace RcloneFileWatcherCore.Logic
     class ProcessUpdateRclone : IProcess
     {
         private readonly ILogger _logger;
+        private readonly Process _process;
         private const string yoursVersion = "yours:";
         private const string latestVersion = "latest:";
         private const string rcloneFileNameToUpdate = "rclone";
         private const int charsForVersion = 20;
-        public ProcessUpdateRclone(ILogger logger)
+        private const string rCloneSelfUpdateVersion = "1.55";
+        private const string rCloneversionChceckArgument = "version --check";
+        private const string rCloneselfUpdateArgument = "selfupdate";
+        private const string rCloneSuccesUpdate = "Successfully updated";
+        public ProcessUpdateRclone(ILogger logger, Process process)
         {
             _logger = logger;
+            _process = process ?? new Process();
         }
+        public ProcessUpdateRclone(ILogger logger) : this(logger, null) { }
         public bool Start(ConfigDTO configDTO)
         {
-            string rcloneWebsiteCurrentVersionAddress = configDTO.UpdateRclone.RcloneWebsiteCurrentVersionAddress;
             string pathToRclone = configDTO.UpdateRclone.RclonePath;
             try
             {
-                int filesUpdated = 0;
-                if (IsNewVersion(pathToRclone))
+                if (IsNewVersionAvailable(pathToRclone))
                 {
-                    using (WebClient webClient = new WebClient())
+                    if (IsSelfUpdateVersionRunning(pathToRclone, IsVersionWithSelfUpdate))
                     {
-                        using (MemoryStream stream = new MemoryStream(webClient.DownloadData(rcloneWebsiteCurrentVersionAddress)))
-                        {
-                            ZipArchive archive = new ZipArchive(stream);
-                            foreach (ZipArchiveEntry entry in archive.Entries)
-                            {
-
-                                if (!String.IsNullOrEmpty(Path.GetFileName(entry.Name)) && Path.GetFileName(entry.Name).Contains(rcloneFileNameToUpdate, StringComparison.OrdinalIgnoreCase))
+                        return (ExecuteProc(pathToRclone, rCloneselfUpdateArgument, SelfUpdateExecutionChceck) == true
+                                && new Func<bool>(() =>
                                 {
-                                    var pathToUnzip = Path.Combine(Path.GetDirectoryName(pathToRclone), entry.Name);
-                                    entry.ExtractToFile(pathToUnzip, true);
-                                    filesUpdated++;
-                                    _logger.Write($"Rclone updated: {entry.Name}");
-                                }
-                            }
-                        }
+                                    _logger.Write($"Rclone updated");
+                                    return true;
+                                })());
+                    }
+                    else
+                    {
+                        string rcloneWebsiteCurrentVersionAddress = configDTO.UpdateRclone.RcloneWebsiteCurrentVersionAddress;
+                        return OldUpdater(rcloneWebsiteCurrentVersionAddress, pathToRclone);
                     }
                 }
-                return filesUpdated > 0;
+                return false;
             }
             catch (Exception ex)
             {
                 _logger.Write(ex.ToString());
                 return false;
             }
-
         }
-        private bool IsNewVersion(string pathToRclone)
+        private bool OldUpdater(string rcloneWebsiteCurrentVersionAddress, string pathToRclone)
         {
-            using var proc = new Process
+            int filesUpdated = 0;
+            using (WebClient webClient = new WebClient())
             {
-                StartInfo = new ProcessStartInfo
+                using (MemoryStream stream = new MemoryStream(webClient.DownloadData(rcloneWebsiteCurrentVersionAddress)))
                 {
-                    FileName = pathToRclone,
-                    Arguments = "version --check",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
+                    ZipArchive archive = new ZipArchive(stream);
+                    foreach (ZipArchiveEntry entry in archive.Entries)
+                    {
+
+                        if (!String.IsNullOrEmpty(Path.GetFileName(entry.Name)) && Path.GetFileName(entry.Name).Contains(rcloneFileNameToUpdate, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var pathToUnzip = Path.Combine(Path.GetDirectoryName(pathToRclone), entry.Name);
+                            entry.ExtractToFile(pathToUnzip, true);
+                            filesUpdated++;
+                            _logger.Write($"Rclone updated: {entry.Name}");
+                        }
+                    }
                 }
-            };
+            }
+            return filesUpdated > 0;
+        }
+        private bool IsSelfUpdateVersionRunning(string pathToRclone, Func<string, bool> funcProcHelper = null)
+        {
+            return ExecuteProc(pathToRclone, rCloneversionChceckArgument, IsVersionWithSelfUpdate);
+        }
+        private bool IsNewVersionAvailable(string pathToRclone, Func<string, bool> funcProcHelper = null)
+        {
+            return ExecuteProc(pathToRclone, rCloneversionChceckArgument, CompareVersions);
+        }
+        public bool ExecuteProc(string pathToRclone, string argument, Func<string, bool> func)
+        {
+            var startInfo = PrepareProc(pathToRclone, argument);
+            _process.StartInfo = startInfo;
             try
             {
-                string versionRclone = string.Empty;
-                string errorVersionChceck = string.Empty;
-                proc.OutputDataReceived += (s, e) => versionRclone += e.Data;
-                proc.ErrorDataReceived += (s, e) => errorVersionChceck += e.Data;
-                proc.Start();
-                proc.BeginErrorReadLine();
-                proc.BeginOutputReadLine();
-                proc.WaitForExit();
-                if (!String.IsNullOrWhiteSpace(errorVersionChceck))
+                string dataReceivedRclone = string.Empty;
+                string errorReceived = string.Empty;
+                DataReceivedEventHandler handlerOutput = (s, e) => dataReceivedRclone += e.Data;
+                DataReceivedEventHandler handlerError = (s, e) => errorReceived += e.Data;
+                _process.OutputDataReceived += handlerOutput;
+                _process.ErrorDataReceived += handlerError;
+                _process.Start();
+                _process.BeginErrorReadLine();
+                _process.BeginOutputReadLine();
+                _process.WaitForExit();
+                _process.OutputDataReceived -= handlerOutput;
+                _process.ErrorDataReceived -= handlerError;
+                if (!String.IsNullOrWhiteSpace(errorReceived))
                 {
-                    _logger.Write($"Update ErrorDataReceived {errorVersionChceck}");
+                    _logger.Write($"Proc Error DataReceived {errorReceived}");
+                    return false;
                 }
-                return CompareVersions(versionRclone);
+                return func(dataReceivedRclone);
             }
             catch (Exception ex)
             {
@@ -93,19 +119,42 @@ namespace RcloneFileWatcherCore.Logic
             }
             finally
             {
-                proc.CloseMainWindow();
-                proc.Close();
-                if (proc != null)
-                    ((IDisposable)proc).Dispose();
+                _process.CancelErrorRead();
+                _process.CancelOutputRead();
+                _process.CloseMainWindow();
+                _process.Close();
+
+                //if (_process != null)
+                //    ((IDisposable)_process).Dispose();
             }
+        }
+               
+        private ProcessStartInfo PrepareProc(string pathToRclone, string arguments)
+        {
+            return new ProcessStartInfo
+            {
+                FileName = pathToRclone,
+                Arguments = arguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
         }
 
         private bool CompareVersions(string versionRclone)
         {
             return GetVersion(versionRclone, latestVersion).CompareTo(GetVersion(versionRclone, yoursVersion)) > 0;
         }
-
-        private static string GetVersion(string versionRclone, string version)
+        private bool SelfUpdateExecutionChceck(string dataReceived)
+        {
+            return dataReceived.Contains(rCloneSuccesUpdate);
+        }
+        private bool IsVersionWithSelfUpdate(string dataReceived)
+        {
+            return rCloneSelfUpdateVersion.CompareTo(GetVersion(dataReceived, yoursVersion)) <= 0;
+        }
+        private string GetVersion(string versionRclone, string version)
         {
             return versionRclone.Substring(versionRclone.IndexOf(version) + version.Length, charsForVersion - version.Length).Trim();
         }
