@@ -10,7 +10,9 @@
 
 ## About
 
-**RcloneFileWatcherCore** is a .NET 8-based tool that enables real-time one-way file synchronization using filesystem change tracking. Instead of scanning entire folders, it watches for file and directory changes and launches `rclone` to sync only the affected files. This makes it possible to perform secure, real-time, encrypted backups to cloud storage providers supported by rclone.
+**RcloneFileWatcherCore** is a .NET 8-based tool that enables real-time one-way file synchronization using filesystem change tracking. Instead of scanning entire folders, it watches for file and directory changes and launches `rclone` to sync only the affected files.
+>### ℹ️ Secure backups
+> **This makes it possible to perform secure, real-time, encrypted backups to cloud storage providers supported by rclone.**
 
 The configuration is optimized for Windows, but the core logic should work on other platforms with some adaptation.
 
@@ -23,6 +25,14 @@ The configuration is optimized for Windows, but the core logic should work on ot
 - Executes an rclone batch command with proper file filtering
 - Optional full-sync at startup
 - Optionally auto-updates rclone binary
+
+---
+
+## ⚙️ Requirements
+
+- [.NET 8.0 Runtime](https://dotnet.microsoft.com/en-us/download)
+- [rclone](https://rclone.org/downloads/) **version ≥ 1.56**
+- Windows OS (tested). Other platforms may work with adjustments.
 
 ---
 
