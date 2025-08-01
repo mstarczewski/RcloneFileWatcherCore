@@ -105,6 +105,7 @@ for /f "delims=" %%b in (
 rclone.exe sync --config="C:\rclone\rclone.conf" --include-from .\Logs\files-from-shared.txt e:\Shared pcloudcryptDaily:Shared --retries-sleep 1m --retries 30 --bwlimit 30M:off --create-empty-src-dirs --backup-dir pcloudcryptDaily:$Archive\Shared\%year% --suffix " [%datetime%]" --log-file=.\Logs\log_livesync_shared.txt --log-level INFO
 @endlocal
 ```
+### Example rclone script (`rclone_startupsync.bat`)
 
 ```bash
 @echo off
