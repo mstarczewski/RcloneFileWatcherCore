@@ -29,7 +29,9 @@ jobs:
         run: dotnet build --no-restore -c ${{ env.Configuration }}
 
       - name: Run tests
-        run: dotnet test ./RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
+        shell: bash
+        run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
+
 
       - name: Publish app
         run: |
