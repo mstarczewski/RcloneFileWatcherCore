@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*.*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: ''
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -46,16 +51,30 @@ jobs:
         run: |
           mkdir "${{ github.workspace }}\artifacts"
           copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
-          #copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\"
+          # copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\"
           Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app.zip"
+
+      - name: Detect tag
+        id: detect_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -z "${{ github.event.inputs.tag }}" ]; then
+            git fetch --tags
+            tag=$(git tag --sort=-creatordate | head -n 1)
+            echo "Auto-detected latest tag: $tag"
+            echo "tag=$tag" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.detect_tag.outputs.tag }}
           files: |
-            artifacts\*.exe
-            #artifacts\version.json
-            artifacts\app.zip
+            artifacts/*.exe
+            artifacts/app.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
