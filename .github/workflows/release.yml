@@ -32,10 +32,10 @@ jobs:
         shell: bash
         run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
 
-
       - name: Publish app
+        shell: bash
         run: |
-          dotnet publish ./RcloneFileWatcherCore/RcloneFileWatcherCore.csproj \
+          dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj \
             --no-build \
             -c ${{ env.Configuration }} \
             -r ${{ env.RuntimeId }} \
