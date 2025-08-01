@@ -38,11 +38,10 @@ jobs:
       - name: Prepare release artifacts
         run: |
           mkdir artifacts
-          copy ".\bin\Release\net8.0\win-x64\publish\*.exe" artifacts\
-          copy ".\bin\Release\net8.0\win-x64\publish\version.json" artifacts\
+          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" artifacts\
+          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" artifacts\
           Compress-Archive -Path artifacts\* -DestinationPath artifacts\app.zip
-
-          
+        
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
