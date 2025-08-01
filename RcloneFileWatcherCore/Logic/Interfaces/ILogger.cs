@@ -1,6 +1,6 @@
 ﻿namespace RcloneFileWatcherCore.Logic.Interfaces
 {
-    interface ILogger
+    public interface ILogger
     {
         bool Enable { get; set; }
         void Write(string text);

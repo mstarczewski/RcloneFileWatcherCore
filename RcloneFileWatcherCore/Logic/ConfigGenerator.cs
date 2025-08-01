@@ -1,4 +1,6 @@
 ﻿using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Logic.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -13,7 +15,7 @@ namespace RcloneFileWatcherCore.Logic
         {
             _fileName = fileName;
         }
-        internal void GenerateConfig()
+        public void GenerateConfig()
         {
             var conf = new ConfigDTO
             {
@@ -38,7 +40,7 @@ namespace RcloneFileWatcherCore.Logic
                                ".tmp",
                                ".drivedownload1"
                            }),
-                        RcloneBatch = "@d:\rclone_Test.bat1",
+                        RcloneBatch = "@d:\rclone_Test1.bat",
                         RcloneFilesFromPath = @"d:\files-from-test1.txt",
                         WatchingPath = @"d:\Test\"
                     }
@@ -47,9 +49,12 @@ namespace RcloneFileWatcherCore.Logic
                 {
                     Update = true,
                     RclonePath = @".\rclone.exe",
-                    RcloneWebsiteCurrentVersionAddress = "https://downloads.rclone.org/rclone-current-windows-amd64.zip",
-                    ChceckUpdateHours = 1
-                }
+                    CheckUpdateHours = 350
+                },
+                SyncIntervalSeconds = 60,
+                RunOneTimeFullStartupSync = true,
+                RunOneTimeFullStartupSyncBatch = @"rclone_startupsync.bat"
+
             };
             var options = new JsonSerializerOptions()
             {

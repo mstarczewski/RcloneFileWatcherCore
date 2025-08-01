@@ -2,7 +2,7 @@
 
 namespace RcloneFileWatcherCore.DTO
 {
-    class FileDTO
+    public class FileDTO
     {
         public string PathPreparedToSync { get; set; }
         public string SourcePath { get; set; }

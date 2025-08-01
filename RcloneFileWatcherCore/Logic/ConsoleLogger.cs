@@ -3,9 +3,9 @@ using System;
 
 namespace RcloneFileWatcherCore.Logic
 {
-    class ConsoleLogger : ILogger
+    public class ConsoleLogger : ILogger
     {
-        public bool Enable { get; set; }
+        public bool Enable { get; set; } = true;
 
         public void Write(string text)
         {
@@ -14,9 +14,10 @@ namespace RcloneFileWatcherCore.Logic
                 WriteAlways(text);
             }
         }
+
         public void WriteAlways(string text)
         {
-            Console.WriteLine($@"{DateTime.Now} {text}");
+            Console.WriteLine($"{DateTime.Now} {text}");
         }
     }
 }

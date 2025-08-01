@@ -1,47 +1,76 @@
 ﻿using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Globals;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Net.Http.Headers;
+using System.Reflection;
 
 namespace RcloneFileWatcherCore.Logic
 {
     class Controller
     {
-        private ConcurrentDictionary<string, FileDTO> _fileDTOs;
-        private ConfigDTO _config;
-        private Watcher _watcher;
-        private ILogger _logger;
-        private readonly Scheduler _scheduler;
-        private const string _configFileName = "RcloneFileWatcherCoreConfig.cfg";
-        private const int _exitCodeConfigError = 2;
+        private const string ConfigFileName = "RcloneFileWatcherCoreConfig.cfg";
+        private const int ExitCodeConfigError = 2;
+
+        private readonly ILogger _logger;
+        private readonly ConfigDTO _configDTO;
+        private readonly ConcurrentDictionary<string, FileDTO> _fileDTOs;
         private readonly Dictionary<Enums.ProcessCode, IProcess> _processDictionary;
+        private readonly Scheduler _scheduler;
+        private readonly Watcher _watcher;
+        private readonly StartupSync _startupSync;
+
         internal Controller()
         {
-
-            //new ConfigGenerator(@"d:\RcloneFileWatcherCoreConfig.cfg").GenerateConfig(); //Example JSON config generator
             _logger = new ConsoleLogger();
-            _config = new Config(_configFileName, _logger).LoadConfig();
-            if (!_config.Path?.Any() ?? true)
+            _configDTO = LoadConfiguration();
+            _fileDTOs = new ConcurrentDictionary<string, FileDTO>();
+            _processDictionary = InitProcesses();
+            _scheduler = new Scheduler(_logger, _processDictionary, _configDTO);
+            _watcher = new Watcher(_logger, _fileDTOs, _configDTO.Path);
+            _startupSync = new StartupSync(_logger, _configDTO);
+        }
+
+        public void Start(bool generateConfig)
+        {
+
+            _logger.WriteAlways(AppVersion.GetVersion());
+
+            if (generateConfig)
             {
-                _logger.WriteAlways("Error in config file");
-                Environment.Exit(_exitCodeConfigError);
+                new ConfigGenerator(ConfigFileName).GenerateConfig();
+                _logger.WriteAlways($"Example config generated:{ConfigFileName}");
+                Environment.Exit(0);
             }
 
-            _fileDTOs = new ConcurrentDictionary<string, FileDTO>();
-            FilePrepare _filePrepare = new FilePrepare(_logger, _config.Path, _fileDTOs);
-
-            _processDictionary = new Dictionary<Enums.ProcessCode, IProcess>();
-            _processDictionary.Add(Enums.ProcessCode.SyncRclone, new ProcessSyncRclone(_logger, _filePrepare, _fileDTOs));
-            _processDictionary.Add(Enums.ProcessCode.UpdateRclone, new ProcessUpdateRclone(_logger));
-
-            _scheduler = new Scheduler(_logger, _processDictionary, _config);
-            _watcher = new Watcher(_logger, _fileDTOs, _config.Path);
             _watcher.Start();
+            _startupSync.StartStartupSync();
             _scheduler.SetTimer();
             _logger.Write("Started");
+        }
+
+        private ConfigDTO LoadConfiguration()
+        {
+            var config = new Config(ConfigFileName, _logger).LoadConfig();
+            if (config?.Path == null || !config.Path.Any())
+            {
+                _logger.WriteAlways("Error in config file");
+                Environment.Exit(ExitCodeConfigError);
+            }
+            return config;
+        }
+
+        private Dictionary<Enums.ProcessCode, IProcess> InitProcesses()
+        {
+            var filePrepare = new FilePrepare(_logger, _configDTO.Path, _fileDTOs);
+            return new Dictionary<Enums.ProcessCode, IProcess>
+            {
+                { Enums.ProcessCode.SyncRclone, new ProcessSyncRclone(_logger, filePrepare, _fileDTOs) },
+                { Enums.ProcessCode.UpdateRclone, new ProcessUpdateRclone(_logger) }
+            };
         }
     }
 }

@@ -6,25 +6,26 @@ using System.Timers;
 
 namespace RcloneFileWatcherCore.Logic
 {
-    class Scheduler
+    public class Scheduler : IDisposable
     {
-        private Timer _timer;
+        private readonly Timer _timer;
         private readonly ILogger _logger;
-        private const int timeOut = 1000 * 30;
-        private DateTime dateTimeUpdate = DateTime.Now;
+        private DateTime _dateTimeUpdate = DateTime.Now;
         private readonly ConfigDTO _configDTO;
         private readonly Dictionary<Enums.ProcessCode, IProcess> _processDictionary;
+
         public Scheduler(ILogger logger, Dictionary<Enums.ProcessCode, IProcess> processDictionary, ConfigDTO configDTO)
         {
             _processDictionary = processDictionary;
             _logger = logger;
             _configDTO = configDTO;
-        }
-        public void SetTimer()
-        {
-            _timer = new Timer(timeOut);
+            _timer = new Timer(_configDTO.SyncIntervalSeconds*1000);
             _timer.Elapsed += OnTimedEvent;
             _timer.AutoReset = false;
+        }
+
+        public void SetTimer()
+        {
             _timer.Enabled = true;
         }
 
@@ -32,14 +33,9 @@ namespace RcloneFileWatcherCore.Logic
         {
             try
             {
-                if ((_configDTO?.UpdateRclone?.Update ?? false) && dateTimeUpdate.AddHours(_configDTO.UpdateRclone.ChceckUpdateHours) < DateTime.Now)
-                {
-                    dateTimeUpdate = DateTime.Now;
-                    _processDictionary[Enums.ProcessCode.UpdateRclone].Start(_configDTO);
-                }
-                _processDictionary[Enums.ProcessCode.SyncRclone].Start(_configDTO);
+                TryUpdateRclone();
+                TrySyncRclone();
             }
-
             catch (Exception ex)
             {
                 _logger.Write(ex.ToString());
@@ -48,6 +44,31 @@ namespace RcloneFileWatcherCore.Logic
             {
                 _timer.Start();
             }
+        }
+
+        private void TryUpdateRclone()
+        {
+            var updateRclone = _configDTO?.UpdateRclone;
+            if (updateRclone?.Update == true &&
+                _dateTimeUpdate.AddHours(updateRclone.CheckUpdateHours) < DateTime.Now &&
+                _processDictionary.TryGetValue(Enums.ProcessCode.UpdateRclone, out var updateProcess))
+            {
+                _dateTimeUpdate = DateTime.Now;
+                updateProcess.Start(_configDTO);
+            }
+        }
+
+        private void TrySyncRclone()
+        {
+            if (_processDictionary.TryGetValue(Enums.ProcessCode.SyncRclone, out var syncProcess))
+            {
+                syncProcess.Start(_configDTO);
+            }
+        }
+
+        public void Dispose()
+        {
+            _timer?.Dispose();
         }
     }
 }

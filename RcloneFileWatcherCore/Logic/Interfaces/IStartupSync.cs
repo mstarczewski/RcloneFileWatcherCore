@@ -2,8 +2,8 @@
 
 namespace RcloneFileWatcherCore.Logic.Interfaces
 {
-    public interface IProcess
+    public interface IStartupSync
     {
-        bool Start(ConfigDTO configDTO);
+        bool StartStartupSync();
     }
 }

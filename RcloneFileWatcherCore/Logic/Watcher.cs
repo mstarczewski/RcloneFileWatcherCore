@@ -8,48 +8,53 @@ namespace RcloneFileWatcherCore.Logic
 {
     class Watcher
     {
+        private const int BufferSize = 65536;
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, FileDTO> _fileDTOs;
-        private readonly List<PathDTO> _FilePathDTO;
-        private List<FileSystemWatcher> _fileWatcherList = new List<FileSystemWatcher>();
-        public Watcher(ILogger logger, ConcurrentDictionary<string, FileDTO> fileDTOs, List<PathDTO> FilePathDTO)
+        private readonly List<PathDTO> _filePathDTO;
+        private readonly List<FileSystemWatcher> _fileWatcherList = new();
+
+        public Watcher(ILogger logger, ConcurrentDictionary<string, FileDTO> fileDTOs, List<PathDTO> filePathDTO)
         {
             _logger = logger;
             _fileDTOs = fileDTOs;
-            _FilePathDTO = FilePathDTO;
+            _filePathDTO = filePathDTO;
         }
 
         public void Start()
         {
-            foreach (var item in _FilePathDTO)
+            foreach (var item in _filePathDTO)
             {
-                var _fileWatcher = new System.IO.FileSystemWatcher();
-                _fileWatcher.Path = item.WatchingPath;
-                _fileWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
-                _fileWatcher.IncludeSubdirectories = true;
-                _fileWatcher.EnableRaisingEvents = true;
-                _fileWatcher.InternalBufferSize = 8192 * 8;
-                _fileWatcher.Changed += OnChanged;
-                _fileWatcher.Created += OnChanged;
-                _fileWatcher.Deleted += OnChanged;
-                _fileWatcher.Renamed += OnRenamed;
-                _fileWatcher.Renamed += OnChanged;
-
-                _fileWatcherList.Add(_fileWatcher);
-
-                var _dirWatcher = new System.IO.FileSystemWatcher();
-                _dirWatcher.Path = item.WatchingPath;
-                _dirWatcher.NotifyFilter = NotifyFilters.DirectoryName;
-                _dirWatcher.IncludeSubdirectories = true;
-                _dirWatcher.EnableRaisingEvents = true;
-                _dirWatcher.InternalBufferSize = 8192 * 8;
-                _dirWatcher.Created += OnChanged;
-                _dirWatcher.Deleted += OnChanged;
-                _dirWatcher.Renamed += OnRenamed;
-                _dirWatcher.Renamed += OnChanged;
-                _fileWatcherList.Add(_dirWatcher);
+                _fileWatcherList.Add(CreateAndRegisterWatcher(item.WatchingPath, NotifyFilters.FileName | NotifyFilters.LastWrite, true));
+                _fileWatcherList.Add(CreateAndRegisterWatcher(item.WatchingPath, NotifyFilters.DirectoryName, false));
                 _logger.Write($"Watcher: {item.WatchingPath}");
             }
+        }
+
+        private FileSystemWatcher CreateAndRegisterWatcher(string path, NotifyFilters filters, bool isFileWatcher)
+        {
+            var watcher = new FileSystemWatcher
+            {
+                Path = path,
+                NotifyFilter = filters,
+                IncludeSubdirectories = true,
+                EnableRaisingEvents = true,
+                InternalBufferSize = BufferSize
+            };
+
+            watcher.Created += OnChanged;
+            watcher.Deleted += OnChanged;
+            watcher.Renamed += OnRenamed;
+            watcher.Renamed += OnChanged;
+
+            if (isFileWatcher)
+                watcher.Changed += OnChanged;
+
+            // (opcjonalnie) log błędów z buffera
+            watcher.Error += (s, e) =>
+                _logger.Write($"[ERROR] Watcher error at {path}: {e.GetException()?.Message}");
+
+            return watcher;
         }
 
         private void OnRenamed(object sender, RenamedEventArgs e)
@@ -62,35 +67,49 @@ namespace RcloneFileWatcherCore.Logic
             AddChangesToCollection(e, (FileSystemWatcher)sender, Globals.TimeStamp.GetTimestampTicks());
         }
 
-        private void AddRenamedOldPathToCollection(RenamedEventArgs e, FileSystemWatcher sourceFileWatcher, long currentTimeSamp)
+        private void AddRenamedOldPathToCollection(RenamedEventArgs e, FileSystemWatcher watcher, long timestamp)
         {
-            var changeDeleted = WatcherChangeTypes.Deleted;
-            _fileDTOs.TryAdd($@"{sourceFileWatcher.Path};{e.FullPath.Substring(sourceFileWatcher.Path.Length)};{currentTimeSamp};{changeDeleted}",
-                             new FileDTO
-                             {
-                                 SourcePath = sourceFileWatcher.Path,
-                                 PathPreparedToSync = e.OldFullPath.Substring(sourceFileWatcher.Path.Length) + (sourceFileWatcher.NotifyFilter == NotifyFilters.DirectoryName ? @"/**" : ""),
-                                 FullPath = e.OldFullPath,
-                                 NotifyFilters = sourceFileWatcher.NotifyFilter,
-                                 WatcherChangeTypes = changeDeleted,
-                                 TimeStampTicks = currentTimeSamp
-                             });
-            _logger.Write($"Action:{changeDeleted} - {e.OldFullPath.Substring(sourceFileWatcher.Path.Length) + (sourceFileWatcher.NotifyFilter.Equals(NotifyFilters.DirectoryName) ? @"/**" : "")}");
+            var isDir = watcher.NotifyFilter.HasFlag(NotifyFilters.DirectoryName);
+            var relativeOldPath = GetRelativePath(watcher.Path, e.OldFullPath);
+            var syncPath = isDir ? $"{relativeOldPath}/**" : relativeOldPath;
+            var key = $"{watcher.Path};{GetRelativePath(watcher.Path, e.FullPath)};{timestamp};{WatcherChangeTypes.Deleted}";
+
+            _fileDTOs.TryAdd(key, new FileDTO
+            {
+                SourcePath = watcher.Path,
+                PathPreparedToSync = syncPath,
+                FullPath = e.OldFullPath,
+                NotifyFilters = watcher.NotifyFilter,
+                WatcherChangeTypes = WatcherChangeTypes.Deleted,
+                TimeStampTicks = timestamp
+            });
+
+            _logger.Write($"Action:{WatcherChangeTypes.Deleted} - {syncPath}");
         }
 
-        private void AddChangesToCollection(FileSystemEventArgs e, FileSystemWatcher sourceFileWatcher, long currentTimeSamp)
+        private void AddChangesToCollection(FileSystemEventArgs e, FileSystemWatcher watcher, long timestamp)
         {
-            _fileDTOs.TryAdd($@"{sourceFileWatcher.Path};{e.FullPath.Substring(sourceFileWatcher.Path.Length)};{currentTimeSamp};{e.ChangeType}",
-                             new FileDTO
-                             {
-                                 SourcePath = sourceFileWatcher.Path,
-                                 PathPreparedToSync = e.FullPath.Substring(sourceFileWatcher.Path.Length) + (sourceFileWatcher.NotifyFilter == NotifyFilters.DirectoryName ? @"/**" : ""),
-                                 FullPath = e.FullPath,
-                                 NotifyFilters = sourceFileWatcher.NotifyFilter,
-                                 WatcherChangeTypes = e.ChangeType,
-                                 TimeStampTicks = currentTimeSamp
-                             });
-            _logger.Write($"Action:{e.ChangeType} - {e.FullPath.Substring(sourceFileWatcher.Path.Length) + (sourceFileWatcher.NotifyFilter.Equals(NotifyFilters.DirectoryName) ? @"/**" : "")}");
+            var isDir = watcher.NotifyFilter.HasFlag(NotifyFilters.DirectoryName);
+            var relativePath = GetRelativePath(watcher.Path, e.FullPath);
+            var syncPath = isDir ? $"{relativePath}/**" : relativePath;
+            var key = $"{watcher.Path};{relativePath};{timestamp};{e.ChangeType}";
+
+            _fileDTOs.TryAdd(key, new FileDTO
+            {
+                SourcePath = watcher.Path,
+                PathPreparedToSync = syncPath,
+                FullPath = e.FullPath,
+                NotifyFilters = watcher.NotifyFilter,
+                WatcherChangeTypes = e.ChangeType,
+                TimeStampTicks = timestamp
+            });
+
+            _logger.Write($"Action:{e.ChangeType} - {syncPath}");
+        }
+
+        private static string GetRelativePath(string basePath, string fullPath)
+        {
+            return Path.GetRelativePath(basePath, fullPath).Replace('\\', '/');
         }
     }
 }

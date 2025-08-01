@@ -8,12 +8,12 @@ using System.Linq;
 
 namespace RcloneFileWatcherCore.Logic
 {
-    class FilePrepare
+    public class FilePrepare
     {
         private readonly ConcurrentDictionary<string, FileDTO> _fileList;
         private readonly List<PathDTO> _syncPathDTO;
         private readonly ILogger _logger;
-        
+
         public FilePrepare(ILogger logger, List<PathDTO> syncPathDTO, ConcurrentDictionary<string, FileDTO> fileList)
         {
             _logger = logger;
@@ -23,72 +23,102 @@ namespace RcloneFileWatcherCore.Logic
 
         public string PrepareFilesToSync(string sourcePath, long lastTimeStamp)
         {
-            int removeCount = 0;
             _logger.Write(sourcePath);
-            var rclonePath = _syncPathDTO.Where(x => x.WatchingPath == sourcePath).FirstOrDefault();
-            string rcloneBatch = rclonePath.RcloneBatch;
-            HashSet<string> filesToWrite = new HashSet<string>();
-            foreach (var item in _fileList.Where(x => x.Value.SourcePath == sourcePath && x.Value.TimeStampTicks <= lastTimeStamp))
+            var rclonePath = _syncPathDTO.FirstOrDefault(x => x.WatchingPath == sourcePath);
+            if (rclonePath == null)
             {
-                if (IsFileToFiltered(item.Value, rclonePath.ExcludeContains))
+                _logger.Write($"No Path found for source Path: {sourcePath}");
+                return null;
+            }
+
+            string rcloneBatch = rclonePath.RcloneBatch;
+            var filesToWrite = new HashSet<string>();
+            int removeCount = 0;
+
+            var items = _fileList
+                .Where(x => x.Value.SourcePath == sourcePath && x.Value.TimeStampTicks <= lastTimeStamp)
+                .ToList();
+
+            foreach (var item in items)
+            {
+                if (IsFileFiltered(item.Value, rclonePath.ExcludeContains))
                 {
                     _fileList.TryRemove(item.Key, out _);
+                    continue;
                 }
-                else if (IsFileReady(item.Value.FullPath))
+
+                if (IsFileReady(item.Value.FullPath))
                 {
-                    string fileNameFinal = (item.Value.PathPreparedToSync.Replace(@"\\", @"/").Replace(@"\", @"/"));
-                    if (fileNameFinal.Length > 0 && fileNameFinal[0] == '/')
+                    string fileNameFinal = NormalizePath(item.Value.PathPreparedToSync);
+                    if (!string.IsNullOrEmpty(fileNameFinal))
                     {
-                        fileNameFinal = fileNameFinal.Substring(1);
+                        filesToWrite.Add(fileNameFinal);
+                        if (_fileList.TryRemove(item.Key, out _))
+                            removeCount++;
                     }
-                    filesToWrite.Add(fileNameFinal);
-                    removeCount += _fileList.TryRemove(item.Key, out _) ? 1 : 0;
                 }
             }
-            File.WriteAllLines(rclonePath.RcloneFilesFromPath, filesToWrite);
+
+            try
+            {
+                File.WriteAllLines(rclonePath.RcloneFilesFromPath, filesToWrite);
+            }
+            catch (Exception ex)
+            {
+                _logger.Write($"Error writing files: {ex}");
+                return null;
+            }
+
             return removeCount > 0 ? rcloneBatch : null;
         }
 
-        private static bool IsFileToFiltered(FileDTO fileDTO, List<string> excludeContains)
+        private static string NormalizePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return string.Empty;
+
+            var normalized = path.Replace(@"\\", "/").Replace(@"\", "/");
+            return normalized.StartsWith("/") ? normalized[1..] : normalized;
+        }
+
+        private static bool IsFileFiltered(FileDTO fileDTO, List<string> excludeContains)
         {
             bool fileExists = File.Exists(fileDTO.FullPath);
             bool directoryExists = Directory.Exists(fileDTO.FullPath);
-            bool watcherChangeTypesCreatedDeletedeRenamed = fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Created)
-                                                            || fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted)
-                                                            || fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Renamed);
+            bool isCreatedDeletedRenamed = fileDTO.WatcherChangeTypes is WatcherChangeTypes.Created
+                or WatcherChangeTypes.Deleted
+                or WatcherChangeTypes.Renamed;
 
-            if (((!fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileExists)
-              || (!fileExists && (!fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted)))
-              || (directoryExists && (fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && (watcherChangeTypesCreatedDeletedeRenamed)))
-              || (!directoryExists && (fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted))))
-              && !(excludeContains.Any(x=>fileDTO.FullPath.Contains(x)))) 
+            bool isExcluded = excludeContains != null && excludeContains.Any(x => fileDTO.FullPath.Contains(x));
+
+            if (
+                (
+                    (!fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileExists)
+                    || (!fileExists && !fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted))
+                    || (directoryExists && fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && isCreatedDeletedRenamed)
+                    || (!directoryExists && fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted))
+                )
+                && !isExcluded
+            )
             {
                 return false;
             }
-            else
-            {
-                return true;
-            }
+            return true;
         }
+
         private bool IsFileReady(string filename)
         {
             try
             {
                 _logger.Write($"IsFileReady checking: {filename}");
                 if (Directory.Exists(filename))
-                {
                     return true;
-                }
                 if (!File.Exists(filename))
-                {
                     return true;
-                }
-                using (FileStream inputStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.None))
-                {
-                    return inputStream.Length >= 0;
-                }
+                using var inputStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.None);
+                return inputStream.Length >= 0;
             }
-            catch (Exception)
+            catch
             {
                 return false;
             }

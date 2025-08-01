@@ -1,4 +1,5 @@
 ﻿using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Globals;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Collections.Concurrent;
@@ -7,7 +8,7 @@ using System.Linq;
 
 namespace RcloneFileWatcherCore.Logic
 {
-    class ProcessSyncRclone:IProcess
+    public class ProcessSyncRclone : IProcess
     {
         private readonly ILogger _logger;
         private readonly FilePrepare _filePrepare;
@@ -24,22 +25,18 @@ namespace RcloneFileWatcherCore.Logic
             {
                 long lastTimeStamp = Globals.TimeStamp.GetTimestampTicks();
                 Globals.TimeStamp.SetTimestampTicks();
-                var sourePathList = _fileDTOs.Where(x => x.Value.TimeStampTicks <= lastTimeStamp).Select(x => x.Value.SourcePath).Distinct().ToList();
-                foreach (var sourcePath in sourePathList)
+                var sourcePathList = _fileDTOs
+                    .Where(x => x.Value.TimeStampTicks <= lastTimeStamp)
+                    .Select(x => x.Value.SourcePath)
+                    .Distinct()
+                    .ToList();
+
+                foreach (var sourcePath in sourcePathList)
                 {
                     string rcloneBatch = _filePrepare.PrepareFilesToSync(sourcePath, lastTimeStamp);
                     if (!string.IsNullOrWhiteSpace(sourcePath) && !string.IsNullOrWhiteSpace(rcloneBatch))
                     {
-                        Process process = new Process();
-                        //process.StartInfo.UseShellExecute = true;
-                        process.StartInfo.CreateNoWindow = false;
-
-                        _logger.Write("Starting rclone");
-                        process.StartInfo.FileName = rcloneBatch;
-                        process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                        process.Start();
-                        process.WaitForExit();
-                        _logger.Write("Finished rclone");
+                        RcloneProcess.RunRcloneProcess(rcloneBatch, _logger);
                     }
                 }
                 return true;
@@ -49,7 +46,6 @@ namespace RcloneFileWatcherCore.Logic
                 _logger.Write(ex.ToString());
                 return false;
             }
-
         }
     }
 }

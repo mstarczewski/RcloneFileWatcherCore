@@ -1,6 +1,6 @@
 ﻿namespace RcloneFileWatcherCore.Enums
 {
-    enum ProcessCode
+    public enum ProcessCode
     {
         SyncRclone,
         UpdateRclone
