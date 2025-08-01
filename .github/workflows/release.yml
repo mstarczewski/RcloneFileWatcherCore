@@ -46,7 +46,7 @@ jobs:
         run: |
           mkdir "${{ github.workspace }}\artifacts"
           copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
-          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\"
+          #copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\"
           Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app.zip"
 
       - name: Create GitHub Release
@@ -54,7 +54,7 @@ jobs:
         with:
           files: |
             artifacts\*.exe
-            artifacts\version.json
+            #artifacts\version.json
             artifacts\app.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
