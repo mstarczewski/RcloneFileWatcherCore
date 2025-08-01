@@ -24,9 +24,13 @@ jobs:
     - name: Restore
       run: dotnet restore
 
-    - name: Build app
+    #- name: Build app
       #run: dotnet publish -c $env:Configuration -r $env:RuntimeId --self-contained false /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
-      run: dotnet publish RcloneFileWatcherCore.csproj -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
+     # run: dotnet publish RcloneFileWatcherCore.csproj -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
+
+    - name: Publish
+      run:  dotnet publish ./RcloneFileWatcherCore/RcloneFileWatcherCore.csproj -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
+      
 
 
     - name: Prepare release artifacts
