@@ -1,53 +1,67 @@
-# RcloneFileWatcherCore 0.6
+# RcloneFileWatcherCore
 
-**.NET Core 3.1**
+[![Build Status](https://github.com/mstarczewski/RcloneFileWatcherCore/actions/workflows/release.yml/badge.svg)](https://github.com/mstarczewski/RcloneFileWatcherCore/actions)
+[![Latest Release](https://img.shields.io/github/v/release/mstarczewski/RcloneFileWatcherCore)](https://github.com/mstarczewski/RcloneFileWatcherCore/releases)
+[![Downloads](https://img.shields.io/github/downloads/mstarczewski/RcloneFileWatcherCore/latest/total)](https://github.com/mstarczewski/RcloneFileWatcherCore/releases)
+[![License](https://img.shields.io/github/license/mstarczewski/RcloneFileWatcherCore)](https://github.com/mstarczewski/RcloneFileWatcherCore/blob/main/LICENSE)
+![.NET](https://img.shields.io/badge/.NET-8.0-blue)
 
-## Main Features
+---
 
-1. Monitor filesystem changes (file and directory level)
-2. Generate a `--include-from` file for rclone
-3. Execute an rclone batch file. The rclone command must include `--include-from`
-4. Synchronize changes in real-time
+## About
+
+**RcloneFileWatcherCore** is a .NET 8-based tool that enables real-time one-way file synchronization using filesystem change tracking. Instead of scanning entire folders, it watches for file and directory changes and launches `rclone` to sync only the affected files. This makes it possible to perform secure, real-time, encrypted backups to cloud storage providers supported by rclone.
+
+The configuration is optimized for Windows, but the core logic should work on other platforms with some adaptation.
+
+---
+
+## Key Features
+
+- Real-time file and directory change monitoring
+- Automatically generates `--include-from` file for rclone
+- Executes an rclone batch command with proper file filtering
+- Optional full-sync at startup
+- Optionally auto-updates rclone binary
+
+---
 
 ## Installation
 
 1. Install and configure [rclone](https://rclone.org/)
-2. Download the [source code or binaries](https://github.com/mstarczewski/RcloneFileWatcherCore/releases) for RcloneFileWatcherCore
+2. Download [source code or binaries](https://github.com/mstarczewski/RcloneFileWatcherCore/releases)
+3. ⚠️ For security: it's recommended to compile the program yourself. Windows SmartScreen may block unsigned binaries.
 
-## Setup and Usage
+---
 
-**`RcloneFileWatcherCoreConfig.cfg`** – JSON configuration file (example below):
+## Configuration
+
+Create a config file named `RcloneFileWatcherCoreConfig.cfg` in the executable folder:
 
 ```json
 {
   "ConsoleWriter": true,
   "Path": [
     {
-      "WatchingPath": "e:\\Shared\\",
-      "RcloneFilesFromPath": "d:\\files-from-shared.txt",
-      "RcloneBatch": "d:\\rclone_livesync_shared.bat",
+      "WatchingPath": "d:\\Test\\",
+      "RcloneFilesFromPath": "d:\\files-from-test.txt",
+      "RcloneBatch": "d:\\rclone_Test.bat",
       "ExcludeContains": [
         ".tmp",
         ".drivedownload1"
-      ]
-    },
-    {
-      "WatchingPath": "d:\\test1\\",
-      "RcloneFilesFromPath": "d:\\files-from-test1.txt",
-      "RcloneBatch": "d:\\rclone_Test1.bat",
-      "ExcludeContains": [
-        ".tmp",
-        ".drivedownload"
       ]
     }
   ],
   "UpdateRclone": {
     "Update": true,
     "RclonePath": ".\\rclone.exe",
-    "RcloneWebsiteCurrentVersionAddress": "https://downloads.rclone.org/rclone-current-windows-amd64.zip",
-    "ChceckUpdateHours": 1
-  }
+    "CheckUpdateHours": 350
+  },
+  "SyncIntervalSeconds": 30,
+  "RunOneTimeFullStartupSync": true,
+  "RunOneTimeFullStartupSyncBatch": "rclone_startupsync.bat"
 }
+
 ```
 
 ### Configuration Parameters
@@ -61,12 +75,39 @@
 * `"Update"` – enables automatic rclone updates
 * `"RclonePath"` – path to the local `rclone.exe`
 * `"RcloneWebsiteCurrentVersionAddress"` – URL to the latest rclone binary
-* `"ChceckUpdateHours"` – how often (in hours) to check for updates *(note: typo in key name – should be `CheckUpdateHours`)*
+* `"CheckUpdateHours"` – how often (in hours) to check for updates
+* `"SyncIntervalSeconds"` -	interval between sync attempts (if changes detected)
+* `"RunOneTimeFullStartupSync"` -	runs a full sync batch at startup
+* `"RunOneTimeFullStartupSyncBatch"` - path to full sync batch script
 
 ### Example rclone script (`rclone_livesync_shared.bat`)
 
 ```bash
-rclone.exe sync --include-from d:\files-from-shared.txt e:\Shared pcloudcrypt:Shared --create-empty-src-dirs --backup-dir pcloudcrypt:$Archive\Shared\2021 --suffix " [backup]" --log-file=d:\log_livesync_shared.txt --log-level INFO
+@echo off
+setlocal
+for /f "delims=" %%a in (
+    'powershell -Command "Get-Date -Format ''yyyy-MM-dd-HH-mm-ss''"'
+) do set "datetime=%%a"
+for /f "delims=" %%b in (
+    'powershell -Command "Get-Date -Format ''yyyy''"'
+) do set "year=%%b"
+@echo on
+rclone.exe sync --config="C:\rclone\rclone.conf" --include-from .\Logs\files-from-shared.txt e:\Shared pcloudcryptDaily:Shared --retries-sleep 1m --retries 30 --bwlimit 30M:off --create-empty-src-dirs --backup-dir pcloudcryptDaily:$Archive\Shared\%year% --suffix " [%datetime%]" --log-file=.\Logs\log_livesync_shared.txt --log-level INFO
+@endlocal
+```
+
+```bash
+@echo off
+setlocal
+for /f "delims=" %%a in (
+    'powershell -Command "Get-Date -Format ''yyyy-MM-dd-HH-mm-ss''"'
+) do set "datetime=%%a"
+for /f "delims=" %%b in (
+    'powershell -Command "Get-Date -Format ''yyyy''"'
+) do set "year=%%b"
+@echo on
+"D:\Rclone\rclone.exe" sync e:\Shared pcloudcryptDaily:Shared --bwlimit 25M:off --transfers=32 --checkers=60 --backup-dir pcloudcryptDaily:$Archive\Shared\%year% --suffix " [%datetime%]" --create-empty-src-dirs --log-file=d:\log_shared.txt --log-level INFO
+@endlocal
 ```
 
 ### Additional Notes
