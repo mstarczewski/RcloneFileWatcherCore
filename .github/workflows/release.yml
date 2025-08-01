@@ -1,0 +1,60 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*.*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      Configuration: Release
+      RuntimeId: win-x64
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --no-restore -c ${{ env.Configuration }}
+
+      - name: Run tests
+        shell: bash
+        run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
+
+
+      - name: Publish app
+        run: |
+          dotnet publish ./RcloneFileWatcherCore/RcloneFileWatcherCore.csproj \
+            --no-build \
+            -c ${{ env.Configuration }} \
+            -r ${{ env.RuntimeId }} \
+            --self-contained false \
+            /p:PublishSingleFile=true
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir artifacts
+          copy ".\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" artifacts\
+          copy ".\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" artifacts\
+          Compress-Archive -Path artifacts\* -DestinationPath artifacts\app.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts\*.exe
+            artifacts\version.json
+            artifacts\app.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
