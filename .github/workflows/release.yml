@@ -1,10 +1,9 @@
 name: Build & Release
-
 on:
   push:
     tags:
       - 'v0.7'
-
+  workflow_dispatch:
 jobs:
   build:
     runs-on: windows-latest
