@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     env:
       Configuration: Release
       RuntimeId: win-x64
@@ -33,14 +33,7 @@ jobs:
         run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
 
       - name: Publish app
-        shell: bash
-        run: |
-          dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj \
-            --no-build \
-            -c ${{ env.Configuration }} \
-            -r ${{ env.RuntimeId }} \
-            --self-contained false \
-            /p:PublishSingleFile=true
+        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
 
       - name: Prepare release artifacts
         run: |
