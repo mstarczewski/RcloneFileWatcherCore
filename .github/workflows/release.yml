@@ -29,8 +29,8 @@ jobs:
         run: dotnet build --no-restore -c ${{ env.Configuration }}
 
       - name: Run tests
-        # tutaj poprawiona ścieżka do projektu testowego
-        run: dotnet test ./RcloneFileWatcherCore/Tests/Tests.csproj --no-build -c ${{ env.Configuration }}
+        run: dotnet test ./RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj \
+             --no-build -c ${{ env.Configuration }}
 
       - name: Publish app
         run: |
@@ -44,7 +44,6 @@ jobs:
       - name: Prepare release artifacts
         run: |
           mkdir artifacts
-          # poprawione ścieżki do katalogu publish Twojej aplikacji:
           copy ".\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" artifacts\
           copy ".\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" artifacts\
           Compress-Archive -Path artifacts\* -DestinationPath artifacts\app.zip
