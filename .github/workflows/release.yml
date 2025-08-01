@@ -35,13 +35,19 @@ jobs:
       - name: Publish app
         run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
 
+      - name: Debug workspace layout
+        run: |
+          echo "Current working directory:"
+          pwd
+          echo "Workspace root contents:"
+          ls -R "${{ github.workspace }}"
+
       - name: Prepare release artifacts
         run: |
-          mkdir artifacts
-          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" artifacts\
-          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" artifacts\
-          Compress-Archive -Path artifacts\* -DestinationPath artifacts\app.zip
-        
+          mkdir "${{ github.workspace }}\artifacts"
+          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
+          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\"
+          Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app.zip"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -52,3 +58,4 @@ jobs:
             artifacts\app.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
