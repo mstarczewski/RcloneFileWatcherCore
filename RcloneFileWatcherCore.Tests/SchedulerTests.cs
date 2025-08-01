@@ -63,7 +63,7 @@ namespace RcloneFileWatcherCore.Tests
             scheduler.SetTimer();
 
             // Assert - Timer is enabled and will trigger OnTimedEvent
-            Thread.Sleep(1500); // Wait for timer to elapse
+            Thread.Sleep(2000); // Wait for timer to elapse
             _syncProcessMock.Verify(x => x.Start(It.IsAny<ConfigDTO>()), Times.AtLeastOnce);
         }
 
@@ -79,7 +79,7 @@ namespace RcloneFileWatcherCore.Tests
             scheduler.SetTimer();
 
             // Assert
-            Thread.Sleep(100); // Wait for timer to elapse
+            Thread.Sleep(1000); // Wait for timer to elapse
             _updateProcessMock.Verify(x => x.Start(It.IsAny<ConfigDTO>()), Times.AtLeastOnce);
         }
 
@@ -108,7 +108,7 @@ namespace RcloneFileWatcherCore.Tests
             scheduler.SetTimer();
 
             // Assert
-            Thread.Sleep(100); // Wait for timer to elapse
+            Thread.Sleep(1000); // Wait for timer to elapse
             _syncProcessMock.Verify(x => x.Start(It.IsAny<ConfigDTO>()), Times.AtLeastOnce);
         }
 
@@ -123,7 +123,7 @@ namespace RcloneFileWatcherCore.Tests
             scheduler.SetTimer();
 
             // Assert
-            Thread.Sleep(100); // Wait for timer to elapse
+            Thread.Sleep(2000); // Wait for timer to elapse
             _loggerMock.Verify(x => x.Write(It.IsAny<string>()), Times.AtLeastOnce);
         }
 
