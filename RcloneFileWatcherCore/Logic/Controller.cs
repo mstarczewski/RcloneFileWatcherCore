@@ -21,7 +21,6 @@ namespace RcloneFileWatcherCore.Logic
         private readonly Dictionary<Enums.ProcessCode, IProcess> _processDictionary;
         private readonly Scheduler _scheduler;
         private readonly Watcher _watcher;
-        private readonly StartupSync _startupSync;
 
         internal Controller()
         {
@@ -31,7 +30,6 @@ namespace RcloneFileWatcherCore.Logic
             _processDictionary = InitProcesses();
             _scheduler = new Scheduler(_logger, _processDictionary, _configDTO);
             _watcher = new Watcher(_logger, _fileDTOs, _configDTO.Path);
-            _startupSync = new StartupSync(_logger, _configDTO);
         }
 
         public void Start(bool generateConfig)
@@ -45,11 +43,11 @@ namespace RcloneFileWatcherCore.Logic
                 _logger.WriteAlways($"Example config generated:{ConfigFileName}");
                 Environment.Exit(0);
             }
-
             _watcher.Start();
-            _startupSync.StartStartupSync();
+            _logger.Write("Watcher started");
+            _scheduler.RunStartupSyncIfNeeded();
             _scheduler.SetTimer();
-            _logger.Write("Started");
+            _logger.Write("Controller started");
         }
 
         private ConfigDTO LoadConfiguration()
@@ -69,7 +67,8 @@ namespace RcloneFileWatcherCore.Logic
             return new Dictionary<Enums.ProcessCode, IProcess>
             {
                 { Enums.ProcessCode.SyncRclone, new ProcessSyncRclone(_logger, filePrepare, _fileDTOs) },
-                { Enums.ProcessCode.UpdateRclone, new ProcessUpdateRclone(_logger) }
+                { Enums.ProcessCode.UpdateRclone, new ProcessUpdateRclone(_logger) },
+                { Enums.ProcessCode.FullSyncRclone, new FullProcessSyncRclone(_logger) },
             };
         }
     }

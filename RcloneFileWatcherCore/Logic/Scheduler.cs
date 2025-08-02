@@ -1,4 +1,5 @@
 ﻿using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Globals;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -13,15 +14,33 @@ namespace RcloneFileWatcherCore.Logic
         private DateTime _dateTimeUpdate = DateTime.Now;
         private readonly ConfigDTO _configDTO;
         private readonly Dictionary<Enums.ProcessCode, IProcess> _processDictionary;
+        private DateTime nextfullSyncAfter = new DateTime();
 
         public Scheduler(ILogger logger, Dictionary<Enums.ProcessCode, IProcess> processDictionary, ConfigDTO configDTO)
         {
             _processDictionary = processDictionary;
             _logger = logger;
             _configDTO = configDTO;
-            _timer = new Timer(_configDTO.SyncIntervalSeconds*1000);
+            var intervalMs = Math.Max(1000, _configDTO.SyncIntervalSeconds * 1000);
+            _timer = new Timer(intervalMs);
             _timer.Elapsed += OnTimedEvent;
             _timer.AutoReset = false;
+        }
+
+        public void RunStartupSyncIfNeeded()
+        {
+            TryFullSyncAtStart();
+        }
+        private void TryFullSyncAtStart()
+        {
+            if ((_configDTO?.RunOneTimeFullStartupSync ?? false) && !string.IsNullOrWhiteSpace(_configDTO.RunOneTimeFullStartupSyncBatch))
+            {
+                if (_processDictionary.TryGetValue(Enums.ProcessCode.FullSyncRclone, out var fullsyncProcess))
+                {
+                    _logger.Write("Running full sync at startup.");
+                    fullsyncProcess.Start(_configDTO);
+                }
+            }
         }
 
         public void SetTimer()
@@ -35,6 +54,7 @@ namespace RcloneFileWatcherCore.Logic
             {
                 TryUpdateRclone();
                 TrySyncRclone();
+                TryFullSyncRclone();
             }
             catch (Exception ex)
             {
@@ -43,6 +63,26 @@ namespace RcloneFileWatcherCore.Logic
             finally
             {
                 _timer.Start();
+            }
+        }
+
+        private void TryFullSyncRclone()
+        {
+            var now = DateTime.Now;
+
+            if (nextfullSyncAfter <= now)
+            {
+                if (TimeSpan.TryParse(_configDTO?.RunStartupScriptEveryDayAt, out var scheduledTime))
+                {
+                    _logger.Write($"Checking for full sync at {scheduledTime} every day.");
+                    DateTime todayRunTime = DateTime.Today.Add(scheduledTime);
+                    if (now >= todayRunTime && _processDictionary.TryGetValue(Enums.ProcessCode.FullSyncRclone, out var fullsyncProcess))
+                    {
+                        _logger.Write($"Running full sync as per schedule.");
+                        nextfullSyncAfter = DateTime.Today.AddDays(1).Add(scheduledTime);
+                        fullsyncProcess.Start(_configDTO);
+                    }
+                }
             }
         }
 
@@ -65,7 +105,6 @@ namespace RcloneFileWatcherCore.Logic
                 syncProcess.Start(_configDTO);
             }
         }
-
         public void Dispose()
         {
             _timer?.Dispose();

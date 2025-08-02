@@ -10,6 +10,7 @@ namespace RcloneFileWatcherCore.DTO
         public int SyncIntervalSeconds { get; set; } = 60000;
         public bool RunOneTimeFullStartupSync { get; set; } = true;
         public string RunOneTimeFullStartupSyncBatch { get; set; }
+        public string RunStartupScriptEveryDayAt { get; set; } = "05:30";
 
 
         public ConfigDTO()

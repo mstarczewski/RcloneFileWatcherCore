@@ -27,7 +27,7 @@ namespace RcloneFileWatcherCore.Logic
             {
                 _fileWatcherList.Add(CreateAndRegisterWatcher(item.WatchingPath, NotifyFilters.FileName | NotifyFilters.LastWrite, true));
                 _fileWatcherList.Add(CreateAndRegisterWatcher(item.WatchingPath, NotifyFilters.DirectoryName, false));
-                _logger.Write($"Watcher: {item.WatchingPath}");
+                _logger.Write($"Watching: {item.WatchingPath}");
             }
         }
 
@@ -50,7 +50,6 @@ namespace RcloneFileWatcherCore.Logic
             if (isFileWatcher)
                 watcher.Changed += OnChanged;
 
-            // (opcjonalnie) log błędów z buffera
             watcher.Error += (s, e) =>
                 _logger.Write($"[ERROR] Watcher error at {path}: {e.GetException()?.Message}");
 

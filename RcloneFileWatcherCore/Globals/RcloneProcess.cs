@@ -22,10 +22,10 @@ namespace RcloneFileWatcherCore.Globals
                 process.StartInfo.FileName = rcloneBatch;
                 process.StartInfo.CreateNoWindow = false;
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                logger.Write("Starting rclone");
+                logger.Write($"Starting rclone with batch file: {rcloneBatch}");
                 process.Start();
                 process.WaitForExit();
-                logger.Write("Finished rclone");
+                logger.Write($"Rclone process exited with code: {process.ExitCode}");
             }
             return true;
         }

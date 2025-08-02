@@ -3,6 +3,7 @@
     public enum ProcessCode
     {
         SyncRclone,
-        UpdateRclone
+        UpdateRclone,
+        FullSyncRclone
     }
 }
