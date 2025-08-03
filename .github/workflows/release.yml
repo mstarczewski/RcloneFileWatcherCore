@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: ''
+        description: 'Optional tag name'
         required: false
         default: ''
 
@@ -19,8 +19,10 @@ jobs:
       RuntimeId: win-x64
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repo with full history
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Pobierz całą historię commitów
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -40,70 +42,60 @@ jobs:
       - name: Publish app
         run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
 
-      - name: List publish dir
-        run: |
-          Get-ChildItem -Recurse "${{ github.workspace }}" | Where-Object { $_.Name -match "RcloneFileWatcherCore.dll" }
-        shell: pwsh
-          
-
       - name: Prepare release artifacts
         run: |
           mkdir "${{ github.workspace }}\artifacts"
           copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
           Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app.zip"
 
-      - name: Locate DLL with version info
-        id: version
-        shell: pwsh
+      # Odczytywanie wersji z assembly
+      - name: Extract version from assembly
+        id: extract_version
         run: |
-          $dll = Get-ChildItem -Path ${{ github.workspace }} -Recurse -Filter "RcloneFileWatcherCore.exe" |
-            Where-Object { $_.FullName -like "*bin\\Release\\net8.0\\win-x64\\publish\\RcloneFileWatcherCore.exe" } |
-            Select-Object -First 1
-
-          if (-not $dll) {
-            throw "Could not find RcloneFileWatcherCore.exe"
-          }
-
-          $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll.FullName).ProductVersion
-          echo "Read version: $version"
+          $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\RcloneFileWatcherCore.exe"
+          $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
+          echo "Extracted version: $version"
           echo "version=$version" >> $env:GITHUB_OUTPUT
+        shell: powershell
 
-
-
-
-      - name: Create Git tag for version
-        if: github.event_name == 'workflow_dispatch'
-        shell: bash
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git tag ${{ steps.version.outputs.version }}
-          git push origin ${{ steps.version.outputs.version }}
-
-      - name: Get previous tag
-        id: previous_tag
-        shell: bash
-        run: |
-          git fetch --tags
-          latest=$(git tag --sort=-creatordate | grep -v "${{ steps.version.outputs.version }}" | head -n 1)
-          echo "Previous tag: $latest"
-          echo "previous=$latest" >> $GITHUB_OUTPUT
-
+      # Generowanie changelog od ostatniego tagu
       - name: Generate changelog
         id: changelog
-        shell: bash
         run: |
-          log=$(git log ${{ steps.previous_tag.outputs.previous }}..HEAD --pretty=format:"- %s (%an)")
-          echo "log<<EOF" >> $GITHUB_OUTPUT
-          echo "$log" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          git fetch --tags
+          # Pobierz ostatni tag (najnowszy)
+          latest_tag=$(git describe --tags --abbrev=0)
+          
+          if [ -z "$latest_tag" ]; then
+            # Jeśli nie ma żadnego tagu, pokaż wszystkie commity
+            changelog=$(git log --pretty=format:"- %s [%h] by %an")
+            echo "No existing tags, showing full history"
+          else
+            # Pobierz commity od ostatniego tagu
+            changelog=$(git log --pretty=format:"- %s [%h] by %an" $latest_tag..HEAD)
+            echo "Changes since $latest_tag"
+          fi
+          
+          # Formatowanie dla GitHub output
+          changelog="${changelog//'%'/'%25'}"
+          changelog="${changelog//$'\n'/'%0A'}"
+          changelog="${changelog//$'\r'/'%0D'}"
+          
+          echo "changelog=$changelog" >> $GITHUB_OUTPUT
+        shell: bash
 
+      # Tworzenie release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.version }}
-          name: ${{ steps.version.outputs.version }}
-          body: ${{ steps.changelog.outputs.log }}
+          tag_name: v${{ steps.extract_version.outputs.version }}
+          name: Release ${{ steps.extract_version.outputs.version }}
+          body: |
+            ### Changes since last release
+            ${{ steps.changelog.outputs.changelog }}
+
+            ### Assembly Version
+            `${{ steps.extract_version.outputs.version }}`
           files: |
             artifacts/*.exe
             artifacts/app.zip
