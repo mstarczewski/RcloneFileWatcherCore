@@ -24,6 +24,7 @@ The configuration is optimized for Windows, but the core logic should work on ot
 - Automatically generates `--include-from` file for rclone
 - Executes an rclone batch command with proper file filtering
 - Optional full-sync at startup
+- Optional full-sync at specified time of day.
 - Optionally auto-updates rclone binary
 
 ---
@@ -50,12 +51,21 @@ Create a config file named `RcloneFileWatcherCoreConfig.cfg` in the executable f
 
 ```json
 {
-  "ConsoleWriter": true,
+  "LogLevel": "Information|Error|Debug",
   "Path": [
     {
       "WatchingPath": "d:\\Test\\",
       "RcloneFilesFromPath": "d:\\files-from-test.txt",
       "RcloneBatch": "d:\\rclone_Test.bat",
+      "ExcludeContains": [
+        ".tmp",
+        ".drivedownload1"
+      ]
+    },
+    {
+      "WatchingPath": "d:\\Test1\\",
+      "RcloneFilesFromPath": "d:\\files-from-test1.txt",
+      "RcloneBatch": "d:\\rclone_Test1.bat",
       "ExcludeContains": [
         ".tmp",
         ".drivedownload1"
@@ -69,26 +79,28 @@ Create a config file named `RcloneFileWatcherCoreConfig.cfg` in the executable f
   },
   "SyncIntervalSeconds": 30,
   "RunOneTimeFullStartupSync": true,
-  "RunOneTimeFullStartupSyncBatch": "rclone_startupsync.bat"
+  "RunOneTimeFullStartupSyncBatch": "rclone_fullsync.bat",
+  "RunStartupScriptEveryDayAt": "05:30"
 }
 
 ```
 
 ### Configuration Parameters
 
-* `"ConsoleWriter": true` – enable or disable debug output in the console
-* `"WatchingPath"` – directory to monitor for changes
-* `"RcloneFilesFromPath"` – path to the output file used with `--include-from` in rclone
-* `"RcloneBatch"` – path to the batch script that runs rclone (executed every 30 seconds if changes are detected). This script **must** include the `--include-from` parameter
-* `"ExcludeContains"` – list of substrings; any path containing these will be excluded
-* `"UpdateRclone"` – section responsible for auto-updating rclone
-* `"Update"` – enables automatic rclone updates
-* `"RclonePath"` – path to the local `rclone.exe`
+* `"LogLevel": Information|Error `" – Sets the logging level. Multiple levels can be combined using the pipe (|), e.g. Trace|Debug|Information|Warning|Error|Critical|Always.
+* `"WatchingPath"` – Directory to monitor for changes
+* `"RcloneFilesFromPath"` – Path to the output file used with `--include-from` in rclone
+* `"RcloneBatch"` – Path to the batch script that runs rclone (executed every 30 seconds if changes are detected). This script **must** include the `--include-from` parameter
+* `"ExcludeContains"` – List of substrings; any path containing these will be excluded
+* `"UpdateRclone"` – Section responsible for auto-updating rclone
+* `"Update"` – Enables automatic rclone updates
+* `"RclonePath"` – Path to the local `rclone.exe`
 * `"RcloneWebsiteCurrentVersionAddress"` – URL to the latest rclone binary
-* `"CheckUpdateHours"` – how often (in hours) to check for updates
-* `"SyncIntervalSeconds"` -	interval between sync attempts (if changes detected)
-* `"RunOneTimeFullStartupSync"` -	runs a full sync batch at startup
-* `"RunOneTimeFullStartupSyncBatch"` - path to full sync batch script
+* `"CheckUpdateHours"` – How often (in hours) to check for updates
+* `"SyncIntervalSeconds"` -	Interval between sync attempts (if changes detected)
+* `"RunOneTimeFullStartupSync"` -	Runs a full sync batch at startup
+* `"RunOneTimeFullStartupSyncBatch"` - Path to full sync batch script
+* `"RunStartupScriptEveryDayAt"` - Runs the startup script (full sync) once per day at the specified time.
 
 ### Example rclone script (`rclone_livesync_shared.bat`)
 
@@ -124,4 +136,4 @@ for /f "delims=" %%b in (
 ### Additional Notes
 
 * On Windows, you can run this tool as a service using **[NSSM](https://nssm.cc/)** – the Non-Sucking Service Manager
-* It is recommended to run `RcloneFileWatcherCore` in the background continuously, and schedule a full rclone sync once per day (e.g., via Task Scheduler or cron) to ensure data consistency. Ideally, the full sync should result in no changes if the watcher worked correctly.
+* It is recommended to run  `RcloneFileWatcherCore` in the background continuously, and setup `RunStartupScriptEveryDayAt` a full rclone sync once per day to ensure data consistency. Ideally, the full sync should result in no changes if the watcher worked correctly.
