@@ -52,17 +52,22 @@ jobs:
           copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
           Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app.zip"
 
-      - name: Read version from DLL
+      - name: Locate DLL with version info
         id: version
         shell: pwsh
         run: |
-          $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\RcloneFileWatcherCore.dll"
-          if (-Not (Test-Path $assemblyPath)) {
-            throw "File not found: $assemblyPath"
+          $dll = Get-ChildItem -Path ${{ github.workspace }} -Recurse -Filter "RcloneFileWatcherCore.dll" |
+            Where-Object { $_.FullName -like "*bin\\Release\\net8.0\\win-x64\\RcloneFileWatcherCore.dll" } |
+            Select-Object -First 1
+
+          if (-not $dll) {
+            throw "Could not find RcloneFileWatcherCore.dll"
           }
-          $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
+
+          $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll.FullName).ProductVersion
           echo "Read version: $version"
           echo "version=$version" >> $env:GITHUB_OUTPUT
+
 
 
 
