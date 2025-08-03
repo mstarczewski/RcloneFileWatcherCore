@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: ''
+        description: 'Optional tag name'
         required: false
         default: ''
 
@@ -19,8 +19,10 @@ jobs:
       RuntimeId: win-x64
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repo with full history
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -40,41 +42,53 @@ jobs:
       - name: Publish app
         run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
 
-      - name: Debug workspace layout
-        run: |
-          echo "Current working directory:"
-          pwd
-          echo "Workspace root contents:"
-          ls -R "${{ github.workspace }}"
-
       - name: Prepare release artifacts
         run: |
           mkdir "${{ github.workspace }}\artifacts"
           copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
-          # copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\"
           Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app.zip"
 
-      - name: Detect tag
-        id: detect_tag
+      - name: Extract version from assembly
+        id: extract_version
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -z "${{ github.event.inputs.tag }}" ]; then
-            git fetch --tags
-            tag=$(git tag --sort=-creatordate | head -n 1)
-            echo "Auto-detected latest tag: $tag"
-            echo "tag=$tag" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
-          fi
+          $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\RcloneFileWatcherCore.exe"
+          $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
+          echo "Extracted version: $version"
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+        shell: powershell
+
+      - name: Generate changelog
+        id: changelog
         shell: bash
+        run: |
+          git fetch --tags
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+          if [ -z "$latest_tag" ]; then
+            echo "No previous tag found, including full history" >&2
+            log=$(git log --pretty=format:"- %s [%h] by %an")
+          else
+            echo "Generating changelog since $latest_tag" >&2
+            log=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an")
+          fi
+
+          # Multiline output (safe)
+          {
+            echo "changelog<<EOF"
+            echo "$log"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.detect_tag.outputs.tag }}
-          files: |
-            artifacts/*.exe
-            artifacts/app.zip
+          tag_name: v${{ steps.extract_version.outputs.version }}
+          name: Release ${{ steps.extract_version.outputs.version }}
+          body: |
+            ### Changes since last release
+            ${{ steps.changelog.outputs.changelog }}
+            ### Assembly Version
+            `${{ steps.extract_version.outputs.version }}`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
