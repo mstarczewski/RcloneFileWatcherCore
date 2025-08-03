@@ -18,7 +18,8 @@ namespace RcloneFileWatcherCore
                     Console.WriteLine(AppVersion.GetVersion());
                     return;
                 }
-                var controller = new StartupManager(args.Contains("--generateConfig") || args.Contains("-generateConfig"));
+                var startupManager = new StartupManager(args.Contains("--generateConfig") || args.Contains("-generateConfig"));
+                startupManager.Start();
                 new System.Threading.AutoResetEvent(false).WaitOne();
             }
             catch (Exception ex)

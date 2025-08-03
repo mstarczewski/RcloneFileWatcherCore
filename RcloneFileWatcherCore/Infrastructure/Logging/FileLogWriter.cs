@@ -8,7 +8,6 @@ namespace RcloneFileWatcherCore.Infrastructure.Logging
     public class FileLogWriter : ILogWriter, IDisposable
     {
         private readonly StreamWriter _writer;
-
         public FileLogWriter(string filePath)
         {
             _writer = new StreamWriter(filePath, true, Encoding.UTF8, 4096)

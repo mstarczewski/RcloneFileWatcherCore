@@ -53,7 +53,7 @@ namespace RcloneFileWatcherCore.App
             new ConfigGenerator(ConfigFileName).GenerateConfig();
             _logger.Log(Enums.LogLevel.Always, $"Example config generated:{ConfigFileName}");
         }
-        public void Start(bool generateConfig)
+        public void Start()
         {
 
             _logger.Log(Enums.LogLevel.Always, AppVersion.GetVersion());
