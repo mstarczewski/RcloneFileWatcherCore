@@ -40,12 +40,11 @@ jobs:
       - name: Publish app
         run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
 
-      - name: Debug workspace layout
+      - name: List publish dir
         run: |
-          echo "Current working directory:"
-          pwd
-          echo "Workspace root contents:"
-          ls -R "${{ github.workspace }}"
+          Get-ChildItem -Recurse "${{ github.workspace }}" | Where-Object { $_.Name -match "RcloneFileWatcherCore.dll" }
+        shell: pwsh
+          
 
       - name: Prepare release artifacts
         run: |
@@ -58,9 +57,13 @@ jobs:
         shell: pwsh
         run: |
           $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\RcloneFileWatcherCore.dll"
+          if (-Not (Test-Path $assemblyPath)) {
+            throw "File not found: $assemblyPath"
+          }
           $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
           echo "Read version: $version"
           echo "version=$version" >> $env:GITHUB_OUTPUT
+
 
       - name: Create Git tag for version
         if: github.event_name == 'workflow_dispatch'
