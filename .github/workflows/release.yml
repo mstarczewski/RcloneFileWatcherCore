@@ -48,12 +48,6 @@ jobs:
           copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
           Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app.zip"
 
-      - name: Debug artifacts
-        run: |
-          echo "Artifacts directory contents:"
-          ls -R "${{ github.workspace }}\artifacts"
-        shell: bash
-
       - name: Extract version from assembly
         id: extract_version
         run: |
@@ -71,12 +65,18 @@ jobs:
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$latest_tag" ]; then
             echo "No previous tag found, including full history" >&2
-            log=$(git log --pretty=format:"- %s [%h] by %an")
+            log=$(git log --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):')
           else
             echo "Generating changelog since $latest_tag" >&2
-            log=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an")
+            log=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):')
           fi
-          # Multiline output (safe)
+          
+          #merges=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an" | grep -E '^Merge pull request')
+          #if [ -n "$merges" ]; then
+          #  log="$log"$'\n'"$merges"
+          #fi
+          
+          # Multiline output
           {
             echo "changelog<<EOF"
             echo "$log"
@@ -94,7 +94,6 @@ jobs:
 
             ### Assembly Version
             `${{ steps.extract_version.outputs.version }}`
-          # DODANA SEKCJA FILES:
           files: |
             artifacts/*.exe
             artifacts/app.zip
