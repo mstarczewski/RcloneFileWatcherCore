@@ -71,9 +71,14 @@ jobs:
             changelog=$(git log --reverse --pretty=format:"- %s [%h] by %an" $latest_tag..HEAD)
           fi
           
-          # Zapisujemy do pliku zamiast do outputu
-          echo "$changelog" > CHANGELOG.txt
-          cat CHANGELOG.txt
+          # Formatowanie dla GitHub output (zachowuje nowe linie)
+          changelog="${changelog//'%'/'%25'}"
+          changelog="${changelog//$'\n'/'%0A'}"
+          changelog="${changelog//$'\r'/'%0D'}"
+          
+          echo "changelog=$changelog" >> $GITHUB_OUTPUT
+          echo "Generated changelog:"
+          echo "$changelog"
         shell: bash
 
       - name: Create GitHub Release
@@ -83,7 +88,7 @@ jobs:
           name: Release ${{ steps.extract_version.outputs.version }}
           body: |
             ### Changes since last release
-            ${{ contents('./CHANGELOG.txt') }}
+            ${{ steps.changelog.outputs.changelog }}
 
             ### Assembly Version
             `${{ steps.extract_version.outputs.version }}`
