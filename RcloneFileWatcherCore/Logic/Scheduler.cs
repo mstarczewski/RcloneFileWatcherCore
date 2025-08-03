@@ -14,7 +14,8 @@ namespace RcloneFileWatcherCore.Logic
         private DateTime _dateTimeUpdate = DateTime.Now;
         private readonly ConfigDTO _configDTO;
         private readonly Dictionary<Enums.ProcessCode, IProcess> _processDictionary;
-        private DateTime nextfullSyncAfter = new DateTime();
+        private DateTime? _nextfullSyncAfter;
+        private TimeSpan _scheduledTime;
 
         public Scheduler(ILogger logger, Dictionary<Enums.ProcessCode, IProcess> processDictionary, ConfigDTO configDTO)
         {
@@ -25,6 +26,19 @@ namespace RcloneFileWatcherCore.Logic
             _timer = new Timer(intervalMs);
             _timer.Elapsed += OnTimedEvent;
             _timer.AutoReset = false;
+            SetUpScheduledTime(_configDTO.RunStartupScriptEveryDayAt);
+        }
+        private void SetUpScheduledTime(string runStartupScriptEveryDayAt)
+        {
+            if (TimeSpan.TryParse(runStartupScriptEveryDayAt, out var scheduledTime))
+            {
+                _scheduledTime = scheduledTime;
+                _nextfullSyncAfter = DateTime.Today.Add(scheduledTime) <= DateTime.Now ? DateTime.Today.AddDays(1).Add(scheduledTime) : DateTime.Today.Add(scheduledTime);
+            }
+            else
+            {
+                _logger.Write($"Invalid time format for RunStartupScriptEveryDayAt: {_configDTO.RunStartupScriptEveryDayAt}");
+            }
         }
 
         public void RunStartupSyncIfNeeded()
@@ -68,21 +82,11 @@ namespace RcloneFileWatcherCore.Logic
 
         private void TryFullSyncRclone()
         {
-            var now = DateTime.Now;
-
-            if (nextfullSyncAfter <= now)
+            if (_nextfullSyncAfter <= DateTime.Now && _processDictionary.TryGetValue(Enums.ProcessCode.FullSyncRclone, out var fullsyncProcess))
             {
-                if (TimeSpan.TryParse(_configDTO?.RunStartupScriptEveryDayAt, out var scheduledTime))
-                {
-                    _logger.Write($"Checking for full sync at {scheduledTime} every day.");
-                    DateTime todayRunTime = DateTime.Today.Add(scheduledTime);
-                    if (now >= todayRunTime && _processDictionary.TryGetValue(Enums.ProcessCode.FullSyncRclone, out var fullsyncProcess))
-                    {
-                        _logger.Write($"Running full sync as per schedule.");
-                        nextfullSyncAfter = DateTime.Today.AddDays(1).Add(scheduledTime);
-                        fullsyncProcess.Start(_configDTO);
-                    }
-                }
+                _logger.Write($"Running full sync as per schedule {_scheduledTime}.");
+                _nextfullSyncAfter = DateTime.Today.AddDays(1).Add(_scheduledTime);
+                fullsyncProcess.Start(_configDTO);
             }
         }
 

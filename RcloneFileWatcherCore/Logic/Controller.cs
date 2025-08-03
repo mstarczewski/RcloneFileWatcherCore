@@ -21,12 +21,14 @@ namespace RcloneFileWatcherCore.Logic
         private readonly Dictionary<Enums.ProcessCode, IProcess> _processDictionary;
         private readonly Scheduler _scheduler;
         private readonly Watcher _watcher;
+        private readonly IRcloneRunner _rcloneRunner;
 
         internal Controller()
         {
             _logger = new ConsoleLogger();
             _configDTO = LoadConfiguration();
             _fileDTOs = new ConcurrentDictionary<string, FileDTO>();
+            _rcloneRunner = new RcloneRunner(_logger);
             _processDictionary = InitProcesses();
             _scheduler = new Scheduler(_logger, _processDictionary, _configDTO);
             _watcher = new Watcher(_logger, _fileDTOs, _configDTO.Path);
@@ -66,9 +68,9 @@ namespace RcloneFileWatcherCore.Logic
             var filePrepare = new FilePrepare(_logger, _configDTO.Path, _fileDTOs);
             return new Dictionary<Enums.ProcessCode, IProcess>
             {
-                { Enums.ProcessCode.SyncRclone, new ProcessSyncRclone(_logger, filePrepare, _fileDTOs) },
+                { Enums.ProcessCode.SyncRclone, new ProcessSyncRclone(_logger, filePrepare, _fileDTOs,_rcloneRunner ) },
                 { Enums.ProcessCode.UpdateRclone, new ProcessUpdateRclone(_logger) },
-                { Enums.ProcessCode.FullSyncRclone, new FullProcessSyncRclone(_logger) },
+                { Enums.ProcessCode.FullSyncRclone, new FullProcessSyncRclone(_logger,_rcloneRunner ) },
             };
         }
     }

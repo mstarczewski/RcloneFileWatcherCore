@@ -1,5 +1,4 @@
 ﻿using RcloneFileWatcherCore.DTO;
-using RcloneFileWatcherCore.Globals;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 
@@ -8,9 +7,11 @@ namespace RcloneFileWatcherCore.Logic
     public class FullProcessSyncRclone : IProcess
     {
         private readonly ILogger _logger;
-        public FullProcessSyncRclone(ILogger logger)
+        private readonly IRcloneRunner _rcloneRunner;
+        public FullProcessSyncRclone(ILogger logger, IRcloneRunner rcloneRunner)
         {
             _logger = logger;
+            _rcloneRunner = rcloneRunner;
         }
         public bool Start(ConfigDTO configDTO)
         {
@@ -19,7 +20,7 @@ namespace RcloneFileWatcherCore.Logic
                 if (!string.IsNullOrWhiteSpace(configDTO.RunOneTimeFullStartupSyncBatch))
                 {
                     _logger.Write("Running full sync.");
-                    RcloneProcess.RunRcloneProcess(configDTO.RunOneTimeFullStartupSyncBatch, _logger);
+                    _rcloneRunner.RunBatch(configDTO.RunOneTimeFullStartupSyncBatch);
                     return true;
                 }
                 else

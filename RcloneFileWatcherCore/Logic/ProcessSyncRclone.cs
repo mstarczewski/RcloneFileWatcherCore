@@ -1,5 +1,4 @@
 ﻿using RcloneFileWatcherCore.DTO;
-using RcloneFileWatcherCore.Globals;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Collections.Concurrent;
@@ -13,11 +12,14 @@ namespace RcloneFileWatcherCore.Logic
         private readonly ILogger _logger;
         private readonly FilePrepare _filePrepare;
         private readonly ConcurrentDictionary<string, FileDTO> _fileDTOs;
-        public ProcessSyncRclone(ILogger logger, FilePrepare filePrepare, ConcurrentDictionary<string, FileDTO> fileDTOs)
+        private readonly IRcloneRunner _rcloneRunner;
+
+        public ProcessSyncRclone(ILogger logger, FilePrepare filePrepare, ConcurrentDictionary<string, FileDTO> fileDTOs, IRcloneRunner rcloneRunner)
         {
             _logger = logger;
             _filePrepare = filePrepare;
             _fileDTOs = fileDTOs;
+            _rcloneRunner = rcloneRunner;
         }
         public bool Start(ConfigDTO configDTO)
         {
@@ -36,7 +38,7 @@ namespace RcloneFileWatcherCore.Logic
                     string rcloneBatch = _filePrepare.PrepareFilesToSync(sourcePath, lastTimeStamp);
                     if (!string.IsNullOrWhiteSpace(sourcePath) && !string.IsNullOrWhiteSpace(rcloneBatch))
                     {
-                        RcloneProcess.RunRcloneProcess(rcloneBatch, _logger);
+                        _rcloneRunner.RunBatch(rcloneBatch);
                     }
                 }
                 return true;
