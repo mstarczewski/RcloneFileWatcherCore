@@ -57,7 +57,6 @@ jobs:
           echo "version=$version" >> $env:GITHUB_OUTPUT
         shell: powershell
 
-      # Generowanie changelog od ostatniego tagu
       - name: Generate changelog
         id: changelog
         shell: bash
@@ -66,16 +65,19 @@ jobs:
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
           if [ -z "$latest_tag" ]; then
-            # brak wcześniejszego taga → cała historia
+            echo "No previous tag found, including full history" >&2
             log=$(git log --pretty=format:"- %s [%h] by %an")
           else
+            echo "Generating changelog since $latest_tag" >&2
             log=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an")
           fi
 
-          # Zapisujemy multiline do outputu
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$log" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Multiline output (safe)
+          {
+            echo "changelog<<EOF"
+            echo "$log"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
 
       - name: Create GitHub Release
