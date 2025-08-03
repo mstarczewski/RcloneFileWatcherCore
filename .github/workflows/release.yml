@@ -56,12 +56,12 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $dll = Get-ChildItem -Path ${{ github.workspace }} -Recurse -Filter "RcloneFileWatcherCore.dll" |
-            Where-Object { $_.FullName -like "*bin\\Release\\net8.0\\win-x64\\RcloneFileWatcherCore.dll" } |
+          $dll = Get-ChildItem -Path ${{ github.workspace }} -Recurse -Filter "RcloneFileWatcherCore.exe" |
+            Where-Object { $_.FullName -like "*bin\\Release\\net8.0\\win-x64\\publish\\RcloneFileWatcherCore.exe" } |
             Select-Object -First 1
 
           if (-not $dll) {
-            throw "Could not find RcloneFileWatcherCore.dll"
+            throw "Could not find RcloneFileWatcherCore.exe"
           }
 
           $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($dll.FullName).ProductVersion
