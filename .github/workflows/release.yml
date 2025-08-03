@@ -22,7 +22,7 @@ jobs:
       - name: Checkout repo with full history
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Pobierz całą historię commitów
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -48,7 +48,6 @@ jobs:
           copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
           Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app.zip"
 
-      # Odczytywanie wersji z assembly
       - name: Extract version from assembly
         id: extract_version
         run: |
@@ -58,33 +57,25 @@ jobs:
           echo "version=$version" >> $env:GITHUB_OUTPUT
         shell: powershell
 
-      # Generowanie changelog od ostatniego tagu
       - name: Generate changelog
         id: changelog
         run: |
           git fetch --tags
-          # Pobierz ostatni tag (najnowszy)
-          latest_tag=$(git describe --tags --abbrev=0)
+          latest_tag=$(git describe --tags --abbrev=0 || echo "")
           
           if [ -z "$latest_tag" ]; then
-            # Jeśli nie ma żadnego tagu, pokaż wszystkie commity
-            changelog=$(git log --pretty=format:"- %s [%h] by %an")
-            echo "No existing tags, showing full history"
+            # Brak tagów - pokaż wszystkie commity
+            changelog=$(git log --reverse --pretty=format:"- %s [%h] by %an")
           else
             # Pobierz commity od ostatniego tagu
-            changelog=$(git log --pretty=format:"- %s [%h] by %an" $latest_tag..HEAD)
-            echo "Changes since $latest_tag"
+            changelog=$(git log --reverse --pretty=format:"- %s [%h] by %an" $latest_tag..HEAD)
           fi
           
-          # Formatowanie dla GitHub output
-          changelog="${changelog//'%'/'%25'}"
-          changelog="${changelog//$'\n'/'%0A'}"
-          changelog="${changelog//$'\r'/'%0D'}"
-          
-          echo "changelog=$changelog" >> $GITHUB_OUTPUT
+          # Zapisujemy do pliku zamiast do outputu
+          echo "$changelog" > CHANGELOG.txt
+          cat CHANGELOG.txt
         shell: bash
 
-      # Tworzenie release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -92,7 +83,7 @@ jobs:
           name: Release ${{ steps.extract_version.outputs.version }}
           body: |
             ### Changes since last release
-            ${{ steps.changelog.outputs.changelog }}
+            ${{ contents('./CHANGELOG.txt') }}
 
             ### Assembly Version
             `${{ steps.extract_version.outputs.version }}`
