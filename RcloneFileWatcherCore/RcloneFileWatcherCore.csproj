@@ -29,6 +29,9 @@
     <!-- General build -->
     <Platforms>AnyCPU;x64</Platforms>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+	
   </PropertyGroup>
   
   <ItemGroup>

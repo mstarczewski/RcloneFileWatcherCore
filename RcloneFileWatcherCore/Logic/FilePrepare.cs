@@ -24,7 +24,7 @@ namespace RcloneFileWatcherCore.Logic
 
         public string PrepareFilesToSync(string sourcePath, long lastTimeStamp)
         {
-            _logger.Log(LogLevel.Information, $"Prepare files to sunc {sourcePath}");
+            _logger.Log(LogLevel.Information, $"Prepare files to sync {sourcePath}");
             var rclonePath = _syncPathDTO.FirstOrDefault(x => x.WatchingPath == sourcePath);
             if (rclonePath == null)
             {
@@ -111,7 +111,7 @@ namespace RcloneFileWatcherCore.Logic
         {
             try
             {
-                _logger.Log(LogLevel.Information, $"Is File Ready checking: {filename}");
+                _logger.Log(LogLevel.Debug, $"Is File Ready checking: {filename}");
                 if (Directory.Exists(filename))
                     return true;
                 if (!File.Exists(filename))
