@@ -56,13 +56,14 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\RcloneFileWatcherCore.dll"
+          $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\RcloneFileWatcherCore.dll"
           if (-Not (Test-Path $assemblyPath)) {
             throw "File not found: $assemblyPath"
           }
           $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
           echo "Read version: $version"
           echo "version=$version" >> $env:GITHUB_OUTPUT
+
 
 
       - name: Create Git tag for version
