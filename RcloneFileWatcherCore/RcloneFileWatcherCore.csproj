@@ -10,10 +10,10 @@
     <DebugSymbols>true</DebugSymbols>
 
     <!-- Auto-increment build version based on date/time -->
-    <Version>0.7.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</Version>
-    <AssemblyVersion>0.7.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</AssemblyVersion>
-    <FileVersion>0.7.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</FileVersion>
-    <InformationalVersion>0.7.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</InformationalVersion>
+    <Version>0.8.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</Version>
+    <AssemblyVersion>0.8.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</AssemblyVersion>
+    <FileVersion>0.8.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</FileVersion>
+    <InformationalVersion>0.8.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</InformationalVersion>
 
     <!-- App info -->
     <Authors>mstarczewski</Authors>
@@ -35,7 +35,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <None Update="RcloneFileWatcherCoreConfig.cfg">
+    <None Update="Config\RcloneFileWatcherCoreConfig.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

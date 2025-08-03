@@ -5,6 +5,7 @@ namespace RcloneFileWatcherCore.DTO
     public class ConfigDTO
     {
         public string LogLevel { get; set; }
+        public string LogPath { get; set; }
         public List<PathDTO> Path { get; set; }
         public UpdateRcloneDTO UpdateRclone { get; set; }
         public int SyncIntervalSeconds { get; set; } = 60000;

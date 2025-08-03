@@ -1,11 +1,12 @@
 ﻿using RcloneFileWatcherCore.DTO;
 using RcloneFileWatcherCore.Globals;
+using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Timers;
 
-namespace RcloneFileWatcherCore.Logic
+namespace RcloneFileWatcherCore.App
 {
     public class Scheduler : IDisposable
     {
@@ -13,11 +14,11 @@ namespace RcloneFileWatcherCore.Logic
         private readonly ILogger _logger;
         private DateTime _dateTimeUpdate = DateTime.Now;
         private readonly ConfigDTO _configDTO;
-        private readonly Dictionary<Enums.ProcessCode, IProcess> _processDictionary;
+        private readonly Dictionary<Enums.ProcessCode, IRcloneJobService> _processDictionary;
         private DateTime? _nextfullSyncAfter;
         private TimeSpan _scheduledTime;
 
-        public Scheduler(ILogger logger, Dictionary<Enums.ProcessCode, IProcess> processDictionary, ConfigDTO configDTO)
+        public Scheduler(ILogger logger, Dictionary<Enums.ProcessCode, IRcloneJobService> processDictionary, ConfigDTO configDTO)
         {
             _processDictionary = processDictionary;
             _logger = logger;
@@ -52,7 +53,7 @@ namespace RcloneFileWatcherCore.Logic
                 if (_processDictionary.TryGetValue(Enums.ProcessCode.FullSyncRclone, out var fullsyncProcess))
                 {
                     _logger.Log(Enums.LogLevel.Information, "Running full sync at startup.");
-                    fullsyncProcess.Start(_configDTO);
+                    fullsyncProcess.Execute(_configDTO);
                 }
             }
         }
@@ -86,7 +87,7 @@ namespace RcloneFileWatcherCore.Logic
             {
                 _logger.Log(Enums.LogLevel.Information, $"Running full sync as per schedule {_scheduledTime.ToString(@"hh\:mm")}.");
                 _nextfullSyncAfter = DateTime.Today.AddDays(1).Add(_scheduledTime);
-                fullsyncProcess.Start(_configDTO);
+                fullsyncProcess.Execute(_configDTO);
             }
         }
 
@@ -98,7 +99,7 @@ namespace RcloneFileWatcherCore.Logic
                 _processDictionary.TryGetValue(Enums.ProcessCode.UpdateRclone, out var updateProcess))
             {
                 _dateTimeUpdate = DateTime.Now;
-                updateProcess.Start(_configDTO);
+                updateProcess.Execute(_configDTO);
             }
         }
 
@@ -106,7 +107,7 @@ namespace RcloneFileWatcherCore.Logic
         {
             if (_processDictionary.TryGetValue(Enums.ProcessCode.SyncRclone, out var syncProcess))
             {
-                syncProcess.Start(_configDTO);
+                syncProcess.Execute(_configDTO);
             }
         }
         public void Dispose()

@@ -1,27 +1,28 @@
 ﻿using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 
-namespace RcloneFileWatcherCore.Logic
+namespace RcloneFileWatcherCore.Logic.Services
 {
-    public class ProcessSyncRclone : IProcess
+    public class RcloneSyncService : IRcloneJobService
     {
         private readonly ILogger _logger;
-        private readonly FilePrepare _filePrepare;
+        private readonly FilePrepareService _filePrepare;
         private readonly ConcurrentDictionary<string, FileDTO> _fileDTOs;
-        private readonly IRcloneRunner _rcloneRunner;
+        private readonly IBatchExecutionService _rcloneRunner;
 
-        public ProcessSyncRclone(ILogger logger, FilePrepare filePrepare, ConcurrentDictionary<string, FileDTO> fileDTOs, IRcloneRunner rcloneRunner)
+        public RcloneSyncService(ILogger logger, FilePrepareService filePrepare, ConcurrentDictionary<string, FileDTO> fileDTOs, IBatchExecutionService rcloneRunner)
         {
             _logger = logger;
             _filePrepare = filePrepare;
             _fileDTOs = fileDTOs;
             _rcloneRunner = rcloneRunner;
         }
-        public bool Start(ConfigDTO configDTO)
+        public bool Execute(ConfigDTO configDTO)
         {
             try
             {
@@ -38,7 +39,7 @@ namespace RcloneFileWatcherCore.Logic
                     string rcloneBatch = _filePrepare.PrepareFilesToSync(sourcePath, lastTimeStamp);
                     if (!string.IsNullOrWhiteSpace(sourcePath) && !string.IsNullOrWhiteSpace(rcloneBatch))
                     {
-                        _rcloneRunner.RunBatch(rcloneBatch);
+                        _rcloneRunner.ExecuteBatch(rcloneBatch);
                     }
                 }
                 return true;

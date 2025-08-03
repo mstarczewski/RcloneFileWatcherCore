@@ -1,21 +1,21 @@
 ﻿using RcloneFileWatcherCore.DTO;
 using RcloneFileWatcherCore.Enums;
-using RcloneFileWatcherCore.Logic.Interfaces;
+using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace RcloneFileWatcherCore.Logic
+namespace RcloneFileWatcherCore.Logic.Services
 {
-    public class FilePrepare
+    public class FilePrepareService
     {
         private readonly ConcurrentDictionary<string, FileDTO> _fileList;
         private readonly List<PathDTO> _syncPathDTO;
         private readonly ILogger _logger;
 
-        public FilePrepare(ILogger logger, List<PathDTO> syncPathDTO, ConcurrentDictionary<string, FileDTO> fileList)
+        public FilePrepareService(ILogger logger, List<PathDTO> syncPathDTO, ConcurrentDictionary<string, FileDTO> fileList)
         {
             _logger = logger;
             _syncPathDTO = syncPathDTO;
@@ -94,10 +94,10 @@ namespace RcloneFileWatcherCore.Logic
 
             if (
                 (
-                    (!fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileExists)
-                    || (!fileExists && !fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted))
-                    || (directoryExists && fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && isCreatedDeletedRenamed)
-                    || (!directoryExists && fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted))
+                    !fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileExists
+                    || !fileExists && !fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted)
+                    || directoryExists && fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && isCreatedDeletedRenamed
+                    || !directoryExists && fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted)
                 )
                 && !isExcluded
             )

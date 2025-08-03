@@ -1,23 +1,24 @@
 ﻿using RcloneFileWatcherCore.DTO;
 using RcloneFileWatcherCore.Enums;
+using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Diagnostics;
 
-namespace RcloneFileWatcherCore.Logic
+namespace RcloneFileWatcherCore.Logic.Services
 {
-    public class ProcessUpdateRclone : IProcess
+    public class RcloneUpdateService : IRcloneJobService
     {
         private readonly ILogger _logger;
         private const string RCLONE_SELFUPDATE_ARGUMENT = "selfupdate";
         private const string RCLONE_SUCCESS_UPDATE = "Successfully updated";
 
-        public ProcessUpdateRclone(ILogger logger)
+        public RcloneUpdateService(ILogger logger)
         {
             _logger = logger;
         }
 
-        public bool Start(ConfigDTO configDTO)
+        public bool Execute(ConfigDTO configDTO)
         {
             try
             {

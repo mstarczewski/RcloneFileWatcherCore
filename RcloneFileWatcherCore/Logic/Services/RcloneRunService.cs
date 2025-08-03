@@ -1,4 +1,4 @@
-﻿using RcloneFileWatcherCore.Logic.Interfaces;
+﻿using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,17 +6,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RcloneFileWatcherCore.Logic
+namespace RcloneFileWatcherCore.Logic.Services
 {
-    public class RcloneRunner : IRcloneRunner
+    public class RcloneRunService : IBatchExecutionService
     {
         private readonly ILogger _logger;
 
-        public RcloneRunner(ILogger logger)
+        public RcloneRunService(ILogger logger)
         {
             _logger = logger;
         }
-        public bool RunBatch(string batchPath)
+        public bool ExecuteBatch(string batchPath)
         {
             if (string.IsNullOrWhiteSpace(batchPath))
             {

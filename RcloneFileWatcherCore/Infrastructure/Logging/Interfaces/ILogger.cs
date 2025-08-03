@@ -1,14 +1,14 @@
 ﻿using RcloneFileWatcherCore.Enums;
 using System;
 
-namespace RcloneFileWatcherCore.Logic.Interfaces
+namespace RcloneFileWatcherCore.Infrastructure.Logging.Interfaces
 {
     public interface ILogger
     {
         LogLevel EnabledLevels { get; set; }
-
+        void SetLogWriter(ILogWriter logWriter);
         void Log(LogLevel level, string message, Exception exception = null);
-
+        
         void Trace(string message);
         void Debug(string message);
         void Info(string message);

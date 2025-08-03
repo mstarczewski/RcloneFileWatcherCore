@@ -1,7 +1,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using RcloneFileWatcherCore.App;
 using RcloneFileWatcherCore.DTO;
 using RcloneFileWatcherCore.Enums;
+using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
 using RcloneFileWatcherCore.Logic;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
@@ -14,18 +16,18 @@ namespace RcloneFileWatcherCore.Tests
     public class SchedulerTests
     {
         private Mock<ILogger> _loggerMock;
-        private Mock<IProcess> _updateProcessMock;
-        private Mock<IProcess> _syncProcessMock;
+        private Mock<IRcloneJobService> _updateProcessMock;
+        private Mock<IRcloneJobService> _syncProcessMock;
         private ConfigDTO _configDTO;
-        private Dictionary<Enums.ProcessCode, IProcess> _processDictionary;
+        private Dictionary<Enums.ProcessCode, IRcloneJobService> _processDictionary;
 
         [TestInitialize]
         public void Setup()
         {
             // Arrange
             _loggerMock = new Mock<ILogger>();
-            _updateProcessMock = new Mock<IProcess>();
-            _syncProcessMock = new Mock<IProcess>();
+            _updateProcessMock = new Mock<IRcloneJobService>();
+            _syncProcessMock = new Mock<IRcloneJobService>();
 
             _configDTO = new ConfigDTO
             {
@@ -37,7 +39,7 @@ namespace RcloneFileWatcherCore.Tests
                 SyncIntervalSeconds = 1
             };
 
-            _processDictionary = new Dictionary<Enums.ProcessCode, IProcess>
+            _processDictionary = new Dictionary<Enums.ProcessCode, IRcloneJobService>
             {
                 { Enums.ProcessCode.UpdateRclone, _updateProcessMock.Object },
                 { Enums.ProcessCode.SyncRclone, _syncProcessMock.Object }
@@ -65,7 +67,7 @@ namespace RcloneFileWatcherCore.Tests
 
             // Assert - Timer is enabled and will trigger OnTimedEvent
             Thread.Sleep(2000); // Wait for timer to elapse
-            _syncProcessMock.Verify(x => x.Start(It.IsAny<ConfigDTO>()), Times.AtLeastOnce);
+            _syncProcessMock.Verify(x => x.Execute(It.IsAny<ConfigDTO>()), Times.AtLeastOnce);
         }
 
         [TestMethod]
@@ -81,7 +83,7 @@ namespace RcloneFileWatcherCore.Tests
 
             // Assert
             Thread.Sleep(1000); // Wait for timer to elapse
-            _updateProcessMock.Verify(x => x.Start(It.IsAny<ConfigDTO>()), Times.AtLeastOnce);
+            _updateProcessMock.Verify(x => x.Execute(It.IsAny<ConfigDTO>()), Times.AtLeastOnce);
         }
 
         [TestMethod]
@@ -96,7 +98,7 @@ namespace RcloneFileWatcherCore.Tests
 
             // Assert
             Thread.Sleep(_configDTO.SyncIntervalSeconds); // Wait for timer to elapse
-            _updateProcessMock.Verify(x => x.Start(It.IsAny<ConfigDTO>()), Times.Never);
+            _updateProcessMock.Verify(x => x.Execute(It.IsAny<ConfigDTO>()), Times.Never);
         }
 
         [TestMethod]
@@ -110,14 +112,14 @@ namespace RcloneFileWatcherCore.Tests
 
             // Assert
             Thread.Sleep(1000); // Wait for timer to elapse
-            _syncProcessMock.Verify(x => x.Start(It.IsAny<ConfigDTO>()), Times.AtLeastOnce);
+            _syncProcessMock.Verify(x => x.Execute(It.IsAny<ConfigDTO>()), Times.AtLeastOnce);
         }
 
         [TestMethod]
         public void OnTimedEvent_WhenExceptionOccurs_LogsError()
         {
             // Arrange
-            _syncProcessMock.Setup(x => x.Start(It.IsAny<ConfigDTO>())).Throws<Exception>();
+            _syncProcessMock.Setup(x => x.Execute(It.IsAny<ConfigDTO>())).Throws<Exception>();
             using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
 
             // Act

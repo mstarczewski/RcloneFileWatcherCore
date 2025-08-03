@@ -3,6 +3,7 @@ using RcloneFileWatcherCore.Logic;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Linq;
+using RcloneFileWatcherCore.App;
 
 namespace RcloneFileWatcherCore
 {
@@ -17,9 +18,7 @@ namespace RcloneFileWatcherCore
                     Console.WriteLine(AppVersion.GetVersion());
                     return;
                 }
-                var controller = new Controller();
-                bool generateConfig = args.Contains("--generateConfig") || args.Contains("-generateConfig");
-                controller.Start(generateConfig);
+                var controller = new StartupManager(args.Contains("--generateConfig") || args.Contains("-generateConfig"));
                 new System.Threading.AutoResetEvent(false).WaitOne();
             }
             catch (Exception ex)

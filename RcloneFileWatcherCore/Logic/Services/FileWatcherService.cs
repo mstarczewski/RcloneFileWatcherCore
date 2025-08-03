@@ -1,12 +1,12 @@
 ﻿using RcloneFileWatcherCore.DTO;
-using RcloneFileWatcherCore.Logic.Interfaces;
+using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 
-namespace RcloneFileWatcherCore.Logic
+namespace RcloneFileWatcherCore.Logic.Services
 {
-    class Watcher
+    class FileWatcherService
     {
         private const int BufferSize = 65536;
         private readonly ILogger _logger;
@@ -14,7 +14,7 @@ namespace RcloneFileWatcherCore.Logic
         private readonly List<PathDTO> _filePathDTO;
         private readonly List<FileSystemWatcher> _fileWatcherList = new();
 
-        public Watcher(ILogger logger, ConcurrentDictionary<string, FileDTO> fileDTOs, List<PathDTO> filePathDTO)
+        public FileWatcherService(ILogger logger, ConcurrentDictionary<string, FileDTO> fileDTOs, List<PathDTO> filePathDTO)
         {
             _logger = logger;
             _fileDTOs = fileDTOs;

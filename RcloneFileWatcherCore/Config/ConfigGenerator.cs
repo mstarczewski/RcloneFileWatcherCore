@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-namespace RcloneFileWatcherCore.Logic
+namespace RcloneFileWatcherCore.Config
 {
     // JSON example config generator 
     internal class ConfigGenerator
@@ -20,6 +20,7 @@ namespace RcloneFileWatcherCore.Logic
             var conf = new ConfigDTO
             {
                 LogLevel = "Information|Error",
+                LogPath = "RcloneFileWatcherCore.log",
                 Path = new List<PathDTO>(new List<PathDTO>
                 {
                     new PathDTO
@@ -42,7 +43,7 @@ namespace RcloneFileWatcherCore.Logic
                            }),
                         RcloneBatch = "@d:\rclone_Test1.bat",
                         RcloneFilesFromPath = @"d:\files-from-test1.txt",
-                        WatchingPath = @"d:\Test\"
+                        WatchingPath = @"d:\Test1\"
                     }
                 }),
                 UpdateRclone = new UpdateRcloneDTO
@@ -53,7 +54,8 @@ namespace RcloneFileWatcherCore.Logic
                 },
                 SyncIntervalSeconds = 60,
                 RunOneTimeFullStartupSync = true,
-                RunOneTimeFullStartupSyncBatch = @"rclone_startupsync.bat"
+                RunOneTimeFullStartupSyncBatch = @"rclone_startupsync.bat",
+                RunStartupScriptEveryDayAt = "05:30"
 
             };
             var options = new JsonSerializerOptions()
