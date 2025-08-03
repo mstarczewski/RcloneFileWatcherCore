@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Enums;
 using RcloneFileWatcherCore.Logic;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
@@ -124,7 +125,8 @@ namespace RcloneFileWatcherCore.Tests
 
             // Assert
             Thread.Sleep(2000); // Wait for timer to elapse
-            _loggerMock.Verify(x => x.Write(It.IsAny<string>()), Times.AtLeastOnce);
+            _loggerMock.Verify(x => x.Log(LogLevel.Error, It.IsAny<string>(), It.IsAny<Exception>()), Times.AtLeastOnce);
+
         }
 
         [TestMethod]

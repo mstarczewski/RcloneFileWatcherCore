@@ -45,7 +45,7 @@ namespace RcloneFileWatcherCore.Logic
             }
             catch (Exception ex)
             {
-                _logger.Write(ex.ToString());
+                _logger.Log(Enums.LogLevel.Error, "Exception during sync process", ex); 
                 return false;
             }
         }

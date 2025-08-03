@@ -19,7 +19,7 @@ namespace RcloneFileWatcherCore.Logic
         {
             var conf = new ConfigDTO
             {
-                ConsoleWriter = false,
+                LogLevel = "Information|Error",
                 Path = new List<PathDTO>(new List<PathDTO>
                 {
                     new PathDTO

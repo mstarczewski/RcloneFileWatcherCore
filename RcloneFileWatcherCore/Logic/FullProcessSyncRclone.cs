@@ -19,19 +19,19 @@ namespace RcloneFileWatcherCore.Logic
             {
                 if (!string.IsNullOrWhiteSpace(configDTO.RunOneTimeFullStartupSyncBatch))
                 {
-                    _logger.Write("Running full sync.");
+                    _logger.Log(Enums.LogLevel.Information, "Running full sync.");
                     _rcloneRunner.RunBatch(configDTO.RunOneTimeFullStartupSyncBatch);
                     return true;
                 }
                 else
                 {
-                    _logger.Write("Skipping full sync.");
+                    _logger.Log(Enums.LogLevel.Information, "Skipping full sync.");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                _logger.Write(ex.ToString());
+                _logger.Log(Enums.LogLevel.Error, "Exception during full sync start", ex);
                 return false;
             }
         }

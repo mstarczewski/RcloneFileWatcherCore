@@ -37,19 +37,19 @@ namespace RcloneFileWatcherCore.Logic
         public void Start(bool generateConfig)
         {
 
-            _logger.WriteAlways(AppVersion.GetVersion());
+            _logger.Log(Enums.LogLevel.Always, AppVersion.GetVersion());
 
             if (generateConfig)
             {
                 new ConfigGenerator(ConfigFileName).GenerateConfig();
-                _logger.WriteAlways($"Example config generated:{ConfigFileName}");
+                _logger.Log(Enums.LogLevel.Always, $"Example config generated:{ConfigFileName}");
                 Environment.Exit(0);
             }
             _watcher.Start();
-            _logger.Write("Watcher started");
+            _logger.Log(Enums.LogLevel.Information, "Watcher started");
             _scheduler.RunStartupSyncIfNeeded();
             _scheduler.SetTimer();
-            _logger.Write("Controller started");
+            _logger.Log(Enums.LogLevel.Information, "Controller started");
         }
 
         private ConfigDTO LoadConfiguration()
@@ -57,7 +57,7 @@ namespace RcloneFileWatcherCore.Logic
             var config = new Config(ConfigFileName, _logger).LoadConfig();
             if (config?.Path == null || !config.Path.Any())
             {
-                _logger.WriteAlways("Error in config file");
+                _logger.Log(Enums.LogLevel.Error, "Error in config file");
                 Environment.Exit(ExitCodeConfigError);
             }
             return config;

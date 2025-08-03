@@ -1,7 +1,8 @@
-﻿using RcloneFileWatcherCore.Logic.Interfaces;
+﻿using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Enums;
+using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.IO;
-using RcloneFileWatcherCore.DTO;
 using System.Text.Json;
 
 namespace RcloneFileWatcherCore.Logic
@@ -21,7 +22,7 @@ namespace RcloneFileWatcherCore.Logic
         {
             if (!File.Exists(_configFileName))
             {
-                _logger.WriteAlways($"Config file is missing: {_configFileName}");
+                _logger.Log(Enums.LogLevel.Error, $"Config file is missing: {_configFileName}");
                 return null;
             }
 
@@ -31,18 +32,37 @@ namespace RcloneFileWatcherCore.Logic
                 var config = JsonSerializer.Deserialize<ConfigDTO>(stream);
                 if (config == null)
                 {
-                    _logger.WriteAlways("Config file is empty or invalid");
+                    _logger.Log(Enums.LogLevel.Error, "Config file is empty or invalid");
                     return null;
                 }
-                _logger.Enable = config.ConsoleWriter;
+                _logger.EnabledLevels = ParseLogLevels(config.LogLevel);
                 return config;
             }
             catch (Exception ex)
             {
-                _logger.WriteAlways($"Config file error: {_configFileName}");
-                _logger.WriteAlways(ex.ToString());
+                _logger.Log(LogLevel.Error, $"Config file error: {_configFileName}", ex);
                 return null;
             }
+        }
+        private LogLevel ParseLogLevels(string configLogLevel)
+        {
+            if (string.IsNullOrWhiteSpace(configLogLevel))
+            {
+                return LogLevel.All;
+            }
+
+            LogLevel result = LogLevel.None;
+            var parts = configLogLevel.Split(new[] { ',', ';', '|', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var part in parts)
+            {
+                if (Enum.TryParse(part.Trim(), ignoreCase: true, out LogLevel level))
+                {
+                    result |= level;
+                }
+            }
+
+            return result == LogLevel.None ? LogLevel.All : result;
         }
     }
 }

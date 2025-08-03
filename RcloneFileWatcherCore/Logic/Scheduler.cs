@@ -37,7 +37,7 @@ namespace RcloneFileWatcherCore.Logic
             }
             else
             {
-                _logger.Write($"Invalid time format for RunStartupScriptEveryDayAt: {_configDTO.RunStartupScriptEveryDayAt}");
+                _logger.Log(Enums.LogLevel.Error, $"Invalid time format for RunStartupScriptEveryDayAt: {_configDTO.RunStartupScriptEveryDayAt}");
             }
         }
 
@@ -51,7 +51,7 @@ namespace RcloneFileWatcherCore.Logic
             {
                 if (_processDictionary.TryGetValue(Enums.ProcessCode.FullSyncRclone, out var fullsyncProcess))
                 {
-                    _logger.Write("Running full sync at startup.");
+                    _logger.Log(Enums.LogLevel.Information, "Running full sync at startup.");
                     fullsyncProcess.Start(_configDTO);
                 }
             }
@@ -72,7 +72,7 @@ namespace RcloneFileWatcherCore.Logic
             }
             catch (Exception ex)
             {
-                _logger.Write(ex.ToString());
+                _logger.Log(Enums.LogLevel.Error, "Exception in scheduler timer event", ex);
             }
             finally
             {
@@ -84,7 +84,7 @@ namespace RcloneFileWatcherCore.Logic
         {
             if (_nextfullSyncAfter <= DateTime.Now && _processDictionary.TryGetValue(Enums.ProcessCode.FullSyncRclone, out var fullsyncProcess))
             {
-                _logger.Write($"Running full sync as per schedule {_scheduledTime}.");
+                _logger.Log(Enums.LogLevel.Information, $"Running full sync as per schedule {_scheduledTime.ToString(@"hh\:mm")}.");
                 _nextfullSyncAfter = DateTime.Today.AddDays(1).Add(_scheduledTime);
                 fullsyncProcess.Start(_configDTO);
             }

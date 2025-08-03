@@ -20,7 +20,7 @@ namespace RcloneFileWatcherCore.Logic
         {
             if (string.IsNullOrWhiteSpace(batchPath))
             {
-                _logger.Write("Rclone batch file is empty or null.");
+                _logger.Log(Enums.LogLevel.Error, "Rclone batch file is empty or null.");
                 return false;
             }
 
@@ -29,10 +29,10 @@ namespace RcloneFileWatcherCore.Logic
                 process.StartInfo.FileName = batchPath;
                 process.StartInfo.CreateNoWindow = false;
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                _logger.Write($"Starting Rclone with batch file: {batchPath}");
+                _logger.Log(Enums.LogLevel.Information, $"Starting Rclone with batch file: {batchPath}");
                 process.Start();
                 process.WaitForExit();
-                _logger.Write($"Rclone process exited with code: {process.ExitCode}");
+                _logger.Log(Enums.LogLevel.Information, $"Rclone process exited with code: {process.ExitCode}");
                 return process.ExitCode == 0;
             }
         }

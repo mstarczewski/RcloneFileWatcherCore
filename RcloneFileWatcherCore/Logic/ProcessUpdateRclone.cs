@@ -1,4 +1,5 @@
 ﻿using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Enums;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Diagnostics;
@@ -23,13 +24,13 @@ namespace RcloneFileWatcherCore.Logic
                 bool updated = ExecuteProc(configDTO.UpdateRclone.RclonePath, RCLONE_SELFUPDATE_ARGUMENT, SelfUpdateExecutionCheck);
                 if (updated)
                 {
-                    _logger.Write("Rclone updated");
+                    _logger.Log(LogLevel.Information, "Rclone updated");
                 }
                 return updated;
             }
             catch (Exception ex)
             {
-                _logger.Write(ex.ToString());
+                _logger.Log(LogLevel.Error,"Error during update", ex);
                 return false;
             }
         }
@@ -62,14 +63,14 @@ namespace RcloneFileWatcherCore.Logic
                 process.ErrorDataReceived -= null;
                 if (!string.IsNullOrWhiteSpace(error))
                 {
-                    _logger.Write($"Proc DataReceived {error}");
+                    _logger.Log(LogLevel.Information, $"Update proc DataReceived {error}");
                     return false;
                 }
                 return resultChecker(output);
             }
             catch (Exception ex)
             {
-                _logger.Write(ex.ToString());
+                _logger.Log(LogLevel.Error, "Error during update", ex);
                 return false;
             }
         }

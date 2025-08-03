@@ -1,4 +1,5 @@
 ﻿using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Enums;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Collections.Concurrent;
@@ -23,11 +24,11 @@ namespace RcloneFileWatcherCore.Logic
 
         public string PrepareFilesToSync(string sourcePath, long lastTimeStamp)
         {
-            _logger.Write(sourcePath);
+            _logger.Log(LogLevel.Information, $"Prepare files to sunc {sourcePath}");
             var rclonePath = _syncPathDTO.FirstOrDefault(x => x.WatchingPath == sourcePath);
             if (rclonePath == null)
             {
-                _logger.Write($"No Path found for source Path: {sourcePath}");
+                _logger.Log(LogLevel.Error, $"No Path found for source Path: {sourcePath}");
                 return null;
             }
 
@@ -65,7 +66,7 @@ namespace RcloneFileWatcherCore.Logic
             }
             catch (Exception ex)
             {
-                _logger.Write($"Error writing files: {ex}");
+                _logger.Log(LogLevel.Information, $"Error writing files", ex);
                 return null;
             }
 
@@ -110,7 +111,7 @@ namespace RcloneFileWatcherCore.Logic
         {
             try
             {
-                _logger.Write($"IsFileReady checking: {filename}");
+                _logger.Log(LogLevel.Information, $"Is File Ready checking: {filename}");
                 if (Directory.Exists(filename))
                     return true;
                 if (!File.Exists(filename))

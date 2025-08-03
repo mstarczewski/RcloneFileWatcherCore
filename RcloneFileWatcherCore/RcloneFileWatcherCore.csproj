@@ -11,8 +11,8 @@
 
     <!-- Auto-increment build version based on date/time -->
     <Version>0.7.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</Version>
-    <AssemblyVersion>0.7.0.0</AssemblyVersion>
-    <FileVersion>0.7.0.0</FileVersion>
+    <AssemblyVersion>0.7.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</AssemblyVersion>
+    <FileVersion>0.7.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</FileVersion>
     <InformationalVersion>0.7.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</InformationalVersion>
 
     <!-- App info -->
@@ -39,18 +39,6 @@
 
   <!-- Generate version.json in output dir -->
   <Target Name="GenerateVersionFile" AfterTargets="Build">
-    <WriteLinesToFile
-      File="$(OutputPath)version.json"
-      Lines='[
-  "Product: $(Product)",
-  "Version: $(Version)",
-  "FileVersion: $(FileVersion)",
-  "InformationalVersion: $(InformationalVersion)",
-  "Author: $(Authors)",
-  "Company: $(Company)",
-  "License: MIT",
-  "BuildDate: $([System.DateTime]::Now.ToString("yyyy-MM-dd HH:mm:ss"))"
-]'
-      Overwrite="true" />
+    <WriteLinesToFile File="$(OutputPath)version.json" Lines="[&#xD;&#xA;  &quot;Product: $(Product)&quot;,&#xD;&#xA;  &quot;Version: $(Version)&quot;,&#xD;&#xA;  &quot;FileVersion: $(FileVersion)&quot;,&#xD;&#xA;  &quot;InformationalVersion: $(InformationalVersion)&quot;,&#xD;&#xA;  &quot;Author: $(Authors)&quot;,&#xD;&#xA;  &quot;Company: $(Company)&quot;,&#xD;&#xA;  &quot;License: MIT&quot;,&#xD;&#xA;  &quot;BuildDate: $([System.DateTime]::Now.ToString(&quot;yyyy-MM-dd HH:mm:ss&quot;))&quot;&#xD;&#xA;]" Overwrite="true" />
   </Target>
 </Project>

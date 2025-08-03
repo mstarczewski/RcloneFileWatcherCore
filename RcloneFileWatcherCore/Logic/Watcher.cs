@@ -27,7 +27,7 @@ namespace RcloneFileWatcherCore.Logic
             {
                 _fileWatcherList.Add(CreateAndRegisterWatcher(item.WatchingPath, NotifyFilters.FileName | NotifyFilters.LastWrite, true));
                 _fileWatcherList.Add(CreateAndRegisterWatcher(item.WatchingPath, NotifyFilters.DirectoryName, false));
-                _logger.Write($"Watching: {item.WatchingPath}");
+                _logger.Log(Enums.LogLevel.Information, $"Watching: {item.WatchingPath}");
             }
         }
 
@@ -51,7 +51,7 @@ namespace RcloneFileWatcherCore.Logic
                 watcher.Changed += OnChanged;
 
             watcher.Error += (s, e) =>
-                _logger.Write($"[ERROR] Watcher error at {path}: {e.GetException()?.Message}");
+               _logger.Log(Enums.LogLevel.Error, $"Watcher error at {path}, e.GetException()");
 
             return watcher;
         }
@@ -83,7 +83,7 @@ namespace RcloneFileWatcherCore.Logic
                 TimeStampTicks = timestamp
             });
 
-            _logger.Write($"Action:{WatcherChangeTypes.Deleted} - {syncPath}");
+            _logger.Log(Enums.LogLevel.Debug, $"Action:{WatcherChangeTypes.Deleted} - {syncPath}");
         }
 
         private void AddChangesToCollection(FileSystemEventArgs e, FileSystemWatcher watcher, long timestamp)
@@ -102,8 +102,7 @@ namespace RcloneFileWatcherCore.Logic
                 WatcherChangeTypes = e.ChangeType,
                 TimeStampTicks = timestamp
             });
-
-            _logger.Write($"Action:{e.ChangeType} - {syncPath}");
+            _logger.Log(Enums.LogLevel.Debug, $"Action:{e.ChangeType} - {syncPath}");
         }
 
         private static string GetRelativePath(string basePath, string fullPath)
