@@ -57,29 +57,26 @@ jobs:
           echo "version=$version" >> $env:GITHUB_OUTPUT
         shell: powershell
 
+      # Generowanie changelog od ostatniego tagu
       - name: Generate changelog
         id: changelog
+        shell: bash
         run: |
           git fetch --tags
-          latest_tag=$(git describe --tags --abbrev=0 || echo "")
-          
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
           if [ -z "$latest_tag" ]; then
-            # Brak tagów - pokaż wszystkie commity
-            changelog=$(git log --reverse --pretty=format:"- %s [%h] by %an")
+            # brak wcześniejszego taga → cała historia
+            log=$(git log --pretty=format:"- %s [%h] by %an")
           else
-            # Pobierz commity od ostatniego tagu
-            changelog=$(git log --reverse --pretty=format:"- %s [%h] by %an" $latest_tag..HEAD)
+            log=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an")
           fi
-          
-          # Formatowanie dla GitHub output (zachowuje nowe linie)
-          changelog="${changelog//'%'/'%25'}"
-          changelog="${changelog//$'\n'/'%0A'}"
-          changelog="${changelog//$'\r'/'%0D'}"
-          
-          echo "changelog=$changelog" >> $GITHUB_OUTPUT
-          echo "Generated changelog:"
-          echo "$changelog"
-        shell: bash
+
+          # Zapisujemy multiline do outputu
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$log" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -89,11 +86,7 @@ jobs:
           body: |
             ### Changes since last release
             ${{ steps.changelog.outputs.changelog }}
-
             ### Assembly Version
             `${{ steps.extract_version.outputs.version }}`
-          files: |
-            artifacts/*.exe
-            artifacts/app.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
