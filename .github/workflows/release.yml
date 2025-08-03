@@ -51,28 +51,50 @@ jobs:
         run: |
           mkdir "${{ github.workspace }}\artifacts"
           copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
-          # copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\"
           Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app.zip"
 
-      - name: Detect tag
-        id: detect_tag
+      - name: Read version from DLL
+        id: version
+        shell: pwsh
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -z "${{ github.event.inputs.tag }}" ]; then
-            git fetch --tags
-            tag=$(git tag --sort=-creatordate | head -n 1)
-            echo "Auto-detected latest tag: $tag"
-            echo "tag=$tag" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
-          fi
+          $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\RcloneFileWatcherCore.dll"
+          $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
+          echo "Read version: $version"
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Create Git tag for version
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag ${{ steps.version.outputs.version }}
+          git push origin ${{ steps.version.outputs.version }}
+
+      - name: Get previous tag
+        id: previous_tag
+        shell: bash
+        run: |
+          git fetch --tags
+          latest=$(git tag --sort=-creatordate | grep -v "${{ steps.version.outputs.version }}" | head -n 1)
+          echo "Previous tag: $latest"
+          echo "previous=$latest" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        shell: bash
+        run: |
+          log=$(git log ${{ steps.previous_tag.outputs.previous }}..HEAD --pretty=format:"- %s (%an)")
+          echo "log<<EOF" >> $GITHUB_OUTPUT
+          echo "$log" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.detect_tag.outputs.tag }}
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          body: ${{ steps.changelog.outputs.log }}
           files: |
             artifacts/*.exe
             artifacts/app.zip
