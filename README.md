@@ -52,6 +52,7 @@ Create a config file named `RcloneFileWatcherCoreConfig.cfg` in the executable f
 ```json
 {
   "LogLevel": "Information|Error|Debug",
+  "LogPath": "RcloneFileWatcherCore.log",
   "Path": [
     {
       "WatchingPath": "d:\\Test\\",
@@ -88,6 +89,7 @@ Create a config file named `RcloneFileWatcherCoreConfig.cfg` in the executable f
 ### Configuration Parameters
 
 * `"LogLevel": Information|Error `" – Sets the logging level. Multiple levels can be combined using the pipe (|), e.g. Trace|Debug|Information|Warning|Error|Critical|Always.
+* `"LogPath": "RcloneFileWatcherCore.log"` – Specifies the log file path. Leave empty (`""`) to output logs to the console instead.
 * `"WatchingPath"` – Directory to monitor for changes
 * `"RcloneFilesFromPath"` – Path to the output file used with `--include-from` in rclone
 * `"RcloneBatch"` – Path to the batch script that runs rclone (executed every 30 seconds if changes are detected). This script **must** include the `--include-from` parameter
