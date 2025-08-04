@@ -63,22 +63,25 @@ jobs:
         run: |
           git fetch --tags
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-
           if [ -z "$latest_tag" ]; then
             echo "No previous tag found, including full history" >&2
-            log=$(git log --pretty=format:"- %s [%h] by %an")
+            log=$(git log --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):')
           else
             echo "Generating changelog since $latest_tag" >&2
-            log=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an")
+            log=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):')
           fi
-
-          # Multiline output (safe)
+          
+          #merges=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an" | grep -E '^Merge pull request')
+          #if [ -n "$merges" ]; then
+          #  log="$log"$'\n'"$merges"
+          #fi
+          
+          # Multiline output
           {
             echo "changelog<<EOF"
             echo "$log"
             echo "EOF"
           } >> $GITHUB_OUTPUT
-
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -88,7 +91,11 @@ jobs:
           body: |
             ### Changes since last release
             ${{ steps.changelog.outputs.changelog }}
+
             ### Assembly Version
             `${{ steps.extract_version.outputs.version }}`
+          files: |
+            artifacts/*.exe
+            artifacts/app.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
