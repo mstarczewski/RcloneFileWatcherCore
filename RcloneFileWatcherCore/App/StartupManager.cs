@@ -61,7 +61,7 @@ namespace RcloneFileWatcherCore.App
             _logger.Log(Enums.LogLevel.Information, "Watcher started");
             _scheduler.RunStartupSyncIfNeeded();
             _scheduler.SetTimer();
-            _logger.Log(Enums.LogLevel.Information, "Controller started");
+            _logger.Log(Enums.LogLevel.Information, "StartupManager started");
         }
 
         private ConfigDTO LoadConfiguration()
