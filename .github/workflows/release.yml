@@ -12,11 +12,8 @@ on:
         default: ''
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        runtime: [win-x64, linux-x64]
-    runs-on: ${{ contains(matrix.runtime, 'win-') && 'windows-latest' || 'ubuntu-latest' }}
+  build-windows:
+    runs-on: windows-latest
     env:
       Configuration: Release
 
@@ -35,59 +32,80 @@ jobs:
         run: dotnet restore
 
       - name: Build solution
-        run: dotnet build --no-restore -c ${{ env.Configuration }} -r ${{ matrix.runtime }}
+        run: dotnet build --no-restore -c ${{ env.Configuration }}
 
       - name: Run tests
-        shell: bash
         run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
 
-      - name: Publish app
-        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r ${{ matrix.runtime }} --self-contained false /p:PublishSingleFile=true
+      - name: Publish Windows app
+        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
 
-      - name: Prepare release artifacts
+      - name: Prepare Windows artifacts
         run: |
-          mkdir -p "${{ github.workspace }}/artifacts/${{ matrix.runtime }}"
-          if [ "${{ matrix.runtime }}" = "win-x64" ]; then
-            cp "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/win-x64/publish/*.exe" "${{ github.workspace }}/artifacts/${{ matrix.runtime }}/"
-          else
-            cp "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/RcloneFileWatcherCore" "${{ github.workspace }}/artifacts/${{ matrix.runtime }}/"
-            chmod +x "${{ github.workspace }}/artifacts/${{ matrix.runtime }}/RcloneFileWatcherCore"
-          fi
-          cp "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/${{ matrix.runtime }}/publish/version.json" "${{ github.workspace }}/artifacts/${{ matrix.runtime }}/"
-          
-          # Create archive
-          cd "${{ github.workspace }}/artifacts/${{ matrix.runtime }}"
-          if [ "${{ matrix.runtime }}" = "win-x64" ]; then
-            Compress-Archive -Path * -DestinationPath "../app-${{ matrix.runtime }}.zip"
-          else
-            zip -r "../app-${{ matrix.runtime }}.zip" *
-          fi
-        shell: bash
+          mkdir "${{ github.workspace }}\artifacts\win-x64"
+          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\win-x64\"
+          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\win-x64\"
+          Compress-Archive -Path "${{ github.workspace }}\artifacts\win-x64\*" -DestinationPath "${{ github.workspace }}\artifacts\app-win-x64.zip"
 
-      - name: Extract version from assembly
+      - name: Extract version from Windows assembly
         id: extract_version
         run: |
-          if [ "${{ matrix.runtime }}" = "win-x64" ]; then
-            assemblyPath="${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/win-x64/publish/RcloneFileWatcherCore.exe"
-          else
-            assemblyPath="${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/RcloneFileWatcherCore"
-          fi
-          
-          # Use dotnet to get version information
-          version=$(dotnet --info | grep -oP '8\.\d+\.\d+')
-          echo "Using assembly: $assemblyPath"
-          echo "version=0.8.$(( $(date +%-j) )).$(( $(date +%-H) ))" >> $GITHUB_OUTPUT
-        shell: bash
-        if: matrix.runtime == 'win-x64'  # Only run once for Windows build
+          $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\RcloneFileWatcherCore.exe"
+          $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
+          echo "Extracted version: $version"
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+        shell: powershell
 
-      - name: Upload artifacts
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: app-${{ matrix.runtime }}
-          path: ${{ github.workspace }}/artifacts/app-${{ matrix.runtime }}.zip
+          name: app-win-x64
+          path: ${{ github.workspace }}/artifacts/app-win-x64.zip
+
+  build-linux:
+    runs-on: ubuntu-latest
+    env:
+      Configuration: Release
+
+    steps:
+      - name: Checkout repo with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --no-restore -c ${{ env.Configuration }}
+
+      - name: Run tests
+        run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
+
+      - name: Publish Linux app
+        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r linux-x64 --self-contained false /p:PublishSingleFile=true
+
+      - name: Prepare Linux artifacts
+        run: |
+          mkdir -p "${{ github.workspace }}/artifacts/linux-x64"
+          cp "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/RcloneFileWatcherCore" "${{ github.workspace }}/artifacts/linux-x64/"
+          cp "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/version.json" "${{ github.workspace }}/artifacts/linux-x64/"
+          chmod +x "${{ github.workspace }}/artifacts/linux-x64/RcloneFileWatcherCore"
+          cd "${{ github.workspace }}/artifacts/linux-x64" && zip -r "../app-linux-x64.zip" .
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-linux-x64
+          path: ${{ github.workspace }}/artifacts/app-linux-x64.zip
 
   create_release:
-    needs: build
+    needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -117,13 +135,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.build.outputs.version }}
-          name: Release ${{ needs.build.outputs.version }}
+          tag_name: v${{ needs.build-windows.outputs.version }}
+          name: Release ${{ needs.build-windows.outputs.version }}
           body: |
             ### Changes since last release
             ${{ steps.changelog.outputs.changelog }}
             ### Assembly Version
-            `${{ needs.build.outputs.version }}`
+            `${{ needs.build-windows.outputs.version }}`
           files: |
             artifacts/app-win-x64.zip
             artifacts/app-linux-x64.zip
