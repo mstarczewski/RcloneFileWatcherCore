@@ -38,13 +38,15 @@ jobs:
         run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
 
       - name: Publish Windows app
-        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
+        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
 
       - name: Prepare Windows artifacts
         run: |
-          mkdir "${{ github.workspace }}\artifacts\win-x64"
-          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\win-x64\"
-          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\win-x64\"
+          New-Item -ItemType Directory -Path "${{ github.workspace }}\artifacts\win-x64" -Force
+          Copy-Item "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\win-x64\"
+          if (Test-Path "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json") {
+            Copy-Item "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\win-x64\"
+          }
           Compress-Archive -Path "${{ github.workspace }}\artifacts\win-x64\*" -DestinationPath "${{ github.workspace }}\artifacts\app-win-x64.zip"
 
       - name: Extract version from Windows assembly
@@ -88,13 +90,15 @@ jobs:
         run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
 
       - name: Publish Linux app
-        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r linux-x64 --self-contained false /p:PublishSingleFile=true
+        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj -c Release -r linux-x64 --self-contained false
 
       - name: Prepare Linux artifacts
         run: |
           mkdir -p "${{ github.workspace }}/artifacts/linux-x64"
           cp "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/RcloneFileWatcherCore" "${{ github.workspace }}/artifacts/linux-x64/"
-          cp "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/version.json" "${{ github.workspace }}/artifacts/linux-x64/"
+          if [ -f "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/version.json" ]; then
+            cp "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/version.json" "${{ github.workspace }}/artifacts/linux-x64/"
+          fi
           chmod +x "${{ github.workspace }}/artifacts/linux-x64/RcloneFileWatcherCore"
           cd "${{ github.workspace }}/artifacts/linux-x64" && zip -r "../app-linux-x64.zip" .
 
