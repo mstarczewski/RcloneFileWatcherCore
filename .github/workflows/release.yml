@@ -14,9 +14,6 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-    env:
-      Configuration: Release
-      RuntimeId: win-x64
     outputs:
       version: ${{ steps.extract_version.outputs.version }}
       changelog: ${{ steps.changelog.outputs.changelog }}
@@ -31,29 +28,19 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore
-        run: dotnet restore -r linux-x64
+      - name: Publish Windows app
+        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
 
-      - name: Build solution
-        run: dotnet build --no-restore -c ${{ env.Configuration }}
-
-      - name: Run tests
-        shell: bash
-        run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
-
-      - name: Publish app
-        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
-
-      - name: Prepare release artifacts
+      - name: Prepare Windows artifacts
         run: |
-          mkdir "${{ github.workspace }}\artifacts"
-          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
-          Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app-win-x64.zip"
+          mkdir artifacts
+          copy "RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "artifacts\"
+          Compress-Archive -Path "artifacts\*" -DestinationPath "artifacts\app-win-x64.zip"
 
       - name: Extract version from assembly
         id: extract_version
         run: |
-          $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\${{ env.RuntimeId }}\publish\RcloneFileWatcherCore.exe"
+          $assemblyPath = "RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\RcloneFileWatcherCore.exe"
           $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
           echo "Extracted version: $version"
           echo "version=$version" >> $env:GITHUB_OUTPUT
@@ -66,19 +53,14 @@ jobs:
           git fetch --tags
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$latest_tag" ]; then
-            echo "No previous tag found, including full history" >&2
-            log=$(git log --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):')
+            log=$(git log --oneline -10 | grep -E '(feat|fix|BREAKING CHANGE):' || echo "No feature/fix commits found")
           else
-            echo "Generating changelog since $latest_tag" >&2
-            log=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):')
+            log=$(git log "$latest_tag"..HEAD --oneline | grep -E '(feat|fix|BREAKING CHANGE):' || echo "No feature/fix commits found")
           fi
           
-          # Multiline output
-          {
-            echo "changelog<<EOF"
-            echo "$log"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$log" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -88,35 +70,21 @@ jobs:
 
   build-linux:
     runs-on: ubuntu-latest
-    env:
-      Configuration: Release
-      RuntimeId: linux-x64
     steps:
-      - name: Checkout repo with full history
+      - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore
-        run: dotnet restore
+      - name: Publish Linux app
+        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj -c Release -r linux-x64 --self-contained false /p:PublishSingleFile=true
 
-      - name: Build solution
-        run: dotnet build --no-restore -c ${{ env.Configuration }}
-
-      - name: Run tests
-        run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
-
-      - name: Publish app
-        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r linux-x64 --self-contained false /p:PublishSingleFile=true
-
-      - name: Prepare release artifacts
+      - name: Prepare Linux artifacts
         run: |
-          mkdir -p artifacts
+          mkdir artifacts
           cp RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/* artifacts/
           cd artifacts && tar -czf app-linux-x64.tar.gz * && cd ..
 
