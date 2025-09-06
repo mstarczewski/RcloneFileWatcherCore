@@ -2,12 +2,8 @@ name: Build & Release
 
 on:
   push:
-    branches:
-      - master
-    paths-ignore:
-      - '**/*.md'
-      - '.github/workflows/*.yml'
-      - 'LICENSE'
+    tags:
+      - 'v*.*'
   workflow_dispatch:
     inputs:
       tag:
@@ -16,12 +12,14 @@ on:
         default: ''
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
     env:
       Configuration: Release
       RuntimeId: win-x64
-
+    outputs:
+      version: ${{ steps.extract_version.outputs.version }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
     steps:
       - name: Checkout repo with full history
         uses: actions/checkout@v4
@@ -50,7 +48,7 @@ jobs:
         run: |
           mkdir "${{ github.workspace }}\artifacts"
           copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
-          Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app.zip"
+          Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app-win-x64.zip"
 
       - name: Extract version from assembly
         id: extract_version
@@ -75,11 +73,6 @@ jobs:
             log=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):')
           fi
           
-          #merges=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an" | grep -E '^Merge pull request')
-          #if [ -n "$merges" ]; then
-          #  log="$log"$'\n'"$merges"
-          #fi
-          
           # Multiline output
           {
             echo "changelog<<EOF"
@@ -87,19 +80,86 @@ jobs:
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: artifacts/
+
+  build-linux:
+    runs-on: ubuntu-latest
+    env:
+      Configuration: Release
+      RuntimeId: linux-x64
+    steps:
+      - name: Checkout repo with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --no-restore -c ${{ env.Configuration }}
+
+      - name: Run tests
+        run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
+
+      - name: Publish app
+        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r linux-x64 --self-contained false /p:PublishSingleFile=true
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir -p artifacts
+          cp RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/* artifacts/
+          cd artifacts && tar -czf app-linux-x64.tar.gz * && cd ..
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: artifacts/
+
+  release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-artifacts
+          path: windows-artifacts/
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-artifacts
+          path: linux-artifacts/
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.extract_version.outputs.version }}
-          name: Release ${{ steps.extract_version.outputs.version }}
+          tag_name: v${{ needs.build-windows.outputs.version }}
+          name: Release ${{ needs.build-windows.outputs.version }}
           body: |
             ### Changes since last release
-            ${{ steps.changelog.outputs.changelog }}
-
+            ${{ needs.build-windows.outputs.changelog }}
+            
             ### Assembly Version
-            `${{ steps.extract_version.outputs.version }}`
+            `${{ needs.build-windows.outputs.version }}`
+            
+            ### Downloads
+            - **Windows x64**: `app-win-x64.zip`
+            - **Linux x64**: `app-linux-x64.tar.gz`
           files: |
-            artifacts/*.exe
-            artifacts/app.zip
+            windows-artifacts/*.exe
+            windows-artifacts/app-win-x64.zip
+            linux-artifacts/app-linux-x64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
