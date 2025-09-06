@@ -5,7 +5,7 @@ on:
     tags:
       - 'v*.*'
     branches:
-      - master  # TYMCZASOWO - usuń po testach
+      - master  
   workflow_dispatch:
     inputs:
       tag:
