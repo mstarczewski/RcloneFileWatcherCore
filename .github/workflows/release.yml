@@ -11,7 +11,7 @@ on:
         required: false
         default: ''
 
-# give the workflow permission to create releases and upload assets
+# give the workflow permission to create/update releases and upload assets
 permissions:
   contents: write
 
@@ -232,56 +232,161 @@ jobs:
           echo "Artifacts directory content:"
           ls -la "${{ github.workspace }}/artifacts" || true
 
-      - name: "Create GitHub Release (official action)"
-        id: create_release
-        uses: actions/create-release@v1
+      - name: "Create or update release and upload assets (API)"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.set_tag.outputs.release_tag }}
-          release_name: Release ${{ needs.build-windows.outputs.version }}
-          body: |
-            ### Changes since last release
-            ${{ steps.changelog.outputs.changelog }}
+        run: |
+          set -euo pipefail
 
-            ### Assembly Version
-            `${{ needs.build-windows.outputs.version }}`
+          OWNER_REPO="${GITHUB_REPOSITORY}"
+          OWNER=${OWNER_REPO%%/*}
+          REPO=${OWNER_REPO##*/}
+          TAG="${{ steps.set_tag.outputs.release_tag }}"
+          RELEASE_NAME="Release ${{ needs.build-windows.outputs.version }}"
 
-            ### SHA256 checksums
-            ```
-            ${{ steps.checksums.outputs.checksums }}
-            ```
-          draft: false
-          prerelease: false
+          # build body (preserve newlines)
+          BODY=$(cat <<EOF
+### Changes since last release
+${{ steps.changelog.outputs.changelog }}
 
-      - name: "Upload Windows zip"
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/artifacts/app-win-x64.zip
-          asset_name: app-win-x64.zip
-          asset_content_type: application/zip
+### Assembly Version
+\`${{ needs.build-windows.outputs.version }}\`
 
-      - name: "Upload Windows zip checksum"
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/artifacts/app-win-x64.zip.sha256
-          asset_name: app-win-x64.zip.sha256
-          asset_content_type: text/plain
+### SHA256 checksums
+\`\`\`
+${{ steps.checksums.outputs.checksums }}
+\`\`\`
+EOF
+)
 
-      - name: "Upload Linux zip"
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/artifacts/app-linux-x64.zip
-          asset_name: app-linux-x64.zip
-          asset_content_type: application/zip
+          echo "Owner: $OWNER, Repo: $REPO, Tag: $TAG"
+          echo "Release name: $RELEASE_NAME"
+          # Try to GET release by tag
+          echo "Checking if release with tag exists..."
+          get_resp=$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/$OWNER/$REPO/releases/tags/$TAG" || true)
 
-      - name: "Upload Linux zip checksum"
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/artifacts/app-linux-x64.zip.sha256
-          asset_name: app-linux-x64.zip.sha256
-          asset_content_type: text/plain
+          release_id=$(python - <<PY
+import sys, json
+try:
+    obj = json.load(sys.stdin)
+    print(obj.get("id",""))
+except:
+    print("")
+PY
+<<<"$get_resp")
+
+          if [ -n "$release_id" ]; then
+            echo "Release exists with id=$release_id — updating body..."
+            # prepare JSON payload for update
+            payload=$(python - <<PY
+import os,json
+print(json.dumps({
+  "name": os.environ["RELEASE_NAME"],
+  "body": os.environ["BODY"],
+  "draft": False,
+  "prerelease": False
+}))
+PY
+RELEASE_NAME="$RELEASE_NAME" BODY="$BODY")
+            update_resp=$(curl -s -X PATCH -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/$OWNER/$REPO/releases/$release_id" -d "$payload")
+            upload_url=$(python - <<PY
+import sys,json
+obj=json.load(sys.stdin)
+print(obj.get("upload_url",""))
+PY
+<<<"$update_resp")
+          else
+            echo "Release does not exist — creating..."
+            payload=$(python - <<PY
+import os,json
+print(json.dumps({
+  "tag_name": os.environ["TAG"],
+  "name": os.environ["RELEASE_NAME"],
+  "body": os.environ["BODY"],
+  "draft": False,
+  "prerelease": False
+}))
+PY
+TAG="$TAG" RELEASE_NAME="$RELEASE_NAME" BODY="$BODY")
+            create_resp=$(curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/$OWNER/$REPO/releases" -d "$payload")
+            release_id=$(python - <<PY
+import sys,json
+obj=json.load(sys.stdin)
+print(obj.get("id",""))
+PY
+<<<"$create_resp")
+            upload_url=$(python - <<PY
+import sys,json
+obj=json.load(sys.stdin)
+print(obj.get("upload_url",""))
+PY
+<<<"$create_resp")
+          fi
+
+          if [ -z "$upload_url" ]; then
+            echo "Failed to get upload_url for release (release_id=$release_id). Response from API:"
+            echo "get_resp:"
+            echo "$get_resp"
+            exit 1
+          fi
+
+          # strip template part {?name,label}
+          upload_url_base=${upload_url%\{*}
+          echo "Upload base URL: $upload_url_base"
+
+          ART_DIR="${{ github.workspace }}/artifacts"
+          cd "$ART_DIR"
+
+          # upload each zip and its .sha256 (delete existing asset with same name first)
+          for file in *.zip *.sha256; do
+            if [ ! -f "$file" ]; then
+              continue
+            fi
+            fname=$(basename "$file")
+            echo "Processing asset: $fname"
+
+            # check existing assets and delete if asset with same name exists
+            assets_resp=$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/$OWNER/$REPO/releases/$release_id/assets")
+            asset_id=$(python - <<PY
+import sys, json
+arr=json.load(sys.stdin)
+for a in arr:
+    if a.get("name","")==sys.argv[1]:
+        print(a.get("id",""))
+        break
+PY
+"$fname" <<<"$assets_resp")
+
+            if [ -n "$asset_id" ]; then
+              echo "Asset with same name exists (id=$asset_id). Deleting it first..."
+              curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/$OWNER/$REPO/releases/assets/$asset_id" || true
+            fi
+
+            if [[ "$fname" == *.zip ]]; then
+              content_type="application/zip"
+            else
+              content_type="text/plain"
+            fi
+
+            echo "Uploading $fname ..."
+            # upload asset
+            resp=$(curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: $content_type" --data-binary @"$file" "$upload_url_base?name=$fname")
+            # basic check if upload succeeded (response contains id)
+            uploaded_id=$(python - <<PY
+import sys,json
+try:
+  obj=json.load(sys.stdin)
+  print(obj.get("id",""))
+except:
+  print("")
+PY
+<<<"$resp")
+            if [ -z "$uploaded_id" ]; then
+              echo "Upload failed for $fname. Server response:"
+              echo "$resp"
+              exit 1
+            fi
+            echo "Uploaded asset id=$uploaded_id"
+          done
+
+          echo "Release id=$release_id updated and assets uploaded successfully."
