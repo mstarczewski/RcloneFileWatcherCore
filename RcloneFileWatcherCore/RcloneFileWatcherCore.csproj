@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
 
     <!-- Debug settings -->
     <DebugType>portable</DebugType>
@@ -43,5 +43,17 @@
   <!-- Generate version.json in output dir -->
   <Target Name="GenerateVersionFile" AfterTargets="Build">
     <WriteLinesToFile File="$(OutputPath)version.json" Lines="[&#xD;&#xA;  &quot;Product: $(Product)&quot;,&#xD;&#xA;  &quot;Version: $(Version)&quot;,&#xD;&#xA;  &quot;FileVersion: $(FileVersion)&quot;,&#xD;&#xA;  &quot;InformationalVersion: $(InformationalVersion)&quot;,&#xD;&#xA;  &quot;Author: $(Authors)&quot;,&#xD;&#xA;  &quot;Company: $(Company)&quot;,&#xD;&#xA;  &quot;License: MIT&quot;,&#xD;&#xA;  &quot;BuildDate: $([System.DateTime]::Now.ToString(&quot;yyyy-MM-dd HH:mm:ss&quot;))&quot;&#xD;&#xA;]" Overwrite="true" />
+  </Target>
+  <!-- Generate version.json in output dir -->
+  <Target Name="GenerateVersionFile" AfterTargets="Build">
+    <WriteLinesToFile File="$(OutputPath)version.json" Lines="[&#xD;&#xA;  &quot;Product: $(Product)&quot;,&#xD;&#xA;  &quot;Version: $(Version)&quot;,&#xD;&#xA;  &quot;FileVersion: $(FileVersion)&quot;,&#xD;&#xA;  &quot;InformationalVersion: $(InformationalVersion)&quot;,&#xD;&#xA;  &quot;Author: $(Authors)&quot;,&#xD;&#xA;  &quot;Company: $(Company)&quot;,&#xD;&#xA;  &quot;License: MIT&quot;,&#xD;&#xA;  &quot;BuildDate: $([System.DateTime]::Now.ToString(&quot;yyyy-MM-dd HH:mm:ss&quot;))&quot;&#xD;&#xA;]" Overwrite="true" />
+  </Target>
+
+  <!-- Auto create and push Git tag for Release builds -->
+  <Target Name="GitTagAndPush" AfterTargets="Build" Condition="'$(Configuration)'=='Release'">
+    <Message Text="Creating Git tag v$(Version) for Release build..." Importance="high" />
+    <Exec Command="git tag v$(Version)" ContinueOnError="true" IgnoreExitCode="true" />
+    <Exec Command="git push origin v$(Version)" ContinueOnError="true" IgnoreExitCode="true" />
+    <Message Text="Git tag v$(Version) created and pushed (if successful)" Importance="high" />
   </Target>
 </Project>
