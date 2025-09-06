@@ -53,7 +53,7 @@ jobs:
       - name: Extract version from assembly
         id: extract_version
         run: |
-          $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\RcloneFileWatcherCore.exe"
+          $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\${{ env.RuntimeId }}\publish\RcloneFileWatcherCore.exe"
           $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
           echo "Extracted version: $version"
           echo "version=$version" >> $env:GITHUB_OUTPUT
