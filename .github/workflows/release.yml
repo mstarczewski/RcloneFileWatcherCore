@@ -11,6 +11,10 @@ on:
         required: false
         default: ''
 
+# give the workflow permission to create releases and upload assets
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -53,6 +57,7 @@ jobs:
 
       - name: "Extract version from Windows assembly"
         id: extract_version
+        shell: powershell
         run: |
           $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\RcloneFileWatcherCore.exe"
           if (-Not (Test-Path $assemblyPath)) {
@@ -62,7 +67,6 @@ jobs:
           $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
           Write-Host "Extracted version: $version"
           echo "version=$version" >> $env:GITHUB_OUTPUT
-        shell: powershell
 
       - name: "Upload Windows artifacts"
         uses: actions/upload-artifact@v4
@@ -176,6 +180,7 @@ jobs:
 
       - name: "Determine release tag"
         id: set_tag
+        shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             if [ -n "${{ github.event.inputs.tag }}" ]; then
@@ -192,7 +197,6 @@ jobs:
 
           echo "Determined release tag: $tag" >&2
           echo "release_tag=$tag" >> $GITHUB_OUTPUT
-        shell: bash
 
       - name: "Generate SHA256 checksums and checksum outputs"
         id: checksums
@@ -201,7 +205,6 @@ jobs:
           ART_DIR="${{ github.workspace }}/artifacts"
           cd "$ART_DIR"
 
-          # find zip files (if none found, exit non-fatally)
           shopt -s nullglob
           zips=( *.zip )
           if [ ${#zips[@]} -eq 0 ]; then
@@ -212,14 +215,12 @@ jobs:
             exit 0
           fi
 
-          # create individual .sha256 files and a combined checksums.txt
           > checksums.txt
           for f in "${zips[@]}"; do
             sha256sum "$f" > "$f.sha256"
             cat "$f.sha256" >> checksums.txt
           done
 
-          # expose checksums (safe for small output)
           {
             echo "checksums<<EOF"
             cat checksums.txt
@@ -235,7 +236,6 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.set_tag.outputs.release_tag }}
           release_name: Release ${{ needs.build-windows.outputs.version }}
           body: |
@@ -283,4 +283,3 @@ jobs:
           asset_path: ${{ github.workspace }}/artifacts/app-linux-x64.zip.sha256
           asset_name: app-linux-x64.zip.sha256
           asset_content_type: text/plain
-
