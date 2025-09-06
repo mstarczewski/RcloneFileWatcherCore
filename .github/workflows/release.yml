@@ -11,42 +11,39 @@ on:
         required: false
         default: ''
 
-# give the workflow permission to create releases and upload assets
-permissions:
-  contents: write
-
 jobs:
   build-windows:
     runs-on: windows-latest
     env:
       Configuration: Release
+    # expose version as job output so other jobs (create_release) mogą z niego korzystać
     outputs:
       version: ${{ steps.extract_version.outputs.version }}
 
     steps:
-      - name: "Checkout repo with full history"
+      - name: Checkout repo with full history
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: "Setup .NET"
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: "Restore"
+      - name: Restore
         run: dotnet restore
 
-      - name: "Build solution"
+      - name: Build solution
         run: dotnet build --no-restore -c ${{ env.Configuration }}
 
-      - name: "Run tests"
+      - name: Run tests
         run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
 
-      - name: "Publish Windows app"
+      - name: Publish Windows app
         run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
 
-      - name: "Prepare Windows artifacts"
+      - name: Prepare Windows artifacts
         run: |
           New-Item -ItemType Directory -Path "${{ github.workspace }}\artifacts\win-x64" -Force
           Copy-Item "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\win-x64\" -Force
@@ -54,9 +51,8 @@ jobs:
             Copy-Item "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\win-x64\" -Force
           }
           Compress-Archive -Path "${{ github.workspace }}\artifacts\win-x64\*" -DestinationPath "${{ github.workspace }}\artifacts\app-win-x64.zip" -Force
-      - name: "Extract version from Windows assembly"
+      - name: Extract version from Windows assembly
         id: extract_version
-        shell: powershell
         run: |
           $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\RcloneFileWatcherCore.exe"
           if (-Not (Test-Path $assemblyPath)) {
@@ -65,8 +61,11 @@ jobs:
           }
           $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
           Write-Host "Extracted version: $version"
+          # zapisz jako output kroku (dostępne przez steps.extract_version.outputs.version)
           echo "version=$version" >> $env:GITHUB_OUTPUT
-      - name: "Upload Windows artifacts"
+        shell: powershell
+
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
           name: app-win-x64
@@ -78,29 +77,29 @@ jobs:
       Configuration: Release
 
     steps:
-      - name: "Checkout repo with full history"
+      - name: Checkout repo with full history
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: "Setup .NET"
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: "Restore"
+      - name: Restore
         run: dotnet restore
 
-      - name: "Build solution"
+      - name: Build solution
         run: dotnet build --no-restore -c ${{ env.Configuration }}
 
-      - name: "Run tests"
+      - name: Run tests
         run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
 
-      - name: "Publish Linux app"
+      - name: Publish Linux app
         run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj -c Release -r linux-x64 --self-contained false
 
-      - name: "Prepare Linux artifacts"
+      - name: Prepare Linux artifacts
         run: |
           mkdir -p "${{ github.workspace }}/artifacts/linux-x64"
           cp "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/RcloneFileWatcherCore" "${{ github.workspace }}/artifacts/linux-x64/" || true
@@ -109,7 +108,7 @@ jobs:
           fi
           chmod +x "${{ github.workspace }}/artifacts/linux-x64/RcloneFileWatcherCore" || true
           cd "${{ github.workspace }}/artifacts/linux-x64" && zip -r "../app-linux-x64.zip" . || true
-      - name: "Upload Linux artifacts"
+      - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: app-linux-x64
@@ -134,8 +133,8 @@ jobs:
           echo "PWD: $(pwd)"
           echo "Listing artifacts directory:"
           ls -la "${{ github.workspace }}/artifacts" || true
-          echo "Listing any nested files (maxdepth 3):"
-          find "${{ github.workspace }}/artifacts" -maxdepth 3 -type f -print -exec ls -la {} \; || true
+          echo "Listing any subfolders:"
+          find "${{ github.workspace }}/artifacts" -maxdepth 2 -type f -print -exec ls -la {} \; || true
       - name: "Flatten artifact files into artifacts/ root (if needed)"
         run: |
           set -e
@@ -170,7 +169,6 @@ jobs:
           } >> $GITHUB_OUTPUT
       - name: "Determine release tag"
         id: set_tag
-        shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             if [ -n "${{ github.event.inputs.tag }}" ]; then
@@ -186,83 +184,22 @@ jobs:
           fi
           echo "Determined release tag: $tag" >&2
           echo "release_tag=$tag" >> $GITHUB_OUTPUT
-      - name: "Generate SHA256 checksums and checksum outputs"
-        id: checksums
+      - name: "Show final files to upload"
         run: |
-          set -e
-          ART_DIR="${{ github.workspace }}/artifacts"
-          cd "$ART_DIR"
-          shopt -s nullglob
-          zips=( *.zip )
-          if [ ${#zips[@]} -eq 0 ]; then
-            echo "No zip files found in $ART_DIR"
-            echo "checksums<<EOF" >> $GITHUB_OUTPUT
-            echo "(no files)" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          > checksums.txt
-          for f in "${zips[@]}"; do
-            sha256sum "$f" > "$f.sha256"
-            cat "$f.sha256" >> checksums.txt
-          done
-          {
-            echo "checksums<<EOF"
-            cat checksums.txt
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
-      - name: "Show files to be uploaded"
-        run: |
-          echo "Artifacts directory content:"
+          echo "Files in artifacts to be uploaded:"
           ls -la "${{ github.workspace }}/artifacts" || true
-      - name: "Create GitHub Release (official action)"
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Create GitHub Release"
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.set_tag.outputs.release_tag }}
-          release_name: Release ${{ needs.build-windows.outputs.version }}
+          name: Release ${{ needs.build-windows.outputs.version }}
           body: |
             ### Changes since last release
             ${{ steps.changelog.outputs.changelog }}
             ### Assembly Version
             `${{ needs.build-windows.outputs.version }}`
-            ### SHA256 checksums
-            ```
-            ${{ steps.checksums.outputs.checksums }}
-            ```
-          draft: false
-          prerelease: false
-
-      - name: "Upload Windows zip"
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/artifacts/app-win-x64.zip
-          asset_name: app-win-x64.zip
-          asset_content_type: application/zip
-
-      - name: "Upload Windows zip checksum"
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/artifacts/app-win-x64.zip.sha256
-          asset_name: app-win-x64.zip.sha256
-          asset_content_type: text/plain
-
-      - name: "Upload Linux zip"
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/artifacts/app-linux-x64.zip
-          asset_name: app-linux-x64.zip
-          asset_content_type: application/zip
-
-      - name: "Upload Linux zip checksum"
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ github.workspace }}/artifacts/app-linux-x64.zip.sha256
-          asset_name: app-linux-x64.zip.sha256
-          asset_content_type: text/plain
+          files: |
+            artifacts/app-win-x64.zip
+            artifacts/app-linux-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
