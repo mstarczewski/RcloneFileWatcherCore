@@ -1,6 +1,7 @@
 ﻿using RcloneFileWatcherCore.DTO;
 using RcloneFileWatcherCore.Enums;
 using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
+using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,12 +15,14 @@ namespace RcloneFileWatcherCore.Logic.Services
         private readonly ConcurrentDictionary<string, FileDTO> _fileList;
         private readonly List<PathDTO> _syncPathDTO;
         private readonly ILogger _logger;
+        private readonly IFileSystem _fileSystem;
 
-        public FilePrepareService(ILogger logger, List<PathDTO> syncPathDTO, ConcurrentDictionary<string, FileDTO> fileList)
+        public FilePrepareService(ILogger logger, List<PathDTO> syncPathDTO, ConcurrentDictionary<string, FileDTO> fileList, IFileSystem fileSystem)
         {
             _logger = logger;
             _syncPathDTO = syncPathDTO;
             _fileList = fileList;
+            _fileSystem = fileSystem;
         }
 
         public string PrepareFilesToSync(string sourcePath, long lastTimeStamp)
@@ -77,34 +80,68 @@ namespace RcloneFileWatcherCore.Logic.Services
         {
             if (string.IsNullOrWhiteSpace(path))
                 return string.Empty;
-
-            var normalized = path.Replace(@"\\", "/").Replace(@"\", "/");
-            return normalized.StartsWith("/") ? normalized[1..] : normalized;
+            if (OperatingSystem.IsWindows())
+            {
+                var normalized = path.Replace(@"\\", "/").Replace(@"\", "/");
+                return normalized.StartsWith("/") ? normalized[1..] : normalized;
+            }
+            return path.StartsWith("/") ? path[1..] : path;
         }
 
-        private static bool IsFileFiltered(FileDTO fileDTO, List<string> excludeContains)
+        public bool IsFileFiltered(FileDTO fileDTO, List<string> excludeContains)
         {
-            bool fileExists = File.Exists(fileDTO.FullPath);
-            bool directoryExists = Directory.Exists(fileDTO.FullPath);
-            bool isCreatedDeletedRenamed = fileDTO.WatcherChangeTypes is WatcherChangeTypes.Created
-                or WatcherChangeTypes.Deleted
-                or WatcherChangeTypes.Renamed;
+            bool fileExists = _fileSystem.FileExists(fileDTO.FullPath);
+            bool directoryExists = _fileSystem.DirectoryExists(fileDTO.FullPath);
+            bool isCreatedDeletedRenamed = IsCreatedDeletedRenamed(fileDTO.WatcherChangeTypes);
+            bool isExcluded = IsExcluded(fileDTO.FullPath, excludeContains);
 
-            bool isExcluded = excludeContains != null && excludeContains.Any(x => fileDTO.FullPath.Contains(x));
-
-            if (
-                (
-                    !fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileExists
-                    || !fileExists && !fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted)
-                    || directoryExists && fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && isCreatedDeletedRenamed
-                    || !directoryExists && fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted)
-                )
-                && !isExcluded
-            )
+            if ((IsExistingFile(fileDTO, fileExists)
+                 || IsDeletedFile(fileDTO, fileExists)
+                 || IsExistingDirectoryWithChange(fileDTO, directoryExists, isCreatedDeletedRenamed)
+                 || IsDeletedDirectory(fileDTO, directoryExists))
+                && !isExcluded)
             {
                 return false;
             }
             return true;
+        }
+
+        private static bool IsExistingFile(FileDTO fileDTO, bool fileExists)
+        {
+            return !fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName) && fileExists;
+        }
+
+        private static bool IsDeletedFile(FileDTO fileDTO, bool fileExists)
+        {
+            return !fileExists
+                && !fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName)
+                && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted);
+        }
+
+        private static bool IsExistingDirectoryWithChange(FileDTO fileDTO, bool directoryExists, bool isCreatedDeletedRenamed)
+        {
+            return directoryExists
+                && fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName)
+                && isCreatedDeletedRenamed;
+        }
+
+        private static bool IsDeletedDirectory(FileDTO fileDTO, bool directoryExists)
+        {
+            return !directoryExists
+                && fileDTO.NotifyFilters.Equals(NotifyFilters.DirectoryName)
+                && fileDTO.WatcherChangeTypes.Equals(WatcherChangeTypes.Deleted);
+        }
+
+        private static bool IsCreatedDeletedRenamed(WatcherChangeTypes changeType)
+        {
+            return changeType is WatcherChangeTypes.Created
+                or WatcherChangeTypes.Deleted
+                or WatcherChangeTypes.Renamed;
+        }
+
+        private static bool IsExcluded(string fullPath, List<string> excludeContains)
+        {
+            return excludeContains != null && excludeContains.Any(x => fullPath.Contains(x));
         }
 
         private bool IsFileReady(string filename)

@@ -26,6 +26,7 @@ namespace RcloneFileWatcherCore.App
         private readonly Scheduler _scheduler;
         private readonly FileWatcherService _watcher;
         private readonly IBatchExecutionService _rcloneRunner;
+        private readonly IFileSystem _fileSystem;
 
         public StartupManager(bool generateConfig)
         {
@@ -40,7 +41,7 @@ namespace RcloneFileWatcherCore.App
                 ? new ConsoleLogWriter()
                 : new FileLogWriter(_configDTO.LogPath);
             _logger.SetLogWriter(_logWritter);
-
+            _fileSystem = new FileSystemService();
             _fileDTOs = new ConcurrentDictionary<string, FileDTO>();
             _rcloneRunner = new RcloneRunService(_logger);
             _processDictionary = InitProcesses();
@@ -77,7 +78,7 @@ namespace RcloneFileWatcherCore.App
 
         private Dictionary<Enums.ProcessCode, IRcloneJobService> InitProcesses()
         {
-            var filePrepare = new FilePrepareService(_logger, _configDTO.Path, _fileDTOs);
+            var filePrepare = new FilePrepareService(_logger, _configDTO.Path, _fileDTOs, _fileSystem);
             return new Dictionary<Enums.ProcessCode, IRcloneJobService>
             {
                 { Enums.ProcessCode.SyncRclone, new RcloneSyncService(_logger, filePrepare, _fileDTOs,_rcloneRunner ) },

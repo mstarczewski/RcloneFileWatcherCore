@@ -1,5 +1,6 @@
 ﻿using RcloneFileWatcherCore.DTO;
 using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -107,7 +108,12 @@ namespace RcloneFileWatcherCore.Logic.Services
 
         private static string GetRelativePath(string basePath, string fullPath)
         {
-            return Path.GetRelativePath(basePath, fullPath).Replace('\\', '/');
+            var path = Path.GetRelativePath(basePath, fullPath);
+            if (OperatingSystem.IsWindows())
+            {
+                return path.Replace('\\', '/');
+            }
+            return path;
         }
     }
 }
