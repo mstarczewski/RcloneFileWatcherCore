@@ -120,24 +120,46 @@ jobs:
     needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo with full history
+      - name: "Checkout repo with full history"
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Download all artifacts
+      - name: "Download all artifacts"
         uses: actions/download-artifact@v4
         with:
           path: ${{ github.workspace }}/artifacts
 
-      - name: Generate changelog
+      - name: "Debug: list downloaded artifacts"
+        run: |
+          echo "PWD: $(pwd)"
+          echo "Listing artifacts directory:"
+          ls -la "${{ github.workspace }}/artifacts" || true
+          echo "Listing any subfolders:"
+          find "${{ github.workspace }}/artifacts" -maxdepth 2 -type f -print -exec ls -la {} \; || true
+
+      - name: "Flatten artifact files into artifacts/ root (if needed)"
+        run: |
+          set -e
+          ART_DIR="${{ github.workspace }}/artifacts"
+
+          for dir in "$ART_DIR"/*; do
+            if [ -d "$dir" ]; then
+              echo "Processing folder: $dir"
+              mv "$dir"/* "$ART_DIR"/ 2>/dev/null || true
+            fi
+          done
+
+          echo "After flatten:"
+          ls -la "$ART_DIR" || true
+
+      - name: "Generate changelog"
         id: changelog
         run: |
           git fetch --tags
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$latest_tag" ]; then
             echo "No previous tag found, including full history" >&2
-            # grep może zwrócić exit code != 0 gdy nie znajdzie nic — zabezpieczamy przez || true
             log=$(git log --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):' || true)
           else
             echo "Generating changelog since $latest_tag" >&2
@@ -154,12 +176,9 @@ jobs:
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
-      - name: Determine release tag
+      - name: "Determine release tag"
         id: set_tag
         run: |
-          # Jeśli workflow_dispatch i podany input.tag - użyj go
-          # W przeciwnym razie - jeśli to push tagu, użyj github.ref_name
-          # Jeśli nic nie ma, fallback do wersji z build-windows
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             if [ -n "${{ github.event.inputs.tag }}" ]; then
               tag="${{ github.event.inputs.tag }}"
@@ -167,9 +186,7 @@ jobs:
               tag="v${{ needs.build-windows.outputs.version }}"
             fi
           else
-            # przy push na tag github.ref_name będzie np. "v1.2.3"
             tag="${{ github.ref_name }}"
-            # fallback gdy ref_name jest puste
             if [ -z "$tag" ]; then
               tag="v${{ needs.build-windows.outputs.version }}"
             fi
@@ -178,7 +195,12 @@ jobs:
           echo "Determined release tag: $tag" >&2
           echo "release_tag=$tag" >> $GITHUB_OUTPUT
 
-      - name: Create GitHub Release
+      - name: "Show final files to upload"
+        run: |
+          echo "Files in artifacts to be uploaded:"
+          ls -la "${{ github.workspace }}/artifacts" || true
+
+      - name: "Create GitHub Release"
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.set_tag.outputs.release_tag }}
