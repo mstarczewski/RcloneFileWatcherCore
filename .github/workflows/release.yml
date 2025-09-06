@@ -16,6 +16,9 @@ jobs:
     runs-on: windows-latest
     env:
       Configuration: Release
+    # expose version as job output so other jobs (create_release) mogą z niego korzystać
+    outputs:
+      version: ${{ steps.extract_version.outputs.version }}
 
     steps:
       - name: Checkout repo with full history
@@ -43,18 +46,23 @@ jobs:
       - name: Prepare Windows artifacts
         run: |
           New-Item -ItemType Directory -Path "${{ github.workspace }}\artifacts\win-x64" -Force
-          Copy-Item "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\win-x64\"
+          Copy-Item "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\win-x64\" -Force
           if (Test-Path "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json") {
-            Copy-Item "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\win-x64\"
+            Copy-Item "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\version.json" "${{ github.workspace }}\artifacts\win-x64\" -Force
           }
-          Compress-Archive -Path "${{ github.workspace }}\artifacts\win-x64\*" -DestinationPath "${{ github.workspace }}\artifacts\app-win-x64.zip"
+          Compress-Archive -Path "${{ github.workspace }}\artifacts\win-x64\*" -DestinationPath "${{ github.workspace }}\artifacts\app-win-x64.zip" -Force
 
       - name: Extract version from Windows assembly
         id: extract_version
         run: |
           $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\RcloneFileWatcherCore.exe"
+          if (-Not (Test-Path $assemblyPath)) {
+            Write-Error "Assembly not found at $assemblyPath"
+            exit 1
+          }
           $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
-          echo "Extracted version: $version"
+          Write-Host "Extracted version: $version"
+          # zapisz jako output kroku (dostępne przez steps.extract_version.outputs.version)
           echo "version=$version" >> $env:GITHUB_OUTPUT
         shell: powershell
 
@@ -95,12 +103,12 @@ jobs:
       - name: Prepare Linux artifacts
         run: |
           mkdir -p "${{ github.workspace }}/artifacts/linux-x64"
-          cp "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/RcloneFileWatcherCore" "${{ github.workspace }}/artifacts/linux-x64/"
+          cp "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/RcloneFileWatcherCore" "${{ github.workspace }}/artifacts/linux-x64/" || true
           if [ -f "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/version.json" ]; then
             cp "${{ github.workspace }}/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/version.json" "${{ github.workspace }}/artifacts/linux-x64/"
           fi
-          chmod +x "${{ github.workspace }}/artifacts/linux-x64/RcloneFileWatcherCore"
-          cd "${{ github.workspace }}/artifacts/linux-x64" && zip -r "../app-linux-x64.zip" .
+          chmod +x "${{ github.workspace }}/artifacts/linux-x64/RcloneFileWatcherCore" || true
+          cd "${{ github.workspace }}/artifacts/linux-x64" && zip -r "../app-linux-x64.zip" . || true
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -129,26 +137,56 @@ jobs:
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$latest_tag" ]; then
             echo "No previous tag found, including full history" >&2
-            log=$(git log --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):')
+            # grep może zwrócić exit code != 0 gdy nie znajdzie nic — zabezpieczamy przez || true
+            log=$(git log --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):' || true)
           else
             echo "Generating changelog since $latest_tag" >&2
-            log=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):')
+            log=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):' || true)
           fi
-          
+
+          if [ -z "$log" ]; then
+            log="(no changelog entries found)"
+          fi
+
           {
             echo "changelog<<EOF"
             echo "$log"
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
+      - name: Determine release tag
+        id: set_tag
+        run: |
+          # Jeśli workflow_dispatch i podany input.tag - użyj go
+          # W przeciwnym razie - jeśli to push tagu, użyj github.ref_name
+          # Jeśli nic nie ma, fallback do wersji z build-windows
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ -n "${{ github.event.inputs.tag }}" ]; then
+              tag="${{ github.event.inputs.tag }}"
+            else
+              tag="v${{ needs.build-windows.outputs.version }}"
+            fi
+          else
+            # przy push na tag github.ref_name będzie np. "v1.2.3"
+            tag="${{ github.ref_name }}"
+            # fallback gdy ref_name jest puste
+            if [ -z "$tag" ]; then
+              tag="v${{ needs.build-windows.outputs.version }}"
+            fi
+          fi
+
+          echo "Determined release tag: $tag" >&2
+          echo "release_tag=$tag" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.build-windows.outputs.version }}
+          tag_name: ${{ steps.set_tag.outputs.release_tag }}
           name: Release ${{ needs.build-windows.outputs.version }}
           body: |
             ### Changes since last release
             ${{ steps.changelog.outputs.changelog }}
+
             ### Assembly Version
             `${{ needs.build-windows.outputs.version }}`
           files: |
