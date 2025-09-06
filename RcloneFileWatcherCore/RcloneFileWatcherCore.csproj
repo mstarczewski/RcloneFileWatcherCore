@@ -1,35 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
+    <!-- Use single RuntimeIdentifier for local development, multiple for publishing -->
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
     <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
-
     <!-- Debug settings -->
     <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
-
     <!-- Auto-increment build version based on date/time -->
     <Version>0.8.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</Version>
     <AssemblyVersion>0.8.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</AssemblyVersion>
     <FileVersion>0.8.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</FileVersion>
     <InformationalVersion>0.8.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</InformationalVersion>
-
     <!-- App info -->
     <Authors>mstarczewski</Authors>
     <Company>mstarczewski</Company>
     <Product>RcloneFileWatcherCore</Product>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/mstarczewski/RcloneFileWatcherCore</RepositoryUrl>
-
     <!-- Deployment -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>false</SelfContained>
-
     <!-- General build -->
     <Platforms>AnyCPU;x64</Platforms>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 	
   </PropertyGroup>
@@ -39,11 +34,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <!-- Generate version.json in output dir -->
-  <Target Name="GenerateVersionFile" AfterTargets="Build">
-    <WriteLinesToFile File="$(OutputPath)version.json" Lines="[&#xD;&#xA;  &quot;Product: $(Product)&quot;,&#xD;&#xA;  &quot;Version: $(Version)&quot;,&#xD;&#xA;  &quot;FileVersion: $(FileVersion)&quot;,&#xD;&#xA;  &quot;InformationalVersion: $(InformationalVersion)&quot;,&#xD;&#xA;  &quot;Author: $(Authors)&quot;,&#xD;&#xA;  &quot;Company: $(Company)&quot;,&#xD;&#xA;  &quot;License: MIT&quot;,&#xD;&#xA;  &quot;BuildDate: $([System.DateTime]::Now.ToString(&quot;yyyy-MM-dd HH:mm:ss&quot;))&quot;&#xD;&#xA;]" Overwrite="true" />
-  </Target>
+  
   <!-- Generate version.json in output dir -->
   <Target Name="GenerateVersionFile" AfterTargets="Build">
     <WriteLinesToFile File="$(OutputPath)version.json" Lines="[&#xD;&#xA;  &quot;Product: $(Product)&quot;,&#xD;&#xA;  &quot;Version: $(Version)&quot;,&#xD;&#xA;  &quot;FileVersion: $(FileVersion)&quot;,&#xD;&#xA;  &quot;InformationalVersion: $(InformationalVersion)&quot;,&#xD;&#xA;  &quot;Author: $(Authors)&quot;,&#xD;&#xA;  &quot;Company: $(Company)&quot;,&#xD;&#xA;  &quot;License: MIT&quot;,&#xD;&#xA;  &quot;BuildDate: $([System.DateTime]::Now.ToString(&quot;yyyy-MM-dd HH:mm:ss&quot;))&quot;&#xD;&#xA;]" Overwrite="true" />
@@ -56,4 +47,5 @@
     <Exec Command="git push origin v$(Version)" ContinueOnError="true" IgnoreExitCode="true" />
     <Message Text="Git tag v$(Version) created and pushed (if successful)" Importance="high" />
   </Target>
+  
 </Project>
