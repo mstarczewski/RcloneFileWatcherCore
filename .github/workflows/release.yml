@@ -32,7 +32,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore -r linux-x64
 
       - name: Build solution
         run: dotnet build --no-restore -c ${{ env.Configuration }}
