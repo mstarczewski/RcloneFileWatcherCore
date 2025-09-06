@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*.*'
+    branches:
+      - master  # TYMCZASOWO - usuń po testach
   workflow_dispatch:
     inputs:
       tag:
@@ -115,6 +117,7 @@ jobs:
         with:
           tag_name: v${{ needs.build-windows.outputs.version }}
           name: Release ${{ needs.build-windows.outputs.version }}
+          draft: true  # Tymczasowo jako draft dla testów
           body: |
             ### Changes since last release
             ${{ needs.build-windows.outputs.changelog }}
