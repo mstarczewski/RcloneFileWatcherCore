@@ -2,7 +2,7 @@
 REM Publishes the web GUI for Debian/Linux (framework-dependent, folder layout with wwwroot/
 REM and locales/). Double-click this file, or run it from a terminal. No Visual Studio needed.
 setlocal
-set "OUT=%~dp0RcloneFileWatcherCore.Web\bin\Release\net8.0\publish\linux-x64"
+set "OUT=%~dp0RcloneFileWatcherCore.Web\bin\Release\net8.0\publish"
 
 dotnet publish "%~dp0RcloneFileWatcherCore.Web\RcloneFileWatcherCore.Web.csproj" -p:PublishProfile=DebianFolder
 if errorlevel 1 (
