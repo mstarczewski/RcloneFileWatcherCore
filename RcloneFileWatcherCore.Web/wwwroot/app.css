@@ -323,6 +323,29 @@ select:focus, input:focus, textarea:focus {
     flex-wrap: wrap;
 }
 
+.subhead {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.9rem;
+}
+
+.field-label {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.checkbox-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+}
+
 .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

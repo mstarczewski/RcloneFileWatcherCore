@@ -42,29 +42,75 @@
 {
     <section class="form-section">
         <h2>@L["cfg.general"]</h2>
+        <div class="field">
+            <span class="field-label">@L["cfg.logLevel"]</span>
+            <div class="checkbox-row">
+                @foreach (var lvl in LogLevels)
+                {
+                    <label class="checkbox">
+                        <input type="checkbox" checked="@_selectedLevels.Contains(lvl)"
+                               @onchange="e => ToggleLevel(lvl, (bool?)e.Value ?? false)" /> @lvl
+                    </label>
+                }
+            </div>
+            <span class="muted">@L["cfg.logLevelHint"]</span>
+        </div>
         <div class="form-grid">
-            <label>@L["cfg.logLevel"]
-                <input @bind="_model.LogLevel" placeholder="Information|Error" />
-            </label>
             <label>@L["cfg.logPath"]
                 <input @bind="_model.LogPath" />
             </label>
             <label>@L["cfg.syncInterval"]
                 <input type="number" min="1" @bind="_model.SyncIntervalSeconds" />
             </label>
-            <label>@L["cfg.fullSyncDaily"]
-                <input @bind="_model.RunStartupScriptEveryDayAt" placeholder="05:30" />
-            </label>
         </div>
+    </section>
+
+    <section class="form-section">
+        <h2>@L["cfg.fullSyncTitle"]</h2>
         <div class="form-grid">
             <label class="checkbox">
                 <input type="checkbox" @bind="_model.RunOneTimeFullStartupSync" />
                 @L["cfg.fullSyncStartup"]
             </label>
+            <label>@L["cfg.fullSyncDaily"]
+                <input @bind="_model.RunStartupScriptEveryDayAt" placeholder="05:30" />
+            </label>
+            <label>@L["cfg.runMode"]
+                <select @bind="_model.FullSyncMode">
+                    <option value="@SyncMode.Script">@L["cfg.modeScript"]</option>
+                    <option value="@SyncMode.Managed">@L["cfg.modeManaged"]</option>
+                </select>
+            </label>
+        </div>
+
+        @if (_model.FullSyncMode == SyncMode.Script)
+        {
             <label>@L["cfg.fullSyncScript"]
                 <input @bind="_model.RunOneTimeFullStartupSyncBatch" />
             </label>
-        </div>
+        }
+        else
+        {
+            <div class="section-head">
+                <h3 class="subhead">@L.F("cfg.fullSyncCommands", _model.FullSyncCommands.Count)</h3>
+                <button class="btn btn-sm" @onclick="AddFullSyncCommand">@L["cfg.addCommand"]</button>
+            </div>
+            @if (_model.FullSyncCommands.Count == 0)
+            {
+                <p class="muted">@L["cfg.noFullSyncCommands"]</p>
+            }
+            @for (var i = 0; i < _model.FullSyncCommands.Count; i++)
+            {
+                var ci = i;
+                <div class="path-card">
+                    <div class="path-card-head">
+                        <strong>@L.F("cfg.commandN", ci + 1)</strong>
+                        <button class="btn btn-sm btn-danger" @onclick="() => RemoveFullSyncCommand(ci)">@L["cfg.remove"]</button>
+                    </div>
+                    <RcloneCommandEditor Command="_model.FullSyncCommands[ci]" ShowIncludeFrom="false" />
+                </div>
+            }
+        }
     </section>
 
     <section class="form-section">
@@ -131,75 +177,7 @@
                 }
                 else
                 {
-                    var cmd = GetCommand(index);
-                    <div class="form-grid">
-                        <label>@L["cfg.rclonePath"]
-                            <input @bind="cmd.RclonePath" />
-                        </label>
-                        <label>@L["cfg.cmdCommand"]
-                            <select @bind="cmd.Command">
-                                <option value="sync">sync</option>
-                                <option value="copy">copy</option>
-                                <option value="move">move</option>
-                            </select>
-                        </label>
-                        <label>@L["cfg.cmdSource"]
-                            <input @bind="cmd.Source" />
-                        </label>
-                        <label>@L["cfg.cmdDest"]
-                            <input @bind="cmd.Destination" />
-                        </label>
-                        <label>--config
-                            <input @bind="cmd.ConfigFile" />
-                        </label>
-                        <label>--bwlimit
-                            <input @bind="cmd.BwLimit" />
-                        </label>
-                        <label>--transfers
-                            <input type="number" min="0" @bind="cmd.Transfers" />
-                        </label>
-                        <label>--checkers
-                            <input type="number" min="0" @bind="cmd.Checkers" />
-                        </label>
-                        <label>--retries
-                            <input type="number" min="0" @bind="cmd.Retries" />
-                        </label>
-                        <label>--retries-sleep
-                            <input @bind="cmd.RetriesSleep" />
-                        </label>
-                        <label>--backup-dir
-                            <input @bind="cmd.BackupDir" />
-                        </label>
-                        <label>--suffix
-                            <input @bind="cmd.Suffix" />
-                        </label>
-                        <label>--log-file
-                            <input @bind="cmd.LogFile" />
-                        </label>
-                        <label>--log-level
-                            <input @bind="cmd.LogLevel" />
-                        </label>
-                    </div>
-                    <div class="form-grid">
-                        <label class="checkbox">
-                            <input type="checkbox" @bind="cmd.IncludeFrom" /> @L["cfg.includeFromInject"]
-                        </label>
-                        <label class="checkbox">
-                            <input type="checkbox" @bind="cmd.IncludeFromStdin" disabled="@(!cmd.IncludeFrom)" /> @L["cfg.includeFromStdin"]
-                        </label>
-                        <label class="checkbox">
-                            <input type="checkbox" @bind="cmd.CreateEmptySrcDirs" /> --create-empty-src-dirs
-                        </label>
-                    </div>
-                    <label>@L["cfg.extraArgs"]
-                        <textarea rows="2" @bind="cmd.ExtraArgs"></textarea>
-                    </label>
-                    <div class="cmd-preview">
-                        <span class="muted">@L["cfg.preview"]</span>
-                        <code class="cmd-line">@RcloneCommandBuilder.BuildPreview(cmd, cmd.IncludeFromStdin ? "-" : _model.Path[index].RcloneFilesFromPath)</code>
-                        <span class="muted">@L["cfg.runtimeVars"]
-                            <code>{datetime}</code> <code>{date}</code> <code>{time}</code> <code>{year}</code></span>
-                    </div>
+                    <RcloneCommandEditor Command="GetCommand(index)" IncludeFromPath="@_model.Path[index].RcloneFilesFromPath" />
                 }
 
                 <label>@L["cfg.exclude"]
@@ -229,10 +207,39 @@
         _model = Clone(ConfigService.Current);
         _model.Path ??= new List<PathDTO>();
         _model.UpdateRclone ??= new UpdateRcloneDTO();
+        _model.FullSyncCommands ??= new List<RcloneCommandDTO>();
         _excludeRaw = _model.Path
             .Select(p => string.Join("\n", p.ExcludeContains ?? new List<string>()))
             .ToList();
+        _selectedLevels = ParseLevels(_model.LogLevel);
         _errors.Clear();
+    }
+
+    private static readonly string[] LogLevels =
+        { "Trace", "Debug", "Information", "Warning", "Error", "Critical", "Always" };
+
+    private HashSet<string> _selectedLevels = new(StringComparer.OrdinalIgnoreCase);
+
+    private static HashSet<string> ParseLevels(string value)
+    {
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            foreach (var part in value.Split(new[] { '|', ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var canonical = LogLevels.FirstOrDefault(l => string.Equals(l, part.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (canonical != null)
+                    set.Add(canonical);
+            }
+        }
+        return set;
+    }
+
+    private void ToggleLevel(string level, bool on)
+    {
+        if (on) _selectedLevels.Add(level);
+        else _selectedLevels.Remove(level);
+        _model.LogLevel = string.Join("|", LogLevels.Where(_selectedLevels.Contains));
     }
 
     private void AddPath()
@@ -246,6 +253,12 @@
         _model.Path.RemoveAt(index);
         _excludeRaw.RemoveAt(index);
     }
+
+    private void AddFullSyncCommand()
+        => _model.FullSyncCommands.Add(new RcloneCommandDTO { IncludeFrom = false, Command = "sync" });
+
+    private void RemoveFullSyncCommand(int index)
+        => _model.FullSyncCommands.RemoveAt(index);
 
     // Lazily create the managed command so the fields/preview can bind even when the loaded
     // config had Managed mode with no command, or right after switching to Managed.
@@ -365,8 +378,15 @@
             && !TimeSpan.TryParse(_model.RunStartupScriptEveryDayAt, out _))
             _errors.Add(L["cfg.vTime"]);
 
-        if (_model.RunOneTimeFullStartupSync && string.IsNullOrWhiteSpace(_model.RunOneTimeFullStartupSyncBatch))
-            _errors.Add(L["cfg.vStartupScript"]);
+        // Full sync at startup needs something to run: a script (Script mode) or at least one
+        // managed command (Managed mode).
+        if (_model.RunOneTimeFullStartupSync)
+        {
+            if (_model.FullSyncMode == SyncMode.Script && string.IsNullOrWhiteSpace(_model.RunOneTimeFullStartupSyncBatch))
+                _errors.Add(L["cfg.vStartupScript"]);
+            else if (_model.FullSyncMode == SyncMode.Managed && (_model.FullSyncCommands == null || _model.FullSyncCommands.Count == 0))
+                _errors.Add(L["cfg.vFullSyncCommands"]);
+        }
 
         if (_model.UpdateRclone.Update && string.IsNullOrWhiteSpace(_model.UpdateRclone.RclonePath))
             _errors.Add(L["cfg.vRclonePath"]);
