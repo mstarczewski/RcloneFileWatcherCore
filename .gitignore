@@ -349,3 +349,6 @@ Examples/
 
 # GUI auth state (enabled flag + hashed password) — never publish
 gui-auth.json
+
+# Keep the shared web GUI publish profile (overrides the global *.pubxml ignore)
+!RcloneFileWatcherCore.Web/Properties/PublishProfiles/DebianFolder.pubxml
