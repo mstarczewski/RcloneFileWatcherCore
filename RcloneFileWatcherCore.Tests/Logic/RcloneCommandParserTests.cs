@@ -53,7 +53,7 @@ mkdir -p /var/log/rclone
             Assert.AreEqual("/src", cmd.Source);
             Assert.AreEqual("remote:dst", cmd.Destination);
             Assert.AreEqual(6, cmd.Transfers);
-            StringAssert.Contains(cmd.ExtraArgs, "--use-mmap");
+            Assert.IsTrue(cmd.UseMmap); // known boolean flag, mapped to an explicit option
             StringAssert.Contains(cmd.ExtraArgs, "--exclude");
             StringAssert.Contains(cmd.ExtraArgs, "Publiczny/**");
         }

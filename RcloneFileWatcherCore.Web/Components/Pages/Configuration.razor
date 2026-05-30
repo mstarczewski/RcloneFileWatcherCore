@@ -8,7 +8,9 @@
 @using RcloneFileWatcherCore.DTO
 @using RcloneFileWatcherCore.Enums
 @using RcloneFileWatcherCore.Logic.Rclone
+@using Microsoft.JSInterop
 @inject IConfigService ConfigService
+@inject IJSRuntime JS
 @inject Loc L
 
 <PageTitle>@L["nav.config"] — RcloneFileWatcher</PageTitle>
@@ -200,8 +202,20 @@
     private List<string> _errors = new();
     private string _message;
     private bool _success;
+    private bool _scrollPending;
 
     protected override void OnInitialized() => LoadFromCurrent();
+
+    // After an action sets a status message (which renders at the top of the page), scroll the
+    // window up so the result is visible — the Save/Import buttons sit far below the fold.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_scrollPending)
+        {
+            _scrollPending = false;
+            await JS.InvokeVoidAsync("scrollTo", new { top = 0, behavior = "smooth" });
+        }
+    }
 
     private void LoadFromCurrent()
     {
@@ -265,6 +279,7 @@
     // becomes its own managed command, then the mode flips to Managed for review.
     private void ImportFullSyncFromScript()
     {
+        _scrollPending = true;
         var batch = _model.RunOneTimeFullStartupSyncBatch;
         if (string.IsNullOrWhiteSpace(batch) || !File.Exists(batch))
         {
@@ -314,6 +329,7 @@
 
     private void ImportFromScript(int index)
     {
+        _scrollPending = true;
         var batch = _model.Path[index].RcloneBatch;
         if (string.IsNullOrWhiteSpace(batch) || !File.Exists(batch))
         {
@@ -338,6 +354,7 @@
 
     private void ImportAllFromScripts()
     {
+        _scrollPending = true;
         int imported = 0, skipped = 0;
         for (var i = 0; i < _model.Path.Count; i++)
         {
@@ -366,6 +383,7 @@
 
     private void Reset()
     {
+        _scrollPending = true;
         LoadFromCurrent();
         _message = L["cfg.restored"];
         _success = true;
@@ -373,6 +391,7 @@
 
     private void Save()
     {
+        _scrollPending = true;
         // Fold the textarea contents back into ExcludeContains lists.
         for (var i = 0; i < _model.Path.Count; i++)
         {

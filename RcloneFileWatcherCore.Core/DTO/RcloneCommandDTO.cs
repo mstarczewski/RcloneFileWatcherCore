@@ -31,6 +31,14 @@ namespace RcloneFileWatcherCore.DTO
         public string BackupDir { get; set; }
         public string Suffix { get; set; }
         public bool CreateEmptySrcDirs { get; set; }
+
+        /// <summary>
+        /// --use-mmap: allocate transfer buffers via mmap instead of the Go heap, so the memory
+        /// is returned to the OS promptly after transfers. Lowers and stabilises memory use,
+        /// useful on memory-constrained servers.
+        /// </summary>
+        public bool UseMmap { get; set; }
+
         public string LogFile { get; set; }
         public string LogLevel { get; set; }
 

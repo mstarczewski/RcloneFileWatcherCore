@@ -36,6 +36,8 @@ namespace RcloneFileWatcherCore.Logic.Rclone
             AddFlag(args, "--suffix", command.Suffix);
             if (command.CreateEmptySrcDirs)
                 args.Add("--create-empty-src-dirs");
+            if (command.UseMmap)
+                args.Add("--use-mmap");
             AddFlag(args, "--log-file", command.LogFile);
             AddFlag(args, "--log-level", command.LogLevel);
 

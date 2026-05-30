@@ -65,6 +65,9 @@
         <label class="checkbox">
             <input type="checkbox" @bind="Command.CreateEmptySrcDirs" /> --create-empty-src-dirs
         </label>
+        <label class="checkbox">
+            <input type="checkbox" @bind="Command.UseMmap" /> --use-mmap
+        </label>
     </div>
     <label>@L["cfg.extraArgs"]
         <textarea rows="2" @bind="Command.ExtraArgs"></textarea>

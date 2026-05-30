@@ -102,6 +102,7 @@ namespace RcloneFileWatcherCore.Logic.Rclone
                     case "--log-file": cmd.LogFile = value; break;
                     case "--log-level": cmd.LogLevel = value; break;
                     case "--create-empty-src-dirs": cmd.CreateEmptySrcDirs = true; break;
+                    case "--use-mmap": cmd.UseMmap = true; break;
                     default:
                         extra.Add(flag);
                         if (value != null)
