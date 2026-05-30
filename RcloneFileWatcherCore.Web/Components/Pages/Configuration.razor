@@ -183,6 +183,9 @@
                     <div class="cmd-preview">
                         <span class="muted">Podgląd komendy:</span>
                         <code>@RcloneCommandBuilder.BuildPreview(cmd, _model.Path[index].RcloneFilesFromPath)</code>
+                        <span class="muted">Zmienne podstawiane przy uruchomieniu:
+                            <code>{datetime}</code> <code>{date}</code> <code>{time}</code> <code>{year}</code>
+                            (np. <code>--suffix " [{datetime}]"</code>, <code>--backup-dir remote:Archiwum/{year}</code>)</span>
                     </div>
                 }
 

@@ -44,11 +44,15 @@ jobs:
       - name: Publish app
         run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
 
+      - name: Publish Web GUI
+        run: dotnet publish RcloneFileWatcherCore.Web/RcloneFileWatcherCore.Web.csproj -c Release -r win-x64 --self-contained false -o "${{ github.workspace }}\publish-web-win"
+
       - name: Prepare release artifacts
         run: |
           mkdir "${{ github.workspace }}\artifacts"
           copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
           Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app-win-x64.zip"
+          Compress-Archive -Path "${{ github.workspace }}\publish-web-win\*" -DestinationPath "${{ github.workspace }}\artifacts\gui-win-x64.zip"
 
       - name: Extract version from assembly
         id: extract_version
@@ -114,11 +118,15 @@ jobs:
       - name: Publish app
         run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r linux-x64 --self-contained false /p:PublishSingleFile=true
 
+      - name: Publish Web GUI
+        run: dotnet publish RcloneFileWatcherCore.Web/RcloneFileWatcherCore.Web.csproj -c Release -r linux-x64 --self-contained false -o publish-web-linux
+
       - name: Prepare release artifacts
         run: |
           mkdir -p artifacts
           cp RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/* artifacts/
-          cd artifacts && tar -czf app-linux-x64.tar.gz * && cd ..
+          cd artifacts && tar -czf app-linux-x64.tar.gz --exclude=app-linux-x64.tar.gz * && cd ..
+          tar -czf artifacts/gui-linux-x64.tar.gz -C publish-web-linux .
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -155,11 +163,15 @@ jobs:
             `${{ needs.build-windows.outputs.version }}`
             
             ### Downloads
-            - **Windows x64**: `app-win-x64.zip`
-            - **Linux x64**: `app-linux-x64.tar.gz`
+            - **Windows x64 (console)**: `app-win-x64.zip`
+            - **Windows x64 (web GUI)**: `gui-win-x64.zip`
+            - **Linux x64 (console)**: `app-linux-x64.tar.gz`
+            - **Linux x64 (web GUI)**: `gui-linux-x64.tar.gz`
           files: |
             windows-artifacts/*.exe
             windows-artifacts/app-win-x64.zip
+            windows-artifacts/gui-win-x64.zip
             linux-artifacts/app-linux-x64.tar.gz
+            linux-artifacts/gui-linux-x64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

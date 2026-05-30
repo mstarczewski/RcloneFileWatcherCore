@@ -1,3 +1,5 @@
+@inject IConfiguration Config
+
 <div class="nav-brand">
     <span class="nav-logo">⟳</span> RcloneFileWatcher
 </div>
@@ -15,3 +17,12 @@
         <span class="nav-icon">📜</span> Logi
     </NavLink>
 </nav>
+
+@if (!string.IsNullOrWhiteSpace(Config["Gui:Password"]))
+{
+    <form method="post" action="/logout" class="nav-logout">
+        <button type="submit" class="nav-item nav-logout-btn">
+            <span class="nav-icon">🚪</span> Wyloguj
+        </button>
+    </form>
+}

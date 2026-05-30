@@ -3,6 +3,7 @@ using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
 using RcloneFileWatcherCore.Logic.Rclone;
 using System;
 using System.Diagnostics;
+using System.Linq;
 
 namespace RcloneFileWatcherCore.Logic.Services
 {
@@ -44,11 +45,15 @@ namespace RcloneFileWatcherCore.Logic.Services
             }
 
             var exe = string.IsNullOrWhiteSpace(command.RclonePath) ? "rclone" : command.RclonePath.Trim();
-            var arguments = RcloneCommandBuilder.BuildArguments(command, includeFromPath);
+            // Expand {datetime}/{year}/... once per run so --suffix/--backup-dir/--log-file get a
+            // consistent timestamp across all arguments of this invocation.
+            var now = DateTime.Now;
+            var arguments = RclonePlaceholders.Expand(
+                RcloneCommandBuilder.BuildArguments(command, includeFromPath), now);
 
             var startInfo = new ProcessStartInfo
             {
-                FileName = exe,
+                FileName = RclonePlaceholders.Expand(exe, now),
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -63,7 +68,10 @@ namespace RcloneFileWatcherCore.Logic.Services
                 process.OutputDataReceived += (s, e) => { if (e.Data != null) _logger.Log(Enums.LogLevel.Information, $"[rclone] {e.Data}"); };
                 process.ErrorDataReceived += (s, e) => { if (e.Data != null) _logger.Log(Enums.LogLevel.Information, $"[rclone] {e.Data}"); };
 
-                _logger.Log(Enums.LogLevel.Information, $"Starting rclone: {RcloneCommandBuilder.BuildPreview(command, includeFromPath)}");
+                var commandLine = string.Join(" ", new[] { startInfo.FileName }
+                    .Concat(arguments)
+                    .Select(a => a.Contains(' ') ? $"\"{a}\"" : a));
+                _logger.Log(Enums.LogLevel.Information, $"Starting rclone: {commandLine}");
                 process.Start();
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();

@@ -171,6 +171,12 @@ code {
     filter: brightness(1.08);
 }
 
+.btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: none;
+}
+
 .placeholder {
     background: var(--panel);
     border: 1px dashed var(--border);
@@ -390,4 +396,50 @@ textarea {
 .badge-accent {
     border-color: var(--accent);
     color: var(--accent);
+}
+
+.login-box {
+    max-width: 360px;
+    margin: 12vh auto;
+    padding: 1.75rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+.login-box h1 {
+    font-size: 1.3rem;
+    margin-top: 0;
+}
+
+.login-box label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.login-box input {
+    width: 100%;
+}
+
+.login-box .btn {
+    width: 100%;
+}
+
+.nav-logout {
+    margin: 0;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--border);
+}
+
+.nav-logout-btn {
+    width: 100%;
+    background: none;
+    border: none;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
 }

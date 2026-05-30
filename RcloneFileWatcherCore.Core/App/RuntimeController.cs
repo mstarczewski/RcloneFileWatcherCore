@@ -9,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace RcloneFileWatcherCore.App
 {
@@ -30,7 +31,13 @@ namespace RcloneFileWatcherCore.App
 
         private FileWatcherService _watcher;
         private Scheduler _scheduler;
+        private Dictionary<ProcessCode, IRcloneJobService> _processes;
         private bool _running;
+
+        public bool IsRunning
+        {
+            get { lock (_lock) { return _running; } }
+        }
 
         public RuntimeController(
             ILogger logger,
@@ -62,9 +69,42 @@ namespace RcloneFileWatcherCore.App
                 _watcher?.Stop();
                 _scheduler = null;
                 _watcher = null;
+                _processes = null;
                 _running = false;
                 _status.MarkWatcherStopped();
                 _logger.Log(LogLevel.Information, "Watcher stopped");
+            }
+        }
+
+        /// <summary>Run a one-off live sync now (off the caller's thread so the GUI stays responsive).</summary>
+        public void SyncNow() => RunJobInBackground(ProcessCode.SyncRclone, "Manual sync requested");
+
+        /// <summary>Run the full sync now (the configured full/startup sync batch).</summary>
+        public void FullSyncNow() => RunJobInBackground(ProcessCode.FullSyncRclone, "Manual full sync requested");
+
+        private void RunJobInBackground(ProcessCode code, string message)
+        {
+            Dictionary<ProcessCode, IRcloneJobService> processes;
+            ConfigDTO config;
+            lock (_lock)
+            {
+                if (!_running || _processes == null)
+                {
+                    _logger.Log(LogLevel.Warning, "Cannot run job: runtime is not running.");
+                    return;
+                }
+                processes = _processes;
+                config = _configService.Current;
+            }
+
+            if (processes.TryGetValue(code, out var job))
+            {
+                _logger.Log(LogLevel.Information, message);
+                Task.Run(() =>
+                {
+                    try { job.Execute(config); }
+                    catch (Exception ex) { _logger.Log(LogLevel.Error, "Manual job failed", ex); }
+                });
             }
         }
 
@@ -76,8 +116,9 @@ namespace RcloneFileWatcherCore.App
                     return;
 
                 var config = _configService.Current;
+                var processes = BuildProcesses(config);
                 var watcher = new FileWatcherService(_logger, _fileDTOs, config.Path);
-                var scheduler = new Scheduler(_logger, BuildProcesses(config), config);
+                var scheduler = new Scheduler(_logger, processes, config);
 
                 // Start the watcher first: if a watched path is invalid it throws here, before
                 // we publish the instances or enable the timer. Initial start lets it propagate
@@ -86,6 +127,7 @@ namespace RcloneFileWatcherCore.App
 
                 _watcher = watcher;
                 _scheduler = scheduler;
+                _processes = processes;
                 _status.MarkWatcherStarted(config.Path?.Select(p => p.WatchingPath).ToList() ?? new List<string>());
                 _logger.Log(LogLevel.Information, "Watcher started");
 

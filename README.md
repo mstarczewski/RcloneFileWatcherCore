@@ -30,6 +30,7 @@ The configuration is optimized for Windows and Linux. On Windows, it is recommen
 - Optional full-sync at startup
 - Optional full-sync at specified time of day
 - Optionally auto-updates rclone binary
+- Optional cross-platform **web GUI** (Blazor Server) for configuration, status, live logs and rclone command building
 
 ---
 
@@ -184,6 +185,58 @@ for /f "delims=" %%b in (
 "D:\Rclone\rclone.exe" sync e:\Shared pcloudcryptDaily:Shared --bwlimit 25M:off --transfers=32 --checkers=60 --backup-dir pcloudcryptDaily:$Archive\Shared\%year% --suffix " [%datetime%]" --create-empty-src-dirs --log-file=d:\log_shared.txt --log-level INFO
 @endlocal
 ```
+
+---
+
+## Web GUI (optional)
+
+A cross-platform **web GUI** (ASP.NET Core Blazor Server) is available alongside the console app.
+It shares the same core, reads/writes the same `RcloneFileWatcherCoreConfig.cfg`, and applies
+configuration changes **without restarting** (the watcher is reloaded live).
+
+### Running
+
+```bash
+dotnet run --project RcloneFileWatcherCore.Web
+# or run the published build:
+dotnet RcloneFileWatcherCore.Web.dll
+```
+
+Then open <http://localhost:5005>. The GUI looks for `RcloneFileWatcherCoreConfig.cfg` in the
+working directory; if it is missing it starts empty so you can create the configuration from the
+browser.
+
+### Pages
+
+* **Pulpit (Dashboard)** – live status (watcher state, queued changes, watched paths) and controls:
+  start/stop the watcher, run a sync now, run a full sync now.
+* **Konfiguracja (Configuration)** – edit all parameters and the watched-paths list, then save &
+  apply live.
+* **Rclone** – per-path preview of the effective rclone command line.
+* **Logi (Logs)** – live log stream with a level filter.
+
+### rclone invocation: script vs managed
+
+Each watched path runs rclone in one of two modes:
+
+* **Script** – the original behavior: run the `RcloneBatch` `.bat`/`.sh` file (which must contain
+  the full rclone command, including `--include-from`).
+* **Managed** – build the rclone command from fields in the GUI; the app runs rclone directly and
+  injects `--include-from` automatically. Date/time placeholders are substituted at run time:
+  `{datetime}` → `yyyy-MM-dd-HH-mm-ss`, `{date}`, `{time}`, `{year}` — e.g.
+  `--suffix " [{datetime}]"`, `--backup-dir remote:$Archive/Shared/{year}`.
+
+### Settings (`appsettings.json` / environment)
+
+* `Gui:Urls` – bind address. Defaults to `http://localhost:5005`. Use e.g. `http://0.0.0.0:5005`
+  to expose on the LAN.
+* `Gui:Password` – when set, the GUI requires login. Leave empty for no authentication
+  (localhost use). When exposing on a network, set a password and prefer running behind an
+  HTTPS reverse proxy.
+* `Gui:OpenBrowser` – `true` to open the browser on startup (desktop convenience; keep `false`
+  for headless/service deployments).
+
+---
 
 ### Additional Notes
 
