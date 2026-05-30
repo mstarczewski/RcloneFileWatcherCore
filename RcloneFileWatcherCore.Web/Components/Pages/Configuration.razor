@@ -88,6 +88,7 @@
             <label>@L["cfg.fullSyncScript"]
                 <input @bind="_model.RunOneTimeFullStartupSyncBatch" />
             </label>
+            <button class="btn btn-sm" @onclick="ImportFullSyncFromScript">@L["cfg.importThisScript"]</button>
         }
         else
         {
@@ -259,6 +260,42 @@
 
     private void RemoveFullSyncCommand(int index)
         => _model.FullSyncCommands.RemoveAt(index);
+
+    // Import a full-sync batch file that chains several rclone calls. Each rclone invocation
+    // becomes its own managed command, then the mode flips to Managed for review.
+    private void ImportFullSyncFromScript()
+    {
+        var batch = _model.RunOneTimeFullStartupSyncBatch;
+        if (string.IsNullOrWhiteSpace(batch) || !File.Exists(batch))
+        {
+            _message = L.F("cfg.scriptNotFound", string.IsNullOrWhiteSpace(batch) ? L["cfg.noPathPlaceholder"] : batch);
+            _success = false;
+            return;
+        }
+
+        try
+        {
+            var commands = RcloneCommandParser.ParseMany(File.ReadAllText(batch));
+            if (commands.Count == 0)
+            {
+                _message = L.F("cfg.importedFullSyncNone", batch);
+                _success = false;
+                return;
+            }
+
+            foreach (var c in commands)
+                c.IncludeFrom = false; // full sync doesn't inject a watched --include-from list
+            _model.FullSyncCommands = commands;
+            _model.FullSyncMode = SyncMode.Managed;
+            _message = L.F("cfg.importedFullSync", commands.Count);
+            _success = true;
+        }
+        catch (Exception ex)
+        {
+            _message = L.F("cfg.importError", ex.Message);
+            _success = false;
+        }
+    }
 
     // Lazily create the managed command so the fields/preview can bind even when the loaded
     // config had Managed mode with no command, or right after switching to Managed.

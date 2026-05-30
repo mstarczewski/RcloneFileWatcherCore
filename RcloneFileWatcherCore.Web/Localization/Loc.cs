@@ -196,6 +196,8 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["cfg.scriptNotFound"] = "Script not found: {0}",
             ["cfg.noPathPlaceholder"] = "(no path)",
             ["cfg.importError"] = "Import error: {0}",
+            ["cfg.importedFullSync"] = "Imported {0} command(s) from the full-sync script to managed. Review the fields and save.",
+            ["cfg.importedFullSyncNone"] = "No rclone command found in the script: {0}",
             ["cfg.importedMany"] = "Imported {0} script(s) to managed. Review the fields and save.",
             ["cfg.importedManySkipped"] = "Imported {0} script(s) to managed, skipped {1} (missing file or error). Review the fields and save.",
             ["cfg.vInterval"] = "Sync interval must be at least 1 second.",

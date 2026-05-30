@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RcloneFileWatcherCore.Logic.Rclone;
+using System.Linq;
 
 namespace RcloneFileWatcherCore.Tests.Logic
 {
@@ -55,6 +56,47 @@ mkdir -p /var/log/rclone
             StringAssert.Contains(cmd.ExtraArgs, "--use-mmap");
             StringAssert.Contains(cmd.ExtraArgs, "--exclude");
             StringAssert.Contains(cmd.ExtraArgs, "Publiczny/**");
+        }
+
+        // A full-sync batch chaining several rclone calls (one section per remote/path).
+        private const string MultiSectionScript = """
+@echo off
+rem --- section 1: shared ---
+rclone.exe sync e:\Shared pcloud:Shared --transfers=6 --create-empty-src-dirs
+rem --- section 2: documents ---
+rclone.exe copy e:\Docs pcloud:Docs --bwlimit 10M
+rem --- section 3: archive ---
+rclone.exe move e:\Old pcloud:Archive --retries 5
+""";
+
+        [TestMethod]
+        public void ParseMany_SplitsEveryRcloneInvocation()
+        {
+            var commands = RcloneCommandParser.ParseMany(MultiSectionScript);
+
+            Assert.AreEqual(3, commands.Count);
+
+            Assert.AreEqual("sync", commands[0].Command);
+            Assert.AreEqual("e:\\Shared", commands[0].Source);
+            Assert.AreEqual("pcloud:Shared", commands[0].Destination);
+            Assert.AreEqual(6, commands[0].Transfers);
+            Assert.IsTrue(commands[0].CreateEmptySrcDirs);
+
+            Assert.AreEqual("copy", commands[1].Command);
+            Assert.AreEqual("pcloud:Docs", commands[1].Destination);
+            Assert.AreEqual("10M", commands[1].BwLimit);
+
+            Assert.AreEqual("move", commands[2].Command);
+            Assert.AreEqual("pcloud:Archive", commands[2].Destination);
+            Assert.AreEqual(5, commands[2].Retries);
+        }
+
+        [TestMethod]
+        public void ParseMany_NoRcloneLine_ReturnsEmpty()
+        {
+            var commands = RcloneCommandParser.ParseMany("@echo off\necho nothing here\npause");
+
+            Assert.AreEqual(0, commands.Count);
         }
 
         [TestMethod]

@@ -34,11 +34,24 @@ namespace RcloneFileWatcherCore.Logic.Rclone
 
         public static RcloneCommandDTO Parse(string scriptText)
         {
-            var cmd = new RcloneCommandDTO { IncludeFrom = false, Command = string.Empty, RclonePath = string.Empty };
             var line = FindRcloneLine(scriptText);
             if (line == null)
-                return cmd;
+                return new RcloneCommandDTO { IncludeFrom = false, Command = string.Empty, RclonePath = string.Empty };
 
+            return ParseLine(line);
+        }
+
+        /// <summary>
+        /// Parse every rclone invocation found in the script into its own command. Useful for
+        /// full-sync batch files that chain several rclone calls (one section per remote/path).
+        /// Returns an empty list when no rclone line is found.
+        /// </summary>
+        public static List<RcloneCommandDTO> ParseMany(string scriptText)
+            => FindRcloneLines(scriptText).Select(ParseLine).ToList();
+
+        private static RcloneCommandDTO ParseLine(string line)
+        {
+            var cmd = new RcloneCommandDTO { IncludeFrom = false, Command = string.Empty, RclonePath = string.Empty };
             var tokens = Tokenize(line);
             if (tokens.Count == 0)
                 return cmd;
@@ -107,9 +120,12 @@ namespace RcloneFileWatcherCore.Logic.Rclone
         }
 
         private static string FindRcloneLine(string scriptText)
+            => FindRcloneLines(scriptText).FirstOrDefault();
+
+        private static IEnumerable<string> FindRcloneLines(string scriptText)
         {
             if (string.IsNullOrWhiteSpace(scriptText))
-                return null;
+                yield break;
 
             var joined = Regex.Replace(scriptText, @"\\\s*\r?\n", " ");
             foreach (var raw in joined.Split('\n'))
@@ -118,9 +134,8 @@ namespace RcloneFileWatcherCore.Logic.Rclone
                 if (line.Length == 0 || line.StartsWith("#") || line.StartsWith("@") || line.StartsWith("rem ", StringComparison.OrdinalIgnoreCase))
                     continue;
                 if (Regex.IsMatch(line, @"rclone(\.exe)?\b", RegexOptions.IgnoreCase) && SubCommand.IsMatch(line))
-                    return line;
+                    yield return line;
             }
-            return null;
         }
 
         private static bool IsCommandWord(string token) =>

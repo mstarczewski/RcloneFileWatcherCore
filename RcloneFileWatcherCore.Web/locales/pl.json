@@ -95,6 +95,8 @@
   "cfg.scriptNotFound": "Nie znaleziono skryptu: {0}",
   "cfg.noPathPlaceholder": "(brak ścieżki)",
   "cfg.importError": "Błąd importu: {0}",
+  "cfg.importedFullSync": "Zaimportowano {0} komend(y) ze skryptu pełnej synchronizacji do trybu Managed. Sprawdź pola i zapisz.",
+  "cfg.importedFullSyncNone": "Nie znaleziono komendy rclone w skrypcie: {0}",
   "cfg.importedMany": "Zaimportowano {0} skrypt(ów) do trybu Managed. Sprawdź pola i zapisz.",
   "cfg.importedManySkipped": "Zaimportowano {0} skrypt(ów) do trybu Managed, pominięto {1} (brak pliku lub błąd). Sprawdź pola i zapisz.",
   "cfg.vInterval": "Interwał synchronizacji musi być co najmniej 1 sekundę.",
