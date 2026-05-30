@@ -85,6 +85,14 @@ main {
 
 .content {
     padding: 1.5rem 2rem;
+    /* Full window width (minus the sidebar) so logs/commands use all the space on wide/4K
+       displays. Forms stay readable via their own max-width below. */
+}
+
+/* Keep editable forms from stretching uncomfortably wide on very large monitors, while logs,
+   command previews and tables still use the full width. */
+.form-section,
+.placeholder {
     max-width: 1100px;
 }
 
