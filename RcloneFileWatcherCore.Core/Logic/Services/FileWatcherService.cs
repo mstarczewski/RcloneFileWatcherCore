@@ -7,7 +7,7 @@ using System.IO;
 
 namespace RcloneFileWatcherCore.Logic.Services
 {
-    class FileWatcherService
+    public class FileWatcherService
     {
         private const int BufferSize = 65536;
         private readonly ILogger _logger;

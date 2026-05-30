@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RcloneFileWatcherCore\RcloneFileWatcherCore.csproj" />
+    <ProjectReference Include="..\RcloneFileWatcherCore.Core\RcloneFileWatcherCore.Core.csproj" />
   </ItemGroup>
 
 </Project>

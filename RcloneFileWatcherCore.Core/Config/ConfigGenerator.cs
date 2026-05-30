@@ -7,8 +7,8 @@ using System.Text.Json;
 
 namespace RcloneFileWatcherCore.Config
 {
-    // JSON example config generator 
-    internal class ConfigGenerator
+    // JSON example config generator
+    public class ConfigGenerator
     {
         private readonly string _fileName;
         public ConfigGenerator(string fileName)

@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace RcloneFileWatcherCore.Config
 {
-    internal class ConfigLoader
+    public class ConfigLoader
     {
         private readonly string _configFileName;
         private readonly ILogger _logger;
@@ -18,7 +18,7 @@ namespace RcloneFileWatcherCore.Config
             _logger = logger;
         }
 
-        internal ConfigDTO LoadConfig()
+        public ConfigDTO LoadConfig()
         {
             if (!File.Exists(_configFileName))
             {
