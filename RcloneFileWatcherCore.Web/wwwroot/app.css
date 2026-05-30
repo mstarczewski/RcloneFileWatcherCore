@@ -270,6 +270,14 @@ select:focus, input:focus, textarea:focus {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.section-head-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .form-grid {
@@ -369,8 +377,8 @@ textarea {
     gap: 0.3rem;
 }
 
-.cmd-line,
-.cmd-preview code {
+.cmd-line {
+    display: block;
     background: #15161a;
     border: 1px solid var(--border);
     border-radius: 6px;

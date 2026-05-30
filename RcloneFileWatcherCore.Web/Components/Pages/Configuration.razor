@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using System.Collections.Generic
 @using System.Linq
+@using System.IO
 @using System.Text.Json
 @using RcloneFileWatcherCore.Config
 @using RcloneFileWatcherCore.DTO
@@ -81,7 +82,10 @@
     <section class="form-section">
         <div class="section-head">
             <h2>Obserwowane ścieżki (@_model.Path.Count)</h2>
-            <button class="btn btn-sm" @onclick="AddPath">+ Dodaj ścieżkę</button>
+            <div class="section-head-actions">
+                <button class="btn btn-sm btn-secondary" @onclick="ImportAllFromScripts">Importuj skrypty → Managed</button>
+                <button class="btn btn-sm" @onclick="AddPath">+ Dodaj ścieżkę</button>
+            </div>
         </div>
 
         @if (_model.Path.Count == 0)
@@ -117,6 +121,9 @@
                     <label>Skrypt rclone (.bat/.sh)
                         <input @bind="_model.Path[index].RcloneBatch" />
                     </label>
+                    <button class="btn btn-sm btn-secondary" @onclick="() => ImportFromScript(index)">
+                        Importuj ten skrypt do trybu Managed
+                    </button>
                 }
                 else
                 {
@@ -182,7 +189,7 @@
                     </label>
                     <div class="cmd-preview">
                         <span class="muted">Podgląd komendy:</span>
-                        <code>@RcloneCommandBuilder.BuildPreview(cmd, _model.Path[index].RcloneFilesFromPath)</code>
+                        <code class="cmd-line">@RcloneCommandBuilder.BuildPreview(cmd, _model.Path[index].RcloneFilesFromPath)</code>
                         <span class="muted">Zmienne podstawiane przy uruchomieniu:
                             <code>{datetime}</code> <code>{date}</code> <code>{time}</code> <code>{year}</code>
                             (np. <code>--suffix " [{datetime}]"</code>, <code>--backup-dir remote:Archiwum/{year}</code>)</span>
@@ -247,6 +254,58 @@
     {
         if (_model.Path[index].SyncMode == SyncMode.Managed)
             GetCommand(index);
+    }
+
+    private void ImportFromScript(int index)
+    {
+        var batch = _model.Path[index].RcloneBatch;
+        if (string.IsNullOrWhiteSpace(batch) || !File.Exists(batch))
+        {
+            _message = $"Nie znaleziono skryptu: {(string.IsNullOrWhiteSpace(batch) ? "(brak ścieżki)" : batch)}";
+            _success = false;
+            return;
+        }
+
+        try
+        {
+            _model.Path[index].RcloneCommand = RcloneCommandParser.Parse(File.ReadAllText(batch));
+            _model.Path[index].SyncMode = SyncMode.Managed;
+            _message = $"Zaimportowano komendę ze skryptu dla ścieżki #{index + 1}. Sprawdź pola i zapisz.";
+            _success = true;
+        }
+        catch (Exception ex)
+        {
+            _message = $"Błąd importu: {ex.Message}";
+            _success = false;
+        }
+    }
+
+    private void ImportAllFromScripts()
+    {
+        int imported = 0, skipped = 0;
+        for (var i = 0; i < _model.Path.Count; i++)
+        {
+            var batch = _model.Path[i].RcloneBatch;
+            if (!string.IsNullOrWhiteSpace(batch) && File.Exists(batch))
+            {
+                try
+                {
+                    _model.Path[i].RcloneCommand = RcloneCommandParser.Parse(File.ReadAllText(batch));
+                    _model.Path[i].SyncMode = SyncMode.Managed;
+                    imported++;
+                }
+                catch { skipped++; }
+            }
+            else
+            {
+                skipped++;
+            }
+        }
+
+        _message = skipped > 0
+            ? $"Zaimportowano {imported} skrypt(ów) do trybu Managed, pominięto {skipped} (brak pliku lub błąd). Sprawdź pola i zapisz."
+            : $"Zaimportowano {imported} skrypt(ów) do trybu Managed. Sprawdź pola i zapisz.";
+        _success = imported > 0;
     }
 
     private void Reset()
