@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>RcloneFileWatcherCore.Web</RootNamespace>
+    <AssemblyName>RcloneFileWatcherCore.Web</AssemblyName>
+    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+    <Product>RcloneFileWatcherCore</Product>
+    <Company>mstarczewski</Company>
+    <Authors>mstarczewski</Authors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RcloneFileWatcherCore.Core\RcloneFileWatcherCore.Core.csproj" />
+  </ItemGroup>
+
+</Project>

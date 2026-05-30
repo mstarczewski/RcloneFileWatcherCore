@@ -1,0 +1,64 @@
+@page "/"
+@rendermode InteractiveServer
+@using RcloneFileWatcherCore.Status
+@inject IStatusService StatusService
+
+<PageTitle>Pulpit — RcloneFileWatcher</PageTitle>
+
+<h1>Pulpit</h1>
+
+@if (_status is null)
+{
+    <p>Ładowanie statusu…</p>
+}
+else
+{
+    <div class="cards">
+        <div class="card">
+            <div class="card-label">Watcher</div>
+            <div class="card-value @(_status.WatcherRunning ? "ok" : "warn")">
+                @(_status.WatcherRunning ? "Działa" : "Zatrzymany")
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-label">Zmiany w kolejce</div>
+            <div class="card-value">@_status.PendingChanges</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Obserwowane ścieżki</div>
+            <div class="card-value">@(_status.WatchedPaths?.Count ?? 0)</div>
+        </div>
+        <div class="card">
+            <div class="card-label">Uruchomiono (UTC)</div>
+            <div class="card-value small">@(_status.StartedAtUtc?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")</div>
+        </div>
+    </div>
+
+    <p class="muted">@_status.Version</p>
+
+    @if (_status.WatchedPaths is { Count: > 0 })
+    {
+        <h2>Obserwowane katalogi</h2>
+        <ul class="path-list">
+            @foreach (var path in _status.WatchedPaths)
+            {
+                <li><code>@path</code></li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p class="muted">Brak skonfigurowanych ścieżek. Dodaj je w sekcji
+            <NavLink href="config">Konfiguracja</NavLink> (wkrótce — Faza 2).</p>
+    }
+
+    <button class="btn" @onclick="Refresh">Odśwież</button>
+}
+
+@code {
+    private AppStatus _status;
+
+    protected override void OnInitialized() => _status = StatusService.GetStatus();
+
+    private void Refresh() => _status = StatusService.GetStatus();
+}

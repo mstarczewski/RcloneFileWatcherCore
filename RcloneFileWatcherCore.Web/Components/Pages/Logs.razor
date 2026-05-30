@@ -1,0 +1,28 @@
+@page "/logs"
+@rendermode InteractiveServer
+@using RcloneFileWatcherCore.Infrastructure.Logging
+@inject BroadcastLogWriter LogBuffer
+
+<PageTitle>Logi — RcloneFileWatcher</PageTitle>
+
+<h1>Logi</h1>
+
+<p class="muted">Ostatnie wpisy z bufora w pamięci. Strumień na żywo (SignalR) dodamy w Fazie 2.</p>
+
+<button class="btn" @onclick="Refresh">Odśwież</button>
+
+<pre class="log-view">@_text</pre>
+
+@code {
+    private string _text = string.Empty;
+
+    protected override void OnInitialized() => Load();
+
+    private void Refresh() => Load();
+
+    private void Load()
+    {
+        var lines = LogBuffer.GetRecent();
+        _text = lines.Count == 0 ? "(brak wpisów)" : string.Join("\n", lines);
+    }
+}
