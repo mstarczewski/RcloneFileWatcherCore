@@ -38,6 +38,9 @@
   "dash.msgStartFailed": "Nie udało się uruchomić: {0}",
   "dash.msgSyncRequested": "Zlecono synchronizację (sprawdź Logi).",
   "dash.msgFullSyncRequested": "Zlecono pełną synchronizację (sprawdź Logi).",
+  "dash.jobRunning": "W toku… (zobacz Logi)",
+  "dash.jobDone": "Zakończono.",
+  "dash.jobFailed": "Niepowodzenie — zobacz Logi.",
 
   "cfg.intro": "Zmiany zapisywane są do {0} i stosowane na żywo (watcher zostaje przeładowany). Zmiana LogPath wymaga restartu aplikacji.",
   "cfg.general": "Ogólne",

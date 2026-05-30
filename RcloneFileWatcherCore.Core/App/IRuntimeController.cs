@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace RcloneFileWatcherCore.App
 {
     public interface IRuntimeController
@@ -5,7 +7,7 @@ namespace RcloneFileWatcherCore.App
         bool IsRunning { get; }
         void Start();
         void Stop();
-        void SyncNow();
-        void FullSyncNow();
+        Task<bool> SyncNowAsync();
+        Task<bool> FullSyncNowAsync();
     }
 }

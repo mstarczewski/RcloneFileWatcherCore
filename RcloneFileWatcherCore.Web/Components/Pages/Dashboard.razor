@@ -56,14 +56,14 @@ else
     <div class="actions">
         @if (_status.WatcherRunning)
         {
-            <button class="btn btn-secondary" @onclick="StopWatcher"><Icon Name="stop" Size="16" /> @L["dash.stopWatcher"]</button>
+            <button class="btn btn-secondary" @onclick="StopWatcher" disabled="@_jobBusy"><Icon Name="stop" Size="16" /> @L["dash.stopWatcher"]</button>
         }
         else
         {
             <button class="btn" @onclick="StartWatcher"><Icon Name="play" Size="16" /> @L["dash.startWatcher"]</button>
         }
-        <button class="btn" @onclick="SyncNow" disabled="@(!_status.WatcherRunning)"><Icon Name="refresh" Size="16" /> @L["dash.syncNow"]</button>
-        <button class="btn" @onclick="FullSyncNow" disabled="@(!_status.WatcherRunning)"><Icon Name="refresh" Size="16" /> @L["dash.fullSync"]</button>
+        <button class="btn" @onclick="SyncNow" disabled="@(!_status.WatcherRunning || _jobBusy)"><Icon Name="refresh" Size="16" /> @L["dash.syncNow"]</button>
+        <button class="btn" @onclick="FullSyncNow" disabled="@(!_status.WatcherRunning || _jobBusy)"><Icon Name="refresh" Size="16" /> @L["dash.fullSync"]</button>
     </div>
 
     @if (_status.WatchedPaths is { Count: > 0 })
@@ -137,18 +137,36 @@ else
         _status = StatusService.GetStatus();
     }
 
-    private void SyncNow()
-    {
-        Controller.SyncNow();
-        _message = L["dash.msgSyncRequested"];
-        _success = true;
-    }
+    private bool _jobBusy;
 
-    private void FullSyncNow()
+    private Task SyncNow() => RunManualJob(() => Controller.SyncNowAsync());
+
+    private Task FullSyncNow() => RunManualJob(() => Controller.FullSyncNowAsync());
+
+    private async Task RunManualJob(Func<Task<bool>> action)
     {
-        Controller.FullSyncNow();
-        _message = L["dash.msgFullSyncRequested"];
+        if (_jobBusy)
+            return;
+
+        _jobBusy = true;
+        _message = L["dash.jobRunning"];
         _success = true;
+        try
+        {
+            var ok = await action();
+            _message = ok ? L["dash.jobDone"] : L["dash.jobFailed"];
+            _success = ok;
+        }
+        catch (Exception ex)
+        {
+            _message = ex.Message;
+            _success = false;
+        }
+        finally
+        {
+            _jobBusy = false;
+            _status = StatusService.GetStatus();
+        }
     }
 
     public void Dispose()

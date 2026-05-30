@@ -76,13 +76,14 @@ namespace RcloneFileWatcherCore.App
             }
         }
 
-        /// <summary>Run a one-off live sync now (off the caller's thread so the GUI stays responsive).</summary>
-        public void SyncNow() => RunJobInBackground(ProcessCode.SyncRclone, "Manual sync requested");
+        /// <summary>Run a one-off live sync now; the task completes when rclone finishes so the
+        /// GUI can keep its button disabled until then.</summary>
+        public Task<bool> SyncNowAsync() => RunJobAsync(ProcessCode.SyncRclone, "Manual sync requested");
 
-        /// <summary>Run the full sync now (the configured full/startup sync batch).</summary>
-        public void FullSyncNow() => RunJobInBackground(ProcessCode.FullSyncRclone, "Manual full sync requested");
+        /// <summary>Run the full sync now; the task completes when rclone finishes.</summary>
+        public Task<bool> FullSyncNowAsync() => RunJobAsync(ProcessCode.FullSyncRclone, "Manual full sync requested");
 
-        private void RunJobInBackground(ProcessCode code, string message)
+        private Task<bool> RunJobAsync(ProcessCode code, string message)
         {
             Dictionary<ProcessCode, IRcloneJobService> processes;
             ConfigDTO config;
@@ -91,7 +92,7 @@ namespace RcloneFileWatcherCore.App
                 if (!_running || _processes == null)
                 {
                     _logger.Log(LogLevel.Warning, "Cannot run job: runtime is not running.");
-                    return;
+                    return Task.FromResult(false);
                 }
                 processes = _processes;
                 config = _configService.Current;
@@ -100,12 +101,13 @@ namespace RcloneFileWatcherCore.App
             if (processes.TryGetValue(code, out var job))
             {
                 _logger.Log(LogLevel.Information, message);
-                Task.Run(() =>
+                return Task.Run(() =>
                 {
-                    try { job.Execute(config); }
-                    catch (Exception ex) { _logger.Log(LogLevel.Error, "Manual job failed", ex); }
+                    try { return job.Execute(config); }
+                    catch (Exception ex) { _logger.Log(LogLevel.Error, "Manual job failed", ex); return false; }
                 });
             }
+            return Task.FromResult(false);
         }
 
         private void StartInternal(bool runStartupSync)

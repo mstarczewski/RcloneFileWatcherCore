@@ -139,6 +139,9 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["dash.msgStartFailed"] = "Could not start: {0}",
             ["dash.msgSyncRequested"] = "Sync requested (check Logs).",
             ["dash.msgFullSyncRequested"] = "Full sync requested (check Logs).",
+            ["dash.jobRunning"] = "Running… (see Logs)",
+            ["dash.jobDone"] = "Done.",
+            ["dash.jobFailed"] = "Failed — see Logs.",
 
             ["cfg.intro"] = "Changes are saved to {0} and applied live (the watcher is reloaded). Changing LogPath requires a restart.",
             ["cfg.general"] = "General",
