@@ -5,6 +5,8 @@
 @using System.Text.Json
 @using RcloneFileWatcherCore.Config
 @using RcloneFileWatcherCore.DTO
+@using RcloneFileWatcherCore.Enums
+@using RcloneFileWatcherCore.Logic.Rclone
 @inject IConfigService ConfigService
 
 <PageTitle>Konfiguracja — RcloneFileWatcher</PageTitle>
@@ -102,10 +104,88 @@
                     <label>Plik --include-from
                         <input @bind="_model.Path[index].RcloneFilesFromPath" />
                     </label>
+                    <label>Tryb uruchomienia rclone
+                        <select @bind="_model.Path[index].SyncMode" @bind:after="() => OnModeChanged(index)">
+                            <option value="@SyncMode.Script">Skrypt (.bat/.sh)</option>
+                            <option value="@SyncMode.Managed">Managed (komenda)</option>
+                        </select>
+                    </label>
+                </div>
+
+                @if (_model.Path[index].SyncMode == SyncMode.Script)
+                {
                     <label>Skrypt rclone (.bat/.sh)
                         <input @bind="_model.Path[index].RcloneBatch" />
                     </label>
-                </div>
+                }
+                else
+                {
+                    var cmd = GetCommand(index);
+                    <div class="form-grid">
+                        <label>Ścieżka do rclone
+                            <input @bind="cmd.RclonePath" />
+                        </label>
+                        <label>Komenda
+                            <select @bind="cmd.Command">
+                                <option value="sync">sync</option>
+                                <option value="copy">copy</option>
+                                <option value="move">move</option>
+                            </select>
+                        </label>
+                        <label>Źródło
+                            <input @bind="cmd.Source" />
+                        </label>
+                        <label>Cel (remote:ścieżka)
+                            <input @bind="cmd.Destination" />
+                        </label>
+                        <label>--config
+                            <input @bind="cmd.ConfigFile" />
+                        </label>
+                        <label>--bwlimit
+                            <input @bind="cmd.BwLimit" />
+                        </label>
+                        <label>--transfers
+                            <input type="number" min="0" @bind="cmd.Transfers" />
+                        </label>
+                        <label>--checkers
+                            <input type="number" min="0" @bind="cmd.Checkers" />
+                        </label>
+                        <label>--retries
+                            <input type="number" min="0" @bind="cmd.Retries" />
+                        </label>
+                        <label>--retries-sleep
+                            <input @bind="cmd.RetriesSleep" />
+                        </label>
+                        <label>--backup-dir
+                            <input @bind="cmd.BackupDir" />
+                        </label>
+                        <label>--suffix
+                            <input @bind="cmd.Suffix" />
+                        </label>
+                        <label>--log-file
+                            <input @bind="cmd.LogFile" />
+                        </label>
+                        <label>--log-level
+                            <input @bind="cmd.LogLevel" />
+                        </label>
+                    </div>
+                    <div class="form-grid">
+                        <label class="checkbox">
+                            <input type="checkbox" @bind="cmd.IncludeFrom" /> Wstrzyknij --include-from
+                        </label>
+                        <label class="checkbox">
+                            <input type="checkbox" @bind="cmd.CreateEmptySrcDirs" /> --create-empty-src-dirs
+                        </label>
+                    </div>
+                    <label>Dodatkowe argumenty (jeden token na linię)
+                        <textarea rows="2" @bind="cmd.ExtraArgs"></textarea>
+                    </label>
+                    <div class="cmd-preview">
+                        <span class="muted">Podgląd komendy:</span>
+                        <code>@RcloneCommandBuilder.BuildPreview(cmd, _model.Path[index].RcloneFilesFromPath)</code>
+                    </div>
+                }
+
                 <label>Wykluczenia (jedno na linię)
                     <textarea rows="3" @bind="_excludeRaw[index]"></textarea>
                 </label>
@@ -149,6 +229,21 @@
     {
         _model.Path.RemoveAt(index);
         _excludeRaw.RemoveAt(index);
+    }
+
+    // Lazily create the managed command so the fields/preview can bind even when the loaded
+    // config had Managed mode with no command, or right after switching to Managed.
+    private RcloneCommandDTO GetCommand(int index)
+    {
+        var p = _model.Path[index];
+        p.RcloneCommand ??= new RcloneCommandDTO { Source = p.WatchingPath };
+        return p.RcloneCommand;
+    }
+
+    private void OnModeChanged(int index)
+    {
+        if (_model.Path[index].SyncMode == SyncMode.Managed)
+            GetCommand(index);
     }
 
     private void Reset()

@@ -25,17 +25,21 @@ namespace RcloneFileWatcherCore.Logic.Services
             _fileSystem = fileSystem;
         }
 
-        public string PrepareFilesToSync(string sourcePath, long lastTimeStamp)
+        /// <summary>
+        /// Writes the --include-from file for the given source path and reports whether any
+        /// changes were collected (so the caller can decide whether to run rclone — as a script
+        /// or a managed command). Returns false when the path is unknown or nothing changed.
+        /// </summary>
+        public bool PrepareFilesToSync(string sourcePath, long lastTimeStamp)
         {
             _logger.Log(LogLevel.Information, $"Prepare files to sync {sourcePath}");
             var rclonePath = _syncPathDTO.FirstOrDefault(x => x.WatchingPath == sourcePath);
             if (rclonePath == null)
             {
                 _logger.Log(LogLevel.Error, $"No Path found for source Path: {sourcePath}");
-                return null;
+                return false;
             }
 
-            string rcloneBatch = rclonePath.RcloneBatch;
             var filesToWrite = new HashSet<string>();
             int removeCount = 0;
 
@@ -70,10 +74,10 @@ namespace RcloneFileWatcherCore.Logic.Services
             catch (Exception ex)
             {
                 _logger.Log(LogLevel.Information, $"Error writing files", ex);
-                return null;
+                return false;
             }
 
-            return removeCount > 0 ? rcloneBatch : null;
+            return removeCount > 0;
         }
 
         private static string NormalizePath(string path)

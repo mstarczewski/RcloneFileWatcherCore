@@ -355,3 +355,39 @@ textarea {
     margin: 0;
     padding-left: 1.2rem;
 }
+
+.cmd-preview {
+    margin-top: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.cmd-line,
+.cmd-preview code {
+    background: #15161a;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    font-family: "Cascadia Code", "Consolas", monospace;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: #cfe3ff;
+}
+
+.badge {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+}
+
+.badge-accent {
+    border-color: var(--accent);
+    color: var(--accent);
+}

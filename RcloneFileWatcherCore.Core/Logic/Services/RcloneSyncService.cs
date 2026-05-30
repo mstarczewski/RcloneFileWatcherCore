@@ -36,10 +36,27 @@ namespace RcloneFileWatcherCore.Logic.Services
 
                 foreach (var sourcePath in sourcePathList)
                 {
-                    string rcloneBatch = _filePrepare.PrepareFilesToSync(sourcePath, lastTimeStamp);
-                    if (!string.IsNullOrWhiteSpace(sourcePath) && !string.IsNullOrWhiteSpace(rcloneBatch))
+                    if (string.IsNullOrWhiteSpace(sourcePath))
+                        continue;
+
+                    bool hadChanges = _filePrepare.PrepareFilesToSync(sourcePath, lastTimeStamp);
+                    if (!hadChanges)
+                        continue;
+
+                    var path = configDTO.Path?.FirstOrDefault(p => p.WatchingPath == sourcePath);
+                    if (path == null)
+                        continue;
+
+                    if (path.SyncMode == Enums.SyncMode.Managed)
                     {
-                        _rcloneRunner.ExecuteBatch(rcloneBatch);
+                        if (path.RcloneCommand != null)
+                            _rcloneRunner.ExecuteCommand(path.RcloneCommand, path.RcloneFilesFromPath);
+                        else
+                            _logger.Log(Enums.LogLevel.Error, $"Managed sync mode set but no rclone command configured for {sourcePath}");
+                    }
+                    else if (!string.IsNullOrWhiteSpace(path.RcloneBatch))
+                    {
+                        _rcloneRunner.ExecuteBatch(path.RcloneBatch);
                     }
                 }
                 return true;

@@ -131,7 +131,7 @@ namespace RcloneFileWatcherCore.Tests.Services
         }
 
         [TestMethod]
-        public void PrepareFilesToSync_WhenNoPathFound_ReturnsNull()
+        public void PrepareFilesToSync_WhenNoPathFound_ReturnsFalse()
         {
             // Arrange
             var sourcePath = "d:\\NonExistentPath";
@@ -140,7 +140,7 @@ namespace RcloneFileWatcherCore.Tests.Services
             var result = _service.PrepareFilesToSync(sourcePath, 0);
 
             // Assert
-            Assert.IsNull(result);
+            Assert.IsFalse(result);
             _loggerMock.Verify(x => x.Log(LogLevel.Error, It.IsAny<string>(), null), Times.Once);
         }
     }

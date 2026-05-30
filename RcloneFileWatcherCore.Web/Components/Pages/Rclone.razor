@@ -1,12 +1,64 @@
 @page "/rclone"
+@rendermode InteractiveServer
+@using RcloneFileWatcherCore.Config
+@using RcloneFileWatcherCore.DTO
+@using RcloneFileWatcherCore.Enums
+@using RcloneFileWatcherCore.Logic.Rclone
+@implements IDisposable
+@inject IConfigService ConfigService
 
 <PageTitle>Rclone — RcloneFileWatcher</PageTitle>
 
 <h1>Rclone</h1>
 
-<div class="placeholder">
-    <p>Kreator komendy rclone (tryb „managed”: budowanie wywołania z pól formularza, z
-       automatycznym <code>--include-from</code>) oraz podgląd generowanej linii poleceń
-       pojawią się w <strong>Fazie 3</strong>. Obsługa istniejących skryptów
-       <code>.bat</code>/<code>.sh</code> zostanie zachowana.</p>
-</div>
+<p class="muted">Podgląd wywołań rclone dla każdej obserwowanej ścieżki. Edycja odbywa się w sekcji
+    <NavLink href="config">Konfiguracja</NavLink>. W trybie <em>Managed</em> komenda jest budowana
+    z pól (z automatycznym <code>--include-from</code>); w trybie <em>Skrypt</em> uruchamiany jest
+    podany plik <code>.bat</code>/<code>.sh</code>.</p>
+
+@{
+    var cfg = ConfigService.Current;
+}
+
+@if (cfg.Path is null || cfg.Path.Count == 0)
+{
+    <p class="muted">Brak skonfigurowanych ścieżek.</p>
+}
+else
+{
+    @foreach (var path in cfg.Path)
+    {
+        <div class="path-card">
+            <div class="path-card-head">
+                <strong><code>@path.WatchingPath</code></strong>
+                <span class="badge @(path.SyncMode == SyncMode.Managed ? "badge-accent" : "")">
+                    @(path.SyncMode == SyncMode.Managed ? "Managed" : "Skrypt")
+                </span>
+            </div>
+
+            @if (path.SyncMode == SyncMode.Managed)
+            {
+                @if (path.RcloneCommand is not null)
+                {
+                    <pre class="cmd-line">@RcloneCommandBuilder.BuildPreview(path.RcloneCommand, path.RcloneFilesFromPath)</pre>
+                }
+                else
+                {
+                    <p class="muted">Tryb Managed bez skonfigurowanej komendy.</p>
+                }
+            }
+            else
+            {
+                <p class="muted">Skrypt: <code>@(string.IsNullOrWhiteSpace(path.RcloneBatch) ? "— (nie ustawiono)" : path.RcloneBatch)</code></p>
+            }
+        </div>
+    }
+}
+
+@code {
+    protected override void OnInitialized() => ConfigService.Changed += OnConfigChanged;
+
+    private void OnConfigChanged(ConfigDTO config) => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => ConfigService.Changed -= OnConfigChanged;
+}
