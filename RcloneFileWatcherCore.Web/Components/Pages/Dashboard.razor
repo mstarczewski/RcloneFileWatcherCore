@@ -54,16 +54,23 @@ else
     }
 
     <div class="actions">
+        @{
+            var rcloneBusy = _jobBusy || _status.RcloneRunning;
+        }
         @if (_status.WatcherRunning)
         {
-            <button class="btn btn-secondary" @onclick="StopWatcher" disabled="@_jobBusy"><Icon Name="stop" Size="16" /> @L["dash.stopWatcher"]</button>
+            <button class="btn btn-secondary" @onclick="StopWatcher" disabled="@rcloneBusy"><Icon Name="stop" Size="16" /> @L["dash.stopWatcher"]</button>
         }
         else
         {
             <button class="btn" @onclick="StartWatcher"><Icon Name="play" Size="16" /> @L["dash.startWatcher"]</button>
         }
-        <button class="btn" @onclick="SyncNow" disabled="@(!_status.WatcherRunning || _jobBusy)"><Icon Name="refresh" Size="16" /> @L["dash.syncNow"]</button>
-        <button class="btn" @onclick="FullSyncNow" disabled="@(!_status.WatcherRunning || _jobBusy)"><Icon Name="refresh" Size="16" /> @L["dash.fullSync"]</button>
+        <button class="btn" @onclick="SyncNow" disabled="@(!_status.WatcherRunning || rcloneBusy)"><Icon Name="refresh" Size="16" /> @L["dash.syncNow"]</button>
+        <button class="btn" @onclick="FullSyncNow" disabled="@(!_status.WatcherRunning || rcloneBusy)"><Icon Name="refresh" Size="16" /> @L["dash.fullSync"]</button>
+        @if (rcloneBusy)
+        {
+            <button class="btn btn-abort" @onclick="StopRclone"><Icon Name="stop" Size="16" /> @L["dash.stopRclone"]</button>
+        }
     </div>
 
     @if (_status.WatchedPaths is { Count: > 0 })
@@ -138,6 +145,7 @@ else
     }
 
     private bool _jobBusy;
+    private bool _stopRequested;
 
     private Task SyncNow() => RunManualJob(() => Controller.SyncNowAsync());
 
@@ -149,13 +157,22 @@ else
             return;
 
         _jobBusy = true;
+        _stopRequested = false;
         _message = L["dash.jobRunning"];
         _success = true;
         try
         {
             var ok = await action();
-            _message = ok ? L["dash.jobDone"] : L["dash.jobFailed"];
-            _success = ok;
+            if (_stopRequested)
+            {
+                _message = L["dash.rcloneStopped"];
+                _success = true;
+            }
+            else
+            {
+                _message = ok ? L["dash.jobDone"] : L["dash.jobFailed"];
+                _success = ok;
+            }
         }
         catch (Exception ex)
         {
@@ -167,6 +184,15 @@ else
             _jobBusy = false;
             _status = StatusService.GetStatus();
         }
+    }
+
+    private void StopRclone()
+    {
+        _stopRequested = true;
+        Controller.StopRclone();
+        _message = L["dash.rcloneStopping"];
+        _success = true;
+        _status = StatusService.GetStatus();
     }
 
     public void Dispose()

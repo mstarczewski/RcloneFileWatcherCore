@@ -3,6 +3,7 @@ using RcloneFileWatcherCore.Enums;
 using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
 using RcloneFileWatcherCore.Logic.Rclone;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -15,10 +16,35 @@ namespace RcloneFileWatcherCore.Logic.Services
     public class RcloneRunService : IBatchExecutionService
     {
         private readonly ILogger _logger;
+        // Tracks rclone/script processes currently running so the GUI can abort them.
+        private readonly ConcurrentDictionary<int, Process> _running = new ConcurrentDictionary<int, Process>();
 
         public RcloneRunService(ILogger logger)
         {
             _logger = logger;
+        }
+
+        /// <summary>True while at least one rclone/script process is running.</summary>
+        public bool AnyRunning => !_running.IsEmpty;
+
+        /// <summary>Hard-stops every running rclone/script process (and its children).</summary>
+        public void CancelRunning()
+        {
+            foreach (var process in _running.Values)
+            {
+                try
+                {
+                    if (!process.HasExited)
+                    {
+                        _logger.Log(LogLevel.Information, $"Stopping rclone process (PID {process.Id})");
+                        process.Kill(entireProcessTree: true);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Log(LogLevel.Error, "Error stopping rclone process", ex);
+                }
+            }
         }
 
         public bool ExecuteBatch(string batchPath)
@@ -36,9 +62,17 @@ namespace RcloneFileWatcherCore.Logic.Services
                 process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 _logger.Log(LogLevel.Information, $"Starting Rclone with batch file: {batchPath}");
                 process.Start();
-                process.WaitForExit();
-                _logger.Log(LogLevel.Information, $"Rclone process exited with code: {process.ExitCode}");
-                return process.ExitCode == 0;
+                _running[process.Id] = process;
+                try
+                {
+                    process.WaitForExit();
+                    _logger.Log(LogLevel.Information, $"Rclone process exited with code: {process.ExitCode}");
+                    return process.ExitCode == 0;
+                }
+                finally
+                {
+                    _running.TryRemove(process.Id, out _);
+                }
             }
         }
 
@@ -74,6 +108,7 @@ namespace RcloneFileWatcherCore.Logic.Services
             foreach (var arg in arguments)
                 startInfo.ArgumentList.Add(arg);
 
+            int pid = -1;
             try
             {
                 using var process = new Process { StartInfo = startInfo };
@@ -85,6 +120,8 @@ namespace RcloneFileWatcherCore.Logic.Services
                     .Select(a => a.Contains(' ') ? $"\"{a}\"" : a));
                 _logger.Log(LogLevel.Information, $"Starting rclone: {commandLine}");
                 process.Start();
+                pid = process.Id;
+                _running[pid] = process;
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
 
@@ -124,6 +161,11 @@ namespace RcloneFileWatcherCore.Logic.Services
             {
                 _logger.Log(LogLevel.Error, $"Failed to run rclone ({exe})", ex);
                 return false;
+            }
+            finally
+            {
+                if (pid >= 0)
+                    _running.TryRemove(pid, out _);
             }
         }
 

@@ -24,7 +24,7 @@ namespace RcloneFileWatcherCore.Tests.App
             var fileSystem = new FileSystemService();
             var runner = new Mock<IBatchExecutionService>().Object;
             var fileDTOs = new ConcurrentDictionary<string, FileDTO>();
-            var status = new StatusService(fileDTOs);
+            var status = new StatusService(fileDTOs, runner);
 
             var watchDir = Directory.CreateTempSubdirectory().FullName;
             var configFile = Path.GetTempFileName();

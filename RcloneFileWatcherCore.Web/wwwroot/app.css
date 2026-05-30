@@ -421,6 +421,10 @@ textarea {
     font-size: 0.8rem;
 }
 
+.btn-abort {
+    background: #c0493f;
+}
+
 .alert {
     border-radius: 6px;
     padding: 0.7rem 1rem;

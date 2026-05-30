@@ -41,6 +41,9 @@
   "dash.jobRunning": "W toku… (zobacz Logi)",
   "dash.jobDone": "Zakończono.",
   "dash.jobFailed": "Niepowodzenie — zobacz Logi.",
+  "dash.stopRclone": "Zatrzymaj rclone",
+  "dash.rcloneStopping": "Zatrzymywanie rclone…",
+  "dash.rcloneStopped": "rclone zatrzymany.",
 
   "cfg.intro": "Zmiany zapisywane są do {0} i stosowane na żywo (watcher zostaje przeładowany). Zmiana LogPath wymaga restartu aplikacji.",
   "cfg.general": "Ogólne",

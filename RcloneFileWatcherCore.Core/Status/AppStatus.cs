@@ -10,5 +10,6 @@ namespace RcloneFileWatcherCore.Status
         public bool WatcherRunning { get; set; }
         public IReadOnlyList<string> WatchedPaths { get; set; } = Array.Empty<string>();
         public int PendingChanges { get; set; }
+        public bool RcloneRunning { get; set; }
     }
 }

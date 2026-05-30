@@ -9,5 +9,6 @@ namespace RcloneFileWatcherCore.App
         void Stop();
         Task<bool> SyncNowAsync();
         Task<bool> FullSyncNowAsync();
+        void StopRclone();
     }
 }

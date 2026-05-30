@@ -83,6 +83,13 @@ namespace RcloneFileWatcherCore.App
         /// <summary>Run the full sync now; the task completes when rclone finishes.</summary>
         public Task<bool> FullSyncNowAsync() => RunJobAsync(ProcessCode.FullSyncRclone, "Manual full sync requested");
 
+        /// <summary>Hard-stop the rclone process(es) currently running (manual or scheduled).</summary>
+        public void StopRclone()
+        {
+            _logger.Log(LogLevel.Information, "Stopping rclone (requested from GUI)");
+            _rcloneRunner.CancelRunning();
+        }
+
         private Task<bool> RunJobAsync(ProcessCode code, string message)
         {
             Dictionary<ProcessCode, IRcloneJobService> processes;

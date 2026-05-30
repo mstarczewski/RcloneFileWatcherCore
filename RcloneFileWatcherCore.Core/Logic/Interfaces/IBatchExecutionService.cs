@@ -13,4 +13,10 @@ public interface IBatchExecutionService
     /// instead of a file. rclone's output is streamed to the log.
     /// </summary>
     bool ExecuteCommand(RcloneCommandDTO command, string includeFromPath, IReadOnlyList<string> includeFromStdin = null);
+
+    /// <summary>True while at least one rclone/script process is running.</summary>
+    bool AnyRunning { get; }
+
+    /// <summary>Hard-stops every running rclone/script process.</summary>
+    void CancelRunning();
 }

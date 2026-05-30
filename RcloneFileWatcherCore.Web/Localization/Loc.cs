@@ -142,6 +142,9 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["dash.jobRunning"] = "Running… (see Logs)",
             ["dash.jobDone"] = "Done.",
             ["dash.jobFailed"] = "Failed — see Logs.",
+            ["dash.stopRclone"] = "Stop rclone",
+            ["dash.rcloneStopping"] = "Stopping rclone…",
+            ["dash.rcloneStopped"] = "rclone stopped.",
 
             ["cfg.intro"] = "Changes are saved to {0} and applied live (the watcher is reloaded). Changing LogPath requires a restart.",
             ["cfg.general"] = "General",

@@ -9,14 +9,16 @@ namespace RcloneFileWatcherCore.Status
     public class StatusService : IStatusService
     {
         private readonly ConcurrentDictionary<string, FileDTO> _fileDTOs;
+        private readonly IBatchExecutionService _rcloneRunner;
         private readonly object _lock = new object();
         private DateTime? _startedAtUtc;
         private bool _watcherRunning;
         private IReadOnlyList<string> _watchedPaths = Array.Empty<string>();
 
-        public StatusService(ConcurrentDictionary<string, FileDTO> fileDTOs)
+        public StatusService(ConcurrentDictionary<string, FileDTO> fileDTOs, IBatchExecutionService rcloneRunner)
         {
             _fileDTOs = fileDTOs;
+            _rcloneRunner = rcloneRunner;
         }
 
         public AppStatus GetStatus()
@@ -29,7 +31,8 @@ namespace RcloneFileWatcherCore.Status
                     StartedAtUtc = _startedAtUtc,
                     WatcherRunning = _watcherRunning,
                     WatchedPaths = _watchedPaths,
-                    PendingChanges = _fileDTOs.Count
+                    PendingChanges = _fileDTOs.Count,
+                    RcloneRunning = _rcloneRunner.AnyRunning
                 };
             }
         }
