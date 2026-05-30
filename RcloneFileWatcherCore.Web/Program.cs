@@ -19,7 +19,7 @@ builder.WebHost.UseUrls(builder.Configuration["Gui:Urls"] ?? "http://localhost:5
 var logger = new Logger();
 var config = new ConfigLoader(ConfigFileName, logger).LoadConfig() ?? new ConfigDTO();
 
-builder.Services.AddRcloneFileWatcherCore(config, logger);
+builder.Services.AddRcloneFileWatcherCore(config, ConfigFileName, logger);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 

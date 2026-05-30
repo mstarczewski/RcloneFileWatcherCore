@@ -7,7 +7,7 @@ using System.IO;
 
 namespace RcloneFileWatcherCore.Logic.Services
 {
-    public class FileWatcherService
+    public class FileWatcherService : IDisposable
     {
         private const int BufferSize = 65536;
         private readonly ILogger _logger;
@@ -115,5 +115,28 @@ namespace RcloneFileWatcherCore.Logic.Services
             }
             return path;
         }
+
+        /// <summary>
+        /// Tears down all FileSystemWatchers so the service can be started again with a fresh
+        /// configuration (used by the runtime reload path). Safe to call repeatedly.
+        /// </summary>
+        public void Stop()
+        {
+            foreach (var watcher in _fileWatcherList)
+            {
+                try
+                {
+                    watcher.EnableRaisingEvents = false;
+                    watcher.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    _logger.Log(Enums.LogLevel.Error, "Error disposing watcher", ex);
+                }
+            }
+            _fileWatcherList.Clear();
+        }
+
+        public void Dispose() => Stop();
     }
 }

@@ -45,7 +45,7 @@ namespace RcloneFileWatcherCore
                 // console output, matching the previous console behaviour. host.Run() blocks
                 // until Ctrl+C / SIGTERM, replacing the old AutoResetEvent.WaitOne().
                 var host = new HostBuilder()
-                    .ConfigureServices(services => services.AddRcloneFileWatcherCore(config, logger))
+                    .ConfigureServices(services => services.AddRcloneFileWatcherCore(config, ConfigFileName, logger))
                     .Build();
 
                 host.Run();

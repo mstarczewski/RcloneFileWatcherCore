@@ -1,11 +1,16 @@
 @page "/"
 @rendermode InteractiveServer
+@using System.Threading
 @using RcloneFileWatcherCore.Status
+@implements IDisposable
 @inject IStatusService StatusService
 
 <PageTitle>Pulpit — RcloneFileWatcher</PageTitle>
 
-<h1>Pulpit</h1>
+<div class="page-head">
+    <h1>Pulpit</h1>
+    <span class="live-dot" title="Aktualizacja na żywo"></span>
+</div>
 
 @if (_status is null)
 {
@@ -49,16 +54,43 @@ else
     else
     {
         <p class="muted">Brak skonfigurowanych ścieżek. Dodaj je w sekcji
-            <NavLink href="config">Konfiguracja</NavLink> (wkrótce — Faza 2).</p>
+            <NavLink href="config">Konfiguracja</NavLink>.</p>
     }
-
-    <button class="btn" @onclick="Refresh">Odśwież</button>
 }
 
 @code {
     private AppStatus _status;
+    private PeriodicTimer _timer;
+    private CancellationTokenSource _cts;
 
-    protected override void OnInitialized() => _status = StatusService.GetStatus();
+    protected override void OnInitialized()
+    {
+        _status = StatusService.GetStatus();
+        _cts = new CancellationTokenSource();
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+        _ = RunLoopAsync(_cts.Token);
+    }
 
-    private void Refresh() => _status = StatusService.GetStatus();
+    private async Task RunLoopAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (await _timer.WaitForNextTickAsync(ct))
+            {
+                _status = StatusService.GetStatus();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // component disposed
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _timer?.Dispose();
+        _cts?.Dispose();
+    }
 }

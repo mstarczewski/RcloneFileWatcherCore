@@ -13,6 +13,12 @@
 
 <body>
     <Routes />
+    <script>
+        window.rfwScrollToBottom = (id) => {
+            const el = document.getElementById(id);
+            if (el) { el.scrollTop = el.scrollHeight; }
+        };
+    </script>
     <script src="_framework/blazor.web.js"></script>
 </body>
 

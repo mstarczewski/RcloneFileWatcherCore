@@ -1,11 +1,228 @@
 @page "/config"
+@rendermode InteractiveServer
+@using System.Collections.Generic
+@using System.Linq
+@using System.Text.Json
+@using RcloneFileWatcherCore.Config
+@using RcloneFileWatcherCore.DTO
+@inject IConfigService ConfigService
 
 <PageTitle>Konfiguracja — RcloneFileWatcher</PageTitle>
 
 <h1>Konfiguracja</h1>
 
-<div class="placeholder">
-    <p>Edycja parametrów aplikacji (ścieżki, interwały, harmonogram, auto-update, logowanie)
-       z zapisem do <code>RcloneFileWatcherCoreConfig.cfg</code> i przeładowaniem bez restartu
-       pojawi się w <strong>Fazie 2</strong>.</p>
-</div>
+<p class="muted">Zmiany zapisywane są do <code>@ConfigService.FilePath</code> i stosowane na żywo
+    (watcher zostaje przeładowany). Zmiana <code>LogPath</code> wymaga restartu aplikacji.</p>
+
+@if (_message is not null)
+{
+    <div class="alert @(_success ? "alert-ok" : "alert-err")">@_message</div>
+}
+
+@if (_errors.Count > 0)
+{
+    <div class="alert alert-err">
+        <ul>
+            @foreach (var e in _errors)
+            {
+                <li>@e</li>
+            }
+        </ul>
+    </div>
+}
+
+@if (_model is not null)
+{
+    <section class="form-section">
+        <h2>Ogólne</h2>
+        <div class="form-grid">
+            <label>Poziom logowania
+                <input @bind="_model.LogLevel" placeholder="Information|Error" />
+            </label>
+            <label>Ścieżka logu (puste = konsola)
+                <input @bind="_model.LogPath" />
+            </label>
+            <label>Interwał synchronizacji (s)
+                <input type="number" min="1" @bind="_model.SyncIntervalSeconds" />
+            </label>
+            <label>Pełna synchronizacja codziennie o (HH:mm)
+                <input @bind="_model.RunStartupScriptEveryDayAt" placeholder="05:30" />
+            </label>
+        </div>
+        <div class="form-grid">
+            <label class="checkbox">
+                <input type="checkbox" @bind="_model.RunOneTimeFullStartupSync" />
+                Pełna synchronizacja przy starcie
+            </label>
+            <label>Skrypt pełnej synchronizacji
+                <input @bind="_model.RunOneTimeFullStartupSyncBatch" />
+            </label>
+        </div>
+    </section>
+
+    <section class="form-section">
+        <h2>Auto-aktualizacja rclone</h2>
+        <div class="form-grid">
+            <label class="checkbox">
+                <input type="checkbox" @bind="_model.UpdateRclone.Update" />
+                Włącz auto-aktualizację
+            </label>
+            <label>Ścieżka do rclone
+                <input @bind="_model.UpdateRclone.RclonePath" />
+            </label>
+            <label>Sprawdzaj co (godz.)
+                <input type="number" min="0" @bind="_model.UpdateRclone.CheckUpdateHours" />
+            </label>
+        </div>
+    </section>
+
+    <section class="form-section">
+        <div class="section-head">
+            <h2>Obserwowane ścieżki (@_model.Path.Count)</h2>
+            <button class="btn btn-sm" @onclick="AddPath">+ Dodaj ścieżkę</button>
+        </div>
+
+        @if (_model.Path.Count == 0)
+        {
+            <p class="muted">Brak ścieżek. Dodaj przynajmniej jedną, aby watcher coś obserwował.</p>
+        }
+
+        @for (var i = 0; i < _model.Path.Count; i++)
+        {
+            var index = i;
+            <div class="path-card">
+                <div class="path-card-head">
+                    <strong>Ścieżka #@(index + 1)</strong>
+                    <button class="btn btn-sm btn-danger" @onclick="() => RemovePath(index)">Usuń</button>
+                </div>
+                <div class="form-grid">
+                    <label>Katalog obserwowany
+                        <input @bind="_model.Path[index].WatchingPath" />
+                    </label>
+                    <label>Plik --include-from
+                        <input @bind="_model.Path[index].RcloneFilesFromPath" />
+                    </label>
+                    <label>Skrypt rclone (.bat/.sh)
+                        <input @bind="_model.Path[index].RcloneBatch" />
+                    </label>
+                </div>
+                <label>Wykluczenia (jedno na linię)
+                    <textarea rows="3" @bind="_excludeRaw[index]"></textarea>
+                </label>
+            </div>
+        }
+    </section>
+
+    <div class="actions">
+        <button class="btn" @onclick="Save">Zapisz i zastosuj</button>
+        <button class="btn btn-secondary" @onclick="Reset">Przywróć</button>
+    </div>
+}
+
+@code {
+    private ConfigDTO _model;
+    private List<string> _excludeRaw = new();
+    private List<string> _errors = new();
+    private string _message;
+    private bool _success;
+
+    protected override void OnInitialized() => LoadFromCurrent();
+
+    private void LoadFromCurrent()
+    {
+        _model = Clone(ConfigService.Current);
+        _model.Path ??= new List<PathDTO>();
+        _model.UpdateRclone ??= new UpdateRcloneDTO();
+        _excludeRaw = _model.Path
+            .Select(p => string.Join("\n", p.ExcludeContains ?? new List<string>()))
+            .ToList();
+        _errors.Clear();
+    }
+
+    private void AddPath()
+    {
+        _model.Path.Add(new PathDTO());
+        _excludeRaw.Add(string.Empty);
+    }
+
+    private void RemovePath(int index)
+    {
+        _model.Path.RemoveAt(index);
+        _excludeRaw.RemoveAt(index);
+    }
+
+    private void Reset()
+    {
+        LoadFromCurrent();
+        _message = "Przywrócono bieżącą konfigurację.";
+        _success = true;
+    }
+
+    private void Save()
+    {
+        // Fold the textarea contents back into ExcludeContains lists.
+        for (var i = 0; i < _model.Path.Count; i++)
+        {
+            _model.Path[i].ExcludeContains = _excludeRaw[i]
+                .Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => s.Length > 0)
+                .ToList();
+        }
+
+        if (!Validate())
+        {
+            _message = "Nie zapisano — popraw błędy poniżej.";
+            _success = false;
+            return;
+        }
+
+        try
+        {
+            ConfigService.Save(_model);
+            LoadFromCurrent();
+            _message = "Zapisano i zastosowano konfigurację.";
+            _success = true;
+        }
+        catch (Exception ex)
+        {
+            _message = $"Błąd zapisu: {ex.Message}";
+            _success = false;
+        }
+    }
+
+    private bool Validate()
+    {
+        _errors.Clear();
+
+        if (_model.SyncIntervalSeconds < 1)
+            _errors.Add("Interwał synchronizacji musi być >= 1 sekundy.");
+
+        if (!string.IsNullOrWhiteSpace(_model.RunStartupScriptEveryDayAt)
+            && !TimeSpan.TryParse(_model.RunStartupScriptEveryDayAt, out _))
+            _errors.Add("Godzina pełnej synchronizacji musi mieć format HH:mm (np. 05:30).");
+
+        if (_model.RunOneTimeFullStartupSync && string.IsNullOrWhiteSpace(_model.RunOneTimeFullStartupSyncBatch))
+            _errors.Add("Włączono pełną synchronizację przy starcie, ale nie podano skryptu.");
+
+        if (_model.UpdateRclone.Update && string.IsNullOrWhiteSpace(_model.UpdateRclone.RclonePath))
+            _errors.Add("Włączono auto-aktualizację rclone, ale nie podano ścieżki do rclone.");
+
+        if (_model.UpdateRclone.CheckUpdateHours < 0)
+            _errors.Add("Częstotliwość sprawdzania aktualizacji nie może być ujemna.");
+
+        for (var i = 0; i < _model.Path.Count; i++)
+        {
+            var p = _model.Path[i];
+            if (string.IsNullOrWhiteSpace(p.WatchingPath))
+                _errors.Add($"Ścieżka #{i + 1}: katalog obserwowany jest wymagany.");
+            if (string.IsNullOrWhiteSpace(p.RcloneFilesFromPath))
+                _errors.Add($"Ścieżka #{i + 1}: plik --include-from jest wymagany.");
+        }
+
+        return _errors.Count == 0;
+    }
+
+    private static ConfigDTO Clone(ConfigDTO src)
+        => JsonSerializer.Deserialize<ConfigDTO>(JsonSerializer.Serialize(src));
+}

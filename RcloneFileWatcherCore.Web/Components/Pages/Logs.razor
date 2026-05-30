@@ -1,28 +1,103 @@
 @page "/logs"
 @rendermode InteractiveServer
+@using System.Collections.Generic
+@using System.Linq
 @using RcloneFileWatcherCore.Infrastructure.Logging
+@implements IDisposable
 @inject BroadcastLogWriter LogBuffer
+@inject IJSRuntime JS
 
 <PageTitle>Logi — RcloneFileWatcher</PageTitle>
 
 <h1>Logi</h1>
 
-<p class="muted">Ostatnie wpisy z bufora w pamięci. Strumień na żywo (SignalR) dodamy w Fazie 2.</p>
+<div class="toolbar">
+    <label>
+        Poziom:
+        <select @bind="_levelFilter" @bind:after="ApplyFilter">
+            <option value="">Wszystkie</option>
+            @foreach (var level in Levels)
+            {
+                <option value="@level">@level</option>
+            }
+        </select>
+    </label>
+    <label class="checkbox">
+        <input type="checkbox" @bind="_autoScroll" /> Auto-przewijanie
+    </label>
+    <span class="spacer"></span>
+    <span class="muted">@_filtered.Count / @_lines.Count wpisów</span>
+    <button class="btn btn-sm" @onclick="Clear">Wyczyść widok</button>
+</div>
 
-<button class="btn" @onclick="Refresh">Odśwież</button>
-
-<pre class="log-view">@_text</pre>
+<pre class="log-view" id="logView">@string.Join("\n", _filtered)</pre>
 
 @code {
-    private string _text = string.Empty;
+    private static readonly string[] Levels =
+        { "Trace", "Debug", "Information", "Warning", "Error", "Critical", "Always" };
 
-    protected override void OnInitialized() => Load();
+    private const int MaxLines = 1000;
 
-    private void Refresh() => Load();
+    private readonly List<string> _lines = new();
+    private List<string> _filtered = new();
+    private string _levelFilter = "";
+    private bool _autoScroll = true;
 
-    private void Load()
+    protected override void OnInitialized()
     {
-        var lines = LogBuffer.GetRecent();
-        _text = lines.Count == 0 ? "(brak wpisów)" : string.Join("\n", lines);
+        _lines.AddRange(LogBuffer.GetRecent());
+        ApplyFilter();
+        LogBuffer.MessageWritten += OnMessage;
+    }
+
+    private void OnMessage(string message)
+    {
+        _ = InvokeAsync(() =>
+        {
+            _lines.Add(message);
+            if (_lines.Count > MaxLines)
+                _lines.RemoveRange(0, _lines.Count - MaxLines);
+
+            if (Matches(message))
+                _filtered.Add(message);
+
+            StateHasChanged();
+        });
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_autoScroll)
+            await JS.InvokeVoidAsync("rfwScrollToBottom", "logView");
+    }
+
+    private void ApplyFilter()
+    {
+        _filtered = _lines.Where(Matches).ToList();
+    }
+
+    private bool Matches(string line)
+    {
+        if (string.IsNullOrEmpty(_levelFilter))
+            return true;
+        return ExtractLevel(line) == _levelFilter;
+    }
+
+    private static string ExtractLevel(string line)
+    {
+        var open = line.IndexOf('[');
+        var close = open >= 0 ? line.IndexOf(']', open + 1) : -1;
+        return close > open ? line.Substring(open + 1, close - open - 1) : "";
+    }
+
+    private void Clear()
+    {
+        _lines.Clear();
+        _filtered.Clear();
+    }
+
+    public void Dispose()
+    {
+        LogBuffer.MessageWritten -= OnMessage;
     }
 }
