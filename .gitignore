@@ -338,3 +338,11 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+
+# Local production config/scripts kept for reference only — must never be published
+Examples/
+
+# Runtime config written by the app / GUI at the working directory (not the tracked
+# sample in RcloneFileWatcherCore/Config/)
+/RcloneFileWatcherCoreConfig.cfg
+/RcloneFileWatcherCore.Web/RcloneFileWatcherCoreConfig.cfg
