@@ -16,7 +16,9 @@
                     <option value="@CultureUrl(lang.Code)" selected="@IsCurrent(lang.Code)">@lang.Name</option>
                 }
             </select>
-            <button type="button" class="iconbtn" onclick="rfwToggleTheme()" title="@L["theme.toggle"]">🌓</button>
+            <button type="button" class="iconbtn" onclick="rfwToggleTheme()" title="@L["theme.toggle"]" aria-label="@L["theme.toggle"]">
+                <Icon Name="theme" />
+            </button>
         </div>
         <article class="content">
             @Body

@@ -6,19 +6,19 @@
 </div>
 <nav class="nav-menu">
     <NavLink class="nav-item" href="" Match="NavLinkMatch.All">
-        <span class="nav-icon">📊</span> @L["nav.dashboard"]
+        <Icon Name="dashboard" Class="nav-icon" /> @L["nav.dashboard"]
     </NavLink>
     <NavLink class="nav-item" href="config">
-        <span class="nav-icon">⚙️</span> @L["nav.config"]
+        <Icon Name="config" Class="nav-icon" /> @L["nav.config"]
     </NavLink>
     <NavLink class="nav-item" href="rclone">
-        <span class="nav-icon">☁️</span> @L["nav.rclone"]
+        <Icon Name="cloud" Class="nav-icon" /> @L["nav.rclone"]
     </NavLink>
     <NavLink class="nav-item" href="logs">
-        <span class="nav-icon">📜</span> @L["nav.logs"]
+        <Icon Name="logs" Class="nav-icon" /> @L["nav.logs"]
     </NavLink>
     <NavLink class="nav-item" href="security">
-        <span class="nav-icon">🔒</span> @L["nav.security"]
+        <Icon Name="lock" Class="nav-icon" /> @L["nav.security"]
     </NavLink>
 </nav>
 
@@ -26,7 +26,7 @@
 {
     <form method="post" action="/logout" class="nav-logout">
         <button type="submit" class="nav-item nav-logout-btn">
-            <span class="nav-icon">🚪</span> @L["nav.logout"]
+            <Icon Name="logout" Class="nav-icon" /> @L["nav.logout"]
         </button>
     </form>
 }

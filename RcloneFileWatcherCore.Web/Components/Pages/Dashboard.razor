@@ -25,6 +25,7 @@ else
         <div class="card">
             <div class="card-label">@L["dash.watcher"]</div>
             <div class="card-value @(_status.WatcherRunning ? "ok" : "warn")">
+                <Icon Name="@(_status.WatcherRunning ? "success" : "warning")" Size="20" />
                 @(_status.WatcherRunning ? L["dash.running"] : L["dash.stopped"])
             </div>
         </div>
@@ -46,20 +47,23 @@ else
 
     @if (_message is not null)
     {
-        <div class="alert @(_success ? "alert-ok" : "alert-err")">@_message</div>
+        <div class="alert @(_success ? "alert-ok" : "alert-err")">
+            <Icon Name="@(_success ? "success" : "error")" />
+            <span>@_message</span>
+        </div>
     }
 
     <div class="actions">
         @if (_status.WatcherRunning)
         {
-            <button class="btn btn-secondary" @onclick="StopWatcher">@L["dash.stopWatcher"]</button>
+            <button class="btn btn-secondary" @onclick="StopWatcher"><Icon Name="stop" Size="16" /> @L["dash.stopWatcher"]</button>
         }
         else
         {
-            <button class="btn" @onclick="StartWatcher">@L["dash.startWatcher"]</button>
+            <button class="btn" @onclick="StartWatcher"><Icon Name="play" Size="16" /> @L["dash.startWatcher"]</button>
         }
-        <button class="btn" @onclick="SyncNow" disabled="@(!_status.WatcherRunning)">@L["dash.syncNow"]</button>
-        <button class="btn" @onclick="FullSyncNow" disabled="@(!_status.WatcherRunning)">@L["dash.fullSync"]</button>
+        <button class="btn" @onclick="SyncNow" disabled="@(!_status.WatcherRunning)"><Icon Name="refresh" Size="16" /> @L["dash.syncNow"]</button>
+        <button class="btn" @onclick="FullSyncNow" disabled="@(!_status.WatcherRunning)"><Icon Name="refresh" Size="16" /> @L["dash.fullSync"]</button>
     </div>
 
     @if (_status.WatchedPaths is { Count: > 0 })

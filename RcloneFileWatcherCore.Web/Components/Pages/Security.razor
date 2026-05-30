@@ -11,7 +11,10 @@
 
 @if (_message is not null)
 {
-    <div class="alert @(_success ? "alert-ok" : "alert-err")">@_message</div>
+    <div class="alert @(_success ? "alert-ok" : "alert-err")">
+        <Icon Name="@(_success ? "success" : "error")" />
+        <span>@_message</span>
+    </div>
 }
 
 <section class="form-section">
