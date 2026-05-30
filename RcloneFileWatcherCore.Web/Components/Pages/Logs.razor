@@ -28,6 +28,7 @@
     </label>
     <span class="spacer"></span>
     <span class="muted">@L.F("log.entries", _filtered.Count, _lines.Count)</span>
+    <button class="btn btn-sm" @onclick="Download" disabled="@(_lines.Count == 0)">@L["log.download"]</button>
     <button class="btn btn-sm" @onclick="Clear">@L["log.clear"]</button>
 </div>
 
@@ -89,6 +90,13 @@
         var open = line.IndexOf('[');
         var close = open >= 0 ? line.IndexOf(']', open + 1) : -1;
         return close > open ? line.Substring(open + 1, close - open - 1) : "";
+    }
+
+    private async Task Download()
+    {
+        var content = string.Join("\n", _lines);
+        var name = $"rclonefilewatcher-log-{DateTime.Now:yyyyMMdd-HHmmss}.log";
+        await JS.InvokeVoidAsync("rfwDownloadText", name, content);
     }
 
     private void Clear()

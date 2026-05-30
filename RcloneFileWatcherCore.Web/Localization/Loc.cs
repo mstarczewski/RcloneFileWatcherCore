@@ -214,6 +214,7 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["log.autoScroll"] = "Auto-scroll",
             ["log.entries"] = "{0} / {1} entries",
             ["log.clear"] = "Clear view",
+            ["log.download"] = "Download log",
             ["log.noEntries"] = "(no entries)",
 
             ["login.password"] = "Password",

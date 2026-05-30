@@ -13,6 +13,19 @@
                 }
             } catch (e) { }
         })();
+        window.rfwDownloadText = function (filename, text) {
+            try {
+                var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+            } catch (e) { }
+        };
         window.rfwToggleTheme = function () {
             var light = document.documentElement.getAttribute('data-theme') === 'light';
             if (light) {

@@ -113,6 +113,7 @@
   "log.autoScroll": "Auto-przewijanie",
   "log.entries": "{0} / {1} wpisów",
   "log.clear": "Wyczyść widok",
+  "log.download": "Pobierz log",
   "log.noEntries": "(brak wpisów)",
 
   "login.password": "Hasło",
