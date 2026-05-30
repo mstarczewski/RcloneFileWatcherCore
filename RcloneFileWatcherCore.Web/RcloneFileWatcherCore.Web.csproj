@@ -16,4 +16,8 @@
     <ProjectReference Include="..\RcloneFileWatcherCore.Core\RcloneFileWatcherCore.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="locales\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

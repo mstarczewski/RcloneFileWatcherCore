@@ -28,9 +28,7 @@ var config = new ConfigLoader(ConfigFileName, logger).LoadConfig() ?? new Config
 builder.Services.AddRcloneFileWatcherCore(config, ConfigFileName, logger);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-builder.Services.AddSingleton<Loc>();
-
-var supportedCultures = new[] { "en", "pl" };
+builder.Services.AddSingleton(new Loc(Path.Combine(builder.Environment.ContentRootPath, "locales")));
 
 var guiPassword = builder.Configuration["Gui:Password"];
 var authEnabled = !string.IsNullOrWhiteSpace(guiPassword);
@@ -48,8 +46,10 @@ if (authEnabled)
 
 var app = builder.Build();
 
+// Supported cultures = English baseline plus every language discovered from locales/*.json.
+var supportedCultures = app.Services.GetRequiredService<Loc>().Languages.Select(l => l.Code).ToArray();
 var localizationOptions = new RequestLocalizationOptions()
-    .SetDefaultCulture("en")
+    .SetDefaultCulture(Loc.DefaultCulture)
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures);
 // English is the default; only an explicit choice (culture cookie set by the language switch)
@@ -80,8 +80,8 @@ if (authEnabled)
     app.UseAuthentication();
     app.UseAuthorization();
 
-    app.MapGet("/login", (string error) =>
-        Results.Content(LoginPage.Render(error != null), "text/html"));
+    app.MapGet("/login", (string error, HttpContext ctx) =>
+        Results.Content(LoginPage.Render(error != null, ctx.RequestServices.GetRequiredService<Loc>()), "text/html"));
 
     app.MapPost("/login", async (HttpContext ctx) =>
     {
@@ -148,9 +148,8 @@ internal static class OpenBrowser
 
 internal static class LoginPage
 {
-    public static string Render(bool error)
+    public static string Render(bool error, Loc loc)
     {
-        var loc = new Loc();
         var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
         var errorHtml = error ? $"<div class=\"alert alert-err\">{loc["login.wrong"]}</div>" : "";
         return $$"""

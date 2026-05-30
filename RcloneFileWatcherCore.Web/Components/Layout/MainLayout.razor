@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @using System.Globalization
 @inject NavigationManager Nav
+@inject Loc L
 
 <div class="page">
     <div class="sidebar">
@@ -8,11 +9,14 @@
     </div>
     <main>
         <div class="topbar">
-            <div class="lang-switch">
-                <a href="@CultureUrl("en")" data-enhance-nav="false" class="@(CurrentLang == "en" ? "active" : "")">EN</a>
-                <a href="@CultureUrl("pl")" data-enhance-nav="false" class="@(CurrentLang == "pl" ? "active" : "")">PL</a>
-            </div>
-            <button type="button" class="iconbtn" onclick="rfwToggleTheme()" title="Light/dark theme">🌓</button>
+            <select class="lang-select" title="@L["lang.label"]"
+                    onchange="if(this.value){window.location.href=this.value;}">
+                @foreach (var lang in L.Languages)
+                {
+                    <option value="@CultureUrl(lang.Code)" selected="@IsCurrent(lang.Code)">@lang.Name</option>
+                }
+            </select>
+            <button type="button" class="iconbtn" onclick="rfwToggleTheme()" title="@L["theme.toggle"]">🌓</button>
         </div>
         <article class="content">
             @Body
@@ -21,11 +25,15 @@
 </div>
 
 @code {
-    private string CurrentLang => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
-
     private string CultureUrl(string culture)
     {
         var current = new Uri(Nav.Uri).PathAndQuery;
         return $"/set-culture?culture={culture}&redirect={Uri.EscapeDataString(current)}";
+    }
+
+    private bool IsCurrent(string code)
+    {
+        var ui = CultureInfo.CurrentUICulture;
+        return code == ui.Name || code == ui.TwoLetterISOLanguageName;
     }
 }

@@ -78,25 +78,9 @@ main {
     border-color: var(--accent);
 }
 
-.lang-switch {
-    display: inline-flex;
-    gap: 0.25rem;
-    align-items: center;
-}
-
-.lang-switch a {
-    color: var(--muted);
-    text-decoration: none;
-    padding: 0.2rem 0.45rem;
-    border-radius: 5px;
+.lang-select {
+    padding: 0.3rem 0.5rem;
     font-size: 0.8rem;
-    border: 1px solid transparent;
-}
-
-.lang-switch a.active {
-    color: var(--text);
-    border-color: var(--border);
-    background: var(--panel-2);
 }
 
 .content {
