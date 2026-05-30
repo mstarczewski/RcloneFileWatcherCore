@@ -21,6 +21,11 @@ var builder = WebApplication.CreateBuilder(args);
 // enable the password in the Security page and put the GUI behind an HTTPS reverse proxy.
 builder.WebHost.UseUrls(builder.Configuration["Gui:Urls"] ?? "http://localhost:5005");
 
+// Serve wwwroot via the static web assets manifest in every environment (not just
+// Development), so the CSS works when running the built binary directly, not only via
+// `dotnet run`. Published builds carry a physical wwwroot and are unaffected.
+builder.WebHost.UseStaticWebAssets();
+
 // Bootstrap the Core logger + config the same way the console app does. If the config is
 // missing or invalid we still start (with an empty config) so the GUI stays reachable and the
 // user can create/fix it from the browser.
@@ -34,12 +39,10 @@ builder.Services.AddSingleton(new Loc(Path.Combine(builder.Environment.ContentRo
 
 // GUI access control is managed at runtime in the Security page (stored hashed in
 // gui-auth.json). Cookie auth + a dynamic policy are always registered; the policy reads the
-// current on/off state per request, so the toggle takes effect without a restart. A legacy
-// plaintext Gui:Password (if present and no gui-auth.json yet) is migrated once.
+// current on/off state per request, so the toggle takes effect without a restart. By default
+// (no gui-auth.json) access is open — set a password in the Security page to require login.
 builder.Services.AddSingleton<IAuthService>(
-    new AuthService(
-        Path.Combine(builder.Environment.ContentRootPath, "gui-auth.json"),
-        builder.Configuration["Gui:Password"]));
+    new AuthService(Path.Combine(builder.Environment.ContentRootPath, "gui-auth.json")));
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

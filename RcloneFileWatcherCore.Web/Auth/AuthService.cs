@@ -8,8 +8,8 @@ namespace RcloneFileWatcherCore.Web.Auth
     /// <summary>
     /// GUI access control. The on/off flag and the salted PBKDF2 password hash live in a small
     /// JSON file (gui-auth.json) so the password is never stored in plain text and the toggle
-    /// survives restarts. A one-time migration seeds this from a legacy plaintext Gui:Password
-    /// if the file does not exist yet.
+    /// survives restarts. With no file, access is open by default until a password is set in
+    /// the Security page.
     /// </summary>
     public class AuthService : IAuthService
     {
@@ -21,10 +21,10 @@ namespace RcloneFileWatcherCore.Web.Auth
         private readonly object _lock = new object();
         private State _state;
 
-        public AuthService(string filePath, string legacyPlaintextPassword)
+        public AuthService(string filePath)
         {
             _filePath = filePath;
-            _state = Load() ?? Migrate(legacyPlaintextPassword) ?? new State();
+            _state = Load() ?? new State();
         }
 
         public bool Enabled => _state.Enabled;
@@ -68,17 +68,6 @@ namespace RcloneFileWatcherCore.Web.Auth
             {
                 return null;
             }
-        }
-
-        private State Migrate(string legacyPlaintextPassword)
-        {
-            if (string.IsNullOrWhiteSpace(legacyPlaintextPassword))
-                return null;
-
-            var migrated = new State { Enabled = true, PasswordHash = Hash(legacyPlaintextPassword) };
-            _state = migrated;
-            Save();
-            return migrated;
         }
 
         private void Save()

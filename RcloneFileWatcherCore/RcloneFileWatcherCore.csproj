@@ -2,8 +2,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <!-- Use single RuntimeIdentifier for local development, multiple for publishing -->
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+    <!-- No forced RID: a plain build is portable and compiles on Windows and Linux alike.
+         Pick a concrete RID only when publishing (e.g. dotnet publish -r linux-x64). -->
     <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
     <!-- Debug settings -->
     <DebugType>portable</DebugType>
@@ -19,9 +19,8 @@
     <Product>RcloneFileWatcherCore</Product>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/mstarczewski/RcloneFileWatcherCore</RepositoryUrl>
-    <!-- Deployment -->
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>false</SelfContained>
+    <!-- Deployment: PublishSingleFile / SelfContained are passed at publish time
+         (see release.yml) so a plain RID-less build stays portable and cross-platform. -->
     <!-- General build -->
     <Platforms>AnyCPU;x64</Platforms>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
