@@ -68,6 +68,7 @@
   "cfg.cmdDest": "Cel (remote:ścieżka)",
   "cfg.cmdCommand": "Komenda",
   "cfg.includeFromInject": "Wstrzyknij --include-from",
+  "cfg.includeFromStdin": "Przekaż listę przez stdin (bez pliku --include-from)",
   "cfg.extraArgs": "Dodatkowe argumenty (jeden token na linię)",
   "cfg.preview": "Podgląd komendy:",
   "cfg.runtimeVars": "Zmienne podstawiane przy uruchomieniu:",

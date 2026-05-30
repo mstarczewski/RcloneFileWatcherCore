@@ -169,6 +169,7 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["cfg.cmdDest"] = "Destination (remote:path)",
             ["cfg.cmdCommand"] = "Command",
             ["cfg.includeFromInject"] = "Inject --include-from",
+            ["cfg.includeFromStdin"] = "Pass the list via stdin (no --include-from file)",
             ["cfg.extraArgs"] = "Extra arguments (one token per line)",
             ["cfg.preview"] = "Command preview:",
             ["cfg.runtimeVars"] = "Variables substituted at run time:",

@@ -42,7 +42,7 @@ namespace RcloneFileWatcherCore.Logic.Services
             }
         }
 
-        public bool ExecuteCommand(RcloneCommandDTO command, string includeFromPath)
+        public bool ExecuteCommand(RcloneCommandDTO command, string includeFromPath, IReadOnlyList<string> includeFromStdin = null)
         {
             if (command == null)
             {
@@ -68,6 +68,7 @@ namespace RcloneFileWatcherCore.Logic.Services
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                RedirectStandardInput = includeFromStdin != null,
                 CreateNoWindow = true
             };
             foreach (var arg in arguments)
@@ -86,6 +87,15 @@ namespace RcloneFileWatcherCore.Logic.Services
                 process.Start();
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
+
+                // Pipe the changed-files list to rclone's stdin (--include-from -). stdout/stderr
+                // are already drained asynchronously above, so this won't deadlock on big lists.
+                if (includeFromStdin != null)
+                {
+                    using var stdin = process.StandardInput;
+                    foreach (var line in includeFromStdin)
+                        stdin.WriteLine(line);
+                }
 
                 Task tailTask = null;
                 CancellationTokenSource tailCts = null;

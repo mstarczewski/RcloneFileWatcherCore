@@ -26,22 +26,22 @@ namespace RcloneFileWatcherCore.Logic.Services
         }
 
         /// <summary>
-        /// Writes the --include-from file for the given source path and reports whether any
-        /// changes were collected (so the caller can decide whether to run rclone — as a script
-        /// or a managed command). Returns false when the path is unknown or nothing changed.
+        /// Collects the list of changed paths to sync for the given source path (applying the
+        /// exclude/ready filtering and clearing processed entries). Returns the lines for rclone's
+        /// --include-from (empty if nothing changed), or null when the path is unknown. The caller
+        /// decides whether to write them to a file or pipe them to rclone via stdin.
         /// </summary>
-        public bool PrepareFilesToSync(string sourcePath, long lastTimeStamp)
+        public List<string> PrepareFilesToSync(string sourcePath, long lastTimeStamp)
         {
             _logger.Log(LogLevel.Information, $"Prepare files to sync {sourcePath}");
             var rclonePath = _syncPathDTO.FirstOrDefault(x => x.WatchingPath == sourcePath);
             if (rclonePath == null)
             {
                 _logger.Log(LogLevel.Error, $"No Path found for source Path: {sourcePath}");
-                return false;
+                return null;
             }
 
             var filesToWrite = new HashSet<string>();
-            int removeCount = 0;
 
             var items = _fileList
                 .Where(x => x.Value.SourcePath == sourcePath && x.Value.TimeStampTicks <= lastTimeStamp)
@@ -61,23 +61,28 @@ namespace RcloneFileWatcherCore.Logic.Services
                     if (!string.IsNullOrEmpty(fileNameFinal))
                     {
                         filesToWrite.Add(fileNameFinal);
-                        if (_fileList.TryRemove(item.Key, out _))
-                            removeCount++;
+                        _fileList.TryRemove(item.Key, out _);
                     }
                 }
             }
 
+            return filesToWrite.ToList();
+        }
+
+        /// <summary>Writes the --include-from lines to a file (used in script mode and when the
+        /// managed command is configured to read the filter from a file rather than stdin).</summary>
+        public bool WriteIncludeFromFile(string path, IEnumerable<string> lines)
+        {
             try
             {
-                File.WriteAllLines(rclonePath.RcloneFilesFromPath, filesToWrite);
+                File.WriteAllLines(path, lines);
+                return true;
             }
             catch (Exception ex)
             {
-                _logger.Log(LogLevel.Information, $"Error writing files", ex);
+                _logger.Log(LogLevel.Error, $"Error writing include-from file {path}", ex);
                 return false;
             }
-
-            return removeCount > 0;
         }
 
         private static string NormalizePath(string path)

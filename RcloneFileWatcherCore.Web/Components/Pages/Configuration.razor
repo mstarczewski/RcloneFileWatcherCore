@@ -185,6 +185,9 @@
                             <input type="checkbox" @bind="cmd.IncludeFrom" /> @L["cfg.includeFromInject"]
                         </label>
                         <label class="checkbox">
+                            <input type="checkbox" @bind="cmd.IncludeFromStdin" disabled="@(!cmd.IncludeFrom)" /> @L["cfg.includeFromStdin"]
+                        </label>
+                        <label class="checkbox">
                             <input type="checkbox" @bind="cmd.CreateEmptySrcDirs" /> --create-empty-src-dirs
                         </label>
                     </div>
@@ -193,7 +196,7 @@
                     </label>
                     <div class="cmd-preview">
                         <span class="muted">@L["cfg.preview"]</span>
-                        <code class="cmd-line">@RcloneCommandBuilder.BuildPreview(cmd, _model.Path[index].RcloneFilesFromPath)</code>
+                        <code class="cmd-line">@RcloneCommandBuilder.BuildPreview(cmd, cmd.IncludeFromStdin ? "-" : _model.Path[index].RcloneFilesFromPath)</code>
                         <span class="muted">@L["cfg.runtimeVars"]
                             <code>{datetime}</code> <code>{date}</code> <code>{time}</code> <code>{year}</code></span>
                     </div>
@@ -376,7 +379,12 @@
             var p = _model.Path[i];
             if (string.IsNullOrWhiteSpace(p.WatchingPath))
                 _errors.Add(L.F("cfg.vWatchDir", i + 1));
-            if (string.IsNullOrWhiteSpace(p.RcloneFilesFromPath))
+
+            // The --include-from file is only needed for script mode or a managed command that
+            // reads the filter from a file (not stdin).
+            var needsFile = p.SyncMode == SyncMode.Script
+                || (p.RcloneCommand is { IncludeFrom: true, IncludeFromStdin: false });
+            if (needsFile && string.IsNullOrWhiteSpace(p.RcloneFilesFromPath))
                 _errors.Add(L.F("cfg.vIncludeFrom", i + 1));
         }
 

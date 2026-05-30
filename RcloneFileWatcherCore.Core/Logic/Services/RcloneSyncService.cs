@@ -39,8 +39,8 @@ namespace RcloneFileWatcherCore.Logic.Services
                     if (string.IsNullOrWhiteSpace(sourcePath))
                         continue;
 
-                    bool hadChanges = _filePrepare.PrepareFilesToSync(sourcePath, lastTimeStamp);
-                    if (!hadChanges)
+                    var files = _filePrepare.PrepareFilesToSync(sourcePath, lastTimeStamp);
+                    if (files == null || files.Count == 0)
                         continue;
 
                     var path = configDTO.Path?.FirstOrDefault(p => p.WatchingPath == sourcePath);
@@ -49,13 +49,28 @@ namespace RcloneFileWatcherCore.Logic.Services
 
                     if (path.SyncMode == Enums.SyncMode.Managed)
                     {
-                        if (path.RcloneCommand != null)
-                            _rcloneRunner.ExecuteCommand(path.RcloneCommand, path.RcloneFilesFromPath);
-                        else
+                        var cmd = path.RcloneCommand;
+                        if (cmd == null)
+                        {
                             _logger.Log(Enums.LogLevel.Error, $"Managed sync mode set but no rclone command configured for {sourcePath}");
+                        }
+                        else if (cmd.IncludeFrom && cmd.IncludeFromStdin)
+                        {
+                            // Pipe the list to rclone via stdin (--include-from -) — no file on disk.
+                            _rcloneRunner.ExecuteCommand(cmd, "-", files);
+                        }
+                        else
+                        {
+                            // Managed but reading the filter from a file (or no filter at all).
+                            if (cmd.IncludeFrom)
+                                _filePrepare.WriteIncludeFromFile(path.RcloneFilesFromPath, files);
+                            _rcloneRunner.ExecuteCommand(cmd, path.RcloneFilesFromPath);
+                        }
                     }
                     else if (!string.IsNullOrWhiteSpace(path.RcloneBatch))
                     {
+                        // Script mode: the .bat/.sh references the --include-from file, so write it.
+                        _filePrepare.WriteIncludeFromFile(path.RcloneFilesFromPath, files);
                         _rcloneRunner.ExecuteBatch(path.RcloneBatch);
                     }
                 }

@@ -13,8 +13,14 @@ namespace RcloneFileWatcherCore.DTO
         public string Source { get; set; }
         public string Destination { get; set; }
 
-        /// <summary>Inject --include-from with the path's files-from file (live sync filter).</summary>
+        /// <summary>Inject --include-from with the live-sync filter (the list of changed paths).</summary>
         public bool IncludeFrom { get; set; } = true;
+
+        /// <summary>
+        /// Feed the changed-files list to rclone via stdin (<c>--include-from -</c>) instead of
+        /// writing the RcloneFilesFromPath file. Avoids the on-disk "exchange" file.
+        /// </summary>
+        public bool IncludeFromStdin { get; set; } = true;
 
         public string ConfigFile { get; set; }
         public string BwLimit { get; set; }
