@@ -380,6 +380,7 @@ textarea {
 .btn-secondary {
     background: var(--panel-2);
     border: 1px solid var(--border);
+    color: var(--text);
 }
 
 .btn-danger {

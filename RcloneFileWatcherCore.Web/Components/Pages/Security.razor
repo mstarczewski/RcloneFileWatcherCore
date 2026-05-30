@@ -1,0 +1,81 @@
+@page "/security"
+@rendermode InteractiveServer
+@inject RcloneFileWatcherCore.Web.Auth.IAuthService Auth
+@inject Loc L
+
+<PageTitle>@L["nav.security"] — RcloneFileWatcher</PageTitle>
+
+<h1>@L["nav.security"]</h1>
+
+<p class="muted">@L["sec.intro"]</p>
+
+@if (_message is not null)
+{
+    <div class="alert @(_success ? "alert-ok" : "alert-err")">@_message</div>
+}
+
+<section class="form-section">
+    <div class="form-grid">
+        <label class="checkbox">
+            <input type="checkbox" @bind="_enabled" />
+            @L["sec.requirePassword"]
+        </label>
+    </div>
+
+    <div class="form-grid">
+        <label>@L["sec.newPassword"]
+            <input type="password" @bind="_newPassword" autocomplete="new-password" />
+        </label>
+        <label>@L["sec.confirmPassword"]
+            <input type="password" @bind="_confirm" autocomplete="new-password" />
+        </label>
+    </div>
+    <p class="muted">@L["sec.changeHint"]</p>
+    @if (Auth.HasPassword)
+    {
+        <p class="muted">@L["sec.passwordIsSet"]</p>
+    }
+
+    <div class="actions">
+        <button class="btn" @onclick="Save">@L["sec.save"]</button>
+    </div>
+
+    <p class="muted">@L["sec.tlsHint"]</p>
+</section>
+
+@code {
+    private bool _enabled;
+    private string _newPassword = "";
+    private string _confirm = "";
+    private string _message;
+    private bool _success;
+
+    protected override void OnInitialized() => _enabled = Auth.Enabled;
+
+    private void Save()
+    {
+        if (!string.IsNullOrEmpty(_newPassword))
+        {
+            if (_newPassword != _confirm)
+            {
+                _message = L["sec.mismatch"];
+                _success = false;
+                return;
+            }
+            Auth.SetPassword(_newPassword);
+        }
+
+        if (_enabled && !Auth.HasPassword)
+        {
+            _message = L["sec.needPassword"];
+            _success = false;
+            return;
+        }
+
+        Auth.SetEnabled(_enabled);
+        _newPassword = "";
+        _confirm = "";
+        _message = L["sec.saved"];
+        _success = true;
+    }
+}

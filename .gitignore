@@ -346,3 +346,6 @@ Examples/
 # sample in RcloneFileWatcherCore/Config/)
 /RcloneFileWatcherCoreConfig.cfg
 /RcloneFileWatcherCore.Web/RcloneFileWatcherCoreConfig.cfg
+
+# GUI auth state (enabled flag + hashed password) — never publish
+gui-auth.json

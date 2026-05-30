@@ -1,4 +1,4 @@
-@inject IConfiguration Config
+@inject RcloneFileWatcherCore.Web.Auth.IAuthService Auth
 @inject Loc L
 
 <div class="nav-brand">
@@ -17,9 +17,12 @@
     <NavLink class="nav-item" href="logs">
         <span class="nav-icon">📜</span> @L["nav.logs"]
     </NavLink>
+    <NavLink class="nav-item" href="security">
+        <span class="nav-icon">🔒</span> @L["nav.security"]
+    </NavLink>
 </nav>
 
-@if (!string.IsNullOrWhiteSpace(Config["Gui:Password"]))
+@if (Auth.Enabled)
 {
     <form method="post" action="/logout" class="nav-logout">
         <button type="submit" class="nav-item nav-logout-btn">

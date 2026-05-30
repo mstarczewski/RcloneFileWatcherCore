@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Localization;
 using RcloneFileWatcherCore.App;
 using RcloneFileWatcherCore.Config;
 using RcloneFileWatcherCore.DTO;
 using RcloneFileWatcherCore.Infrastructure.Logging;
+using RcloneFileWatcherCore.Web.Auth;
 using RcloneFileWatcherCore.Web.Components;
 using RcloneFileWatcherCore.Web.Localization;
 using System.Globalization;
@@ -16,7 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Bind to localhost by default; override with the "Gui:Urls" setting (appsettings / env /
 // command line) e.g. "http://0.0.0.0:5005" for LAN access. When exposing on the network,
-// also set "Gui:Password" to require login (and prefer putting it behind an HTTPS proxy).
+// enable the password in the Security page and put the GUI behind an HTTPS reverse proxy.
 builder.WebHost.UseUrls(builder.Configuration["Gui:Urls"] ?? "http://localhost:5005");
 
 // Bootstrap the Core logger + config the same way the console app does. If the config is
@@ -30,19 +32,29 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddSingleton(new Loc(Path.Combine(builder.Environment.ContentRootPath, "locales")));
 
-var guiPassword = builder.Configuration["Gui:Password"];
-var authEnabled = !string.IsNullOrWhiteSpace(guiPassword);
-if (authEnabled)
+// GUI access control is managed at runtime in the Security page (stored hashed in
+// gui-auth.json). Cookie auth + a dynamic policy are always registered; the policy reads the
+// current on/off state per request, so the toggle takes effect without a restart. A legacy
+// plaintext Gui:Password (if present and no gui-auth.json yet) is migrated once.
+builder.Services.AddSingleton<IAuthService>(
+    new AuthService(
+        Path.Combine(builder.Environment.ContentRootPath, "gui-auth.json"),
+        builder.Configuration["Gui:Password"]));
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/login";
+        options.ExpireTimeSpan = TimeSpan.FromHours(12);
+        options.SlidingExpiration = true;
+    });
+builder.Services.AddAuthorization(options =>
 {
-    builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-        .AddCookie(options =>
-        {
-            options.LoginPath = "/login";
-            options.ExpireTimeSpan = TimeSpan.FromHours(12);
-            options.SlidingExpiration = true;
-        });
-    builder.Services.AddAuthorization();
-}
+    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+        .AddRequirements(new GuiAuthRequirement())
+        .Build();
+});
+builder.Services.AddSingleton<IAuthorizationHandler, GuiAuthHandler>();
 
 var app = builder.Build();
 
@@ -75,41 +87,43 @@ app.MapGet("/set-culture", (string culture, string redirect, HttpContext ctx) =>
     return Results.LocalRedirect(string.IsNullOrWhiteSpace(redirect) ? "/" : redirect);
 });
 
-if (authEnabled)
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapGet("/login", (string error, HttpContext ctx) =>
 {
-    app.UseAuthentication();
-    app.UseAuthorization();
+    var auth = ctx.RequestServices.GetRequiredService<IAuthService>();
+    if (!auth.Enabled)
+        return Results.LocalRedirect("/");
+    return Results.Content(LoginPage.Render(error != null, ctx.RequestServices.GetRequiredService<Loc>()), "text/html");
+});
 
-    app.MapGet("/login", (string error, HttpContext ctx) =>
-        Results.Content(LoginPage.Render(error != null, ctx.RequestServices.GetRequiredService<Loc>()), "text/html"));
-
-    app.MapPost("/login", async (HttpContext ctx) =>
+app.MapPost("/login", async (HttpContext ctx) =>
+{
+    var auth = ctx.RequestServices.GetRequiredService<IAuthService>();
+    var form = await ctx.Request.ReadFormAsync();
+    if (auth.Enabled && auth.Verify(form["password"].ToString()))
     {
-        var form = await ctx.Request.ReadFormAsync();
-        if (form["password"].ToString() == guiPassword)
-        {
-            var identity = new ClaimsIdentity(
-                new[] { new Claim(ClaimTypes.Name, "admin") },
-                CookieAuthenticationDefaults.AuthenticationScheme);
-            await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
-            return Results.Redirect("/");
-        }
-        return Results.Redirect("/login?error=1");
-    }).DisableAntiforgery();
+        var identity = new ClaimsIdentity(
+            new[] { new Claim(ClaimTypes.Name, "admin") },
+            CookieAuthenticationDefaults.AuthenticationScheme);
+        await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+        return Results.LocalRedirect("/");
+    }
+    return Results.Redirect("/login?error=1");
+}).DisableAntiforgery();
 
-    app.MapPost("/logout", async (HttpContext ctx) =>
-    {
-        await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        return Results.Redirect("/login");
-    }).DisableAntiforgery();
-}
+app.MapPost("/logout", async (HttpContext ctx) =>
+{
+    await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.LocalRedirect("/");
+}).DisableAntiforgery();
 
 app.UseAntiforgery();
 
-var components = app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-if (authEnabled)
-    components.RequireAuthorization();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode()
+    .RequireAuthorization();
 
 // Optional convenience for desktop use: open the browser once the server is up. Off by
 // default so headless/service deployments (systemd/NSSM) don't try to launch a browser.
