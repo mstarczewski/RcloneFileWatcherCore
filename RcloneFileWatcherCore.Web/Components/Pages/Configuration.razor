@@ -9,13 +9,13 @@
 @using RcloneFileWatcherCore.Enums
 @using RcloneFileWatcherCore.Logic.Rclone
 @inject IConfigService ConfigService
+@inject Loc L
 
-<PageTitle>Konfiguracja — RcloneFileWatcher</PageTitle>
+<PageTitle>@L["nav.config"] — RcloneFileWatcher</PageTitle>
 
-<h1>Konfiguracja</h1>
+<h1>@L["nav.config"]</h1>
 
-<p class="muted">Zmiany zapisywane są do <code>@ConfigService.FilePath</code> i stosowane na żywo
-    (watcher zostaje przeładowany). Zmiana <code>LogPath</code> wymaga restartu aplikacji.</p>
+<p class="muted">@L.F("cfg.intro", ConfigService.FilePath)</p>
 
 @if (_message is not null)
 {
@@ -37,43 +37,43 @@
 @if (_model is not null)
 {
     <section class="form-section">
-        <h2>Ogólne</h2>
+        <h2>@L["cfg.general"]</h2>
         <div class="form-grid">
-            <label>Poziom logowania
+            <label>@L["cfg.logLevel"]
                 <input @bind="_model.LogLevel" placeholder="Information|Error" />
             </label>
-            <label>Ścieżka logu (puste = konsola)
+            <label>@L["cfg.logPath"]
                 <input @bind="_model.LogPath" />
             </label>
-            <label>Interwał synchronizacji (s)
+            <label>@L["cfg.syncInterval"]
                 <input type="number" min="1" @bind="_model.SyncIntervalSeconds" />
             </label>
-            <label>Pełna synchronizacja codziennie o (HH:mm)
+            <label>@L["cfg.fullSyncDaily"]
                 <input @bind="_model.RunStartupScriptEveryDayAt" placeholder="05:30" />
             </label>
         </div>
         <div class="form-grid">
             <label class="checkbox">
                 <input type="checkbox" @bind="_model.RunOneTimeFullStartupSync" />
-                Pełna synchronizacja przy starcie
+                @L["cfg.fullSyncStartup"]
             </label>
-            <label>Skrypt pełnej synchronizacji
+            <label>@L["cfg.fullSyncScript"]
                 <input @bind="_model.RunOneTimeFullStartupSyncBatch" />
             </label>
         </div>
     </section>
 
     <section class="form-section">
-        <h2>Auto-aktualizacja rclone</h2>
+        <h2>@L["cfg.autoUpdate"]</h2>
         <div class="form-grid">
             <label class="checkbox">
                 <input type="checkbox" @bind="_model.UpdateRclone.Update" />
-                Włącz auto-aktualizację
+                @L["cfg.enableAutoUpdate"]
             </label>
-            <label>Ścieżka do rclone
+            <label>@L["cfg.rclonePath"]
                 <input @bind="_model.UpdateRclone.RclonePath" />
             </label>
-            <label>Sprawdzaj co (godz.)
+            <label>@L["cfg.checkEvery"]
                 <input type="number" min="0" @bind="_model.UpdateRclone.CheckUpdateHours" />
             </label>
         </div>
@@ -81,16 +81,16 @@
 
     <section class="form-section">
         <div class="section-head">
-            <h2>Obserwowane ścieżki (@_model.Path.Count)</h2>
+            <h2>@L.F("cfg.watchedPaths", _model.Path.Count)</h2>
             <div class="section-head-actions">
-                <button class="btn btn-sm btn-secondary" @onclick="ImportAllFromScripts">Importuj skrypty → Managed</button>
-                <button class="btn btn-sm" @onclick="AddPath">+ Dodaj ścieżkę</button>
+                <button class="btn btn-sm btn-secondary" @onclick="ImportAllFromScripts">@L["cfg.importScripts"]</button>
+                <button class="btn btn-sm" @onclick="AddPath">@L["cfg.addPath"]</button>
             </div>
         </div>
 
         @if (_model.Path.Count == 0)
         {
-            <p class="muted">Brak ścieżek. Dodaj przynajmniej jedną, aby watcher coś obserwował.</p>
+            <p class="muted">@L["cfg.noPaths"]</p>
         }
 
         @for (var i = 0; i < _model.Path.Count; i++)
@@ -98,51 +98,51 @@
             var index = i;
             <div class="path-card">
                 <div class="path-card-head">
-                    <strong>Ścieżka #@(index + 1)</strong>
-                    <button class="btn btn-sm btn-danger" @onclick="() => RemovePath(index)">Usuń</button>
+                    <strong>@L.F("cfg.pathN", index + 1)</strong>
+                    <button class="btn btn-sm btn-danger" @onclick="() => RemovePath(index)">@L["cfg.remove"]</button>
                 </div>
                 <div class="form-grid">
-                    <label>Katalog obserwowany
+                    <label>@L["cfg.watchDir"]
                         <input @bind="_model.Path[index].WatchingPath" />
                     </label>
-                    <label>Plik --include-from
+                    <label>@L["cfg.includeFromFile"]
                         <input @bind="_model.Path[index].RcloneFilesFromPath" />
                     </label>
-                    <label>Tryb uruchomienia rclone
+                    <label>@L["cfg.runMode"]
                         <select @bind="_model.Path[index].SyncMode" @bind:after="() => OnModeChanged(index)">
-                            <option value="@SyncMode.Script">Skrypt (.bat/.sh)</option>
-                            <option value="@SyncMode.Managed">Managed (komenda)</option>
+                            <option value="@SyncMode.Script">@L["cfg.modeScript"]</option>
+                            <option value="@SyncMode.Managed">@L["cfg.modeManaged"]</option>
                         </select>
                     </label>
                 </div>
 
                 @if (_model.Path[index].SyncMode == SyncMode.Script)
                 {
-                    <label>Skrypt rclone (.bat/.sh)
+                    <label>@L["cfg.scriptFile"]
                         <input @bind="_model.Path[index].RcloneBatch" />
                     </label>
                     <button class="btn btn-sm btn-secondary" @onclick="() => ImportFromScript(index)">
-                        Importuj ten skrypt do trybu Managed
+                        @L["cfg.importThisScript"]
                     </button>
                 }
                 else
                 {
                     var cmd = GetCommand(index);
                     <div class="form-grid">
-                        <label>Ścieżka do rclone
+                        <label>@L["cfg.rclonePath"]
                             <input @bind="cmd.RclonePath" />
                         </label>
-                        <label>Komenda
+                        <label>@L["cfg.cmdCommand"]
                             <select @bind="cmd.Command">
                                 <option value="sync">sync</option>
                                 <option value="copy">copy</option>
                                 <option value="move">move</option>
                             </select>
                         </label>
-                        <label>Źródło
+                        <label>@L["cfg.cmdSource"]
                             <input @bind="cmd.Source" />
                         </label>
-                        <label>Cel (remote:ścieżka)
+                        <label>@L["cfg.cmdDest"]
                             <input @bind="cmd.Destination" />
                         </label>
                         <label>--config
@@ -178,25 +178,24 @@
                     </div>
                     <div class="form-grid">
                         <label class="checkbox">
-                            <input type="checkbox" @bind="cmd.IncludeFrom" /> Wstrzyknij --include-from
+                            <input type="checkbox" @bind="cmd.IncludeFrom" /> @L["cfg.includeFromInject"]
                         </label>
                         <label class="checkbox">
                             <input type="checkbox" @bind="cmd.CreateEmptySrcDirs" /> --create-empty-src-dirs
                         </label>
                     </div>
-                    <label>Dodatkowe argumenty (jeden token na linię)
+                    <label>@L["cfg.extraArgs"]
                         <textarea rows="2" @bind="cmd.ExtraArgs"></textarea>
                     </label>
                     <div class="cmd-preview">
-                        <span class="muted">Podgląd komendy:</span>
+                        <span class="muted">@L["cfg.preview"]</span>
                         <code class="cmd-line">@RcloneCommandBuilder.BuildPreview(cmd, _model.Path[index].RcloneFilesFromPath)</code>
-                        <span class="muted">Zmienne podstawiane przy uruchomieniu:
-                            <code>{datetime}</code> <code>{date}</code> <code>{time}</code> <code>{year}</code>
-                            (np. <code>--suffix " [{datetime}]"</code>, <code>--backup-dir remote:Archiwum/{year}</code>)</span>
+                        <span class="muted">@L["cfg.runtimeVars"]
+                            <code>{datetime}</code> <code>{date}</code> <code>{time}</code> <code>{year}</code></span>
                     </div>
                 }
 
-                <label>Wykluczenia (jedno na linię)
+                <label>@L["cfg.exclude"]
                     <textarea rows="3" @bind="_excludeRaw[index]"></textarea>
                 </label>
             </div>
@@ -204,8 +203,8 @@
     </section>
 
     <div class="actions">
-        <button class="btn" @onclick="Save">Zapisz i zastosuj</button>
-        <button class="btn btn-secondary" @onclick="Reset">Przywróć</button>
+        <button class="btn" @onclick="Save">@L["cfg.save"]</button>
+        <button class="btn btn-secondary" @onclick="Reset">@L["cfg.reset"]</button>
     </div>
 }
 
@@ -261,7 +260,7 @@
         var batch = _model.Path[index].RcloneBatch;
         if (string.IsNullOrWhiteSpace(batch) || !File.Exists(batch))
         {
-            _message = $"Nie znaleziono skryptu: {(string.IsNullOrWhiteSpace(batch) ? "(brak ścieżki)" : batch)}";
+            _message = L.F("cfg.scriptNotFound", string.IsNullOrWhiteSpace(batch) ? L["cfg.noPathPlaceholder"] : batch);
             _success = false;
             return;
         }
@@ -270,12 +269,12 @@
         {
             _model.Path[index].RcloneCommand = RcloneCommandParser.Parse(File.ReadAllText(batch));
             _model.Path[index].SyncMode = SyncMode.Managed;
-            _message = $"Zaimportowano komendę ze skryptu dla ścieżki #{index + 1}. Sprawdź pola i zapisz.";
+            _message = L.F("cfg.importedOne", index + 1);
             _success = true;
         }
         catch (Exception ex)
         {
-            _message = $"Błąd importu: {ex.Message}";
+            _message = L.F("cfg.importError", ex.Message);
             _success = false;
         }
     }
@@ -303,15 +302,15 @@
         }
 
         _message = skipped > 0
-            ? $"Zaimportowano {imported} skrypt(ów) do trybu Managed, pominięto {skipped} (brak pliku lub błąd). Sprawdź pola i zapisz."
-            : $"Zaimportowano {imported} skrypt(ów) do trybu Managed. Sprawdź pola i zapisz.";
+            ? L.F("cfg.importedManySkipped", imported, skipped)
+            : L.F("cfg.importedMany", imported);
         _success = imported > 0;
     }
 
     private void Reset()
     {
         LoadFromCurrent();
-        _message = "Przywrócono bieżącą konfigurację.";
+        _message = L["cfg.restored"];
         _success = true;
     }
 
@@ -329,7 +328,7 @@
 
         if (!Validate())
         {
-            _message = "Nie zapisano — popraw błędy poniżej.";
+            _message = L["cfg.notSaved"];
             _success = false;
             return;
         }
@@ -338,12 +337,12 @@
         {
             ConfigService.Save(_model);
             LoadFromCurrent();
-            _message = "Zapisano i zastosowano konfigurację.";
+            _message = L["cfg.savedApplied"];
             _success = true;
         }
         catch (Exception ex)
         {
-            _message = $"Błąd zapisu: {ex.Message}";
+            _message = L.F("cfg.saveError", ex.Message);
             _success = false;
         }
     }
@@ -353,28 +352,28 @@
         _errors.Clear();
 
         if (_model.SyncIntervalSeconds < 1)
-            _errors.Add("Interwał synchronizacji musi być >= 1 sekundy.");
+            _errors.Add(L["cfg.vInterval"]);
 
         if (!string.IsNullOrWhiteSpace(_model.RunStartupScriptEveryDayAt)
             && !TimeSpan.TryParse(_model.RunStartupScriptEveryDayAt, out _))
-            _errors.Add("Godzina pełnej synchronizacji musi mieć format HH:mm (np. 05:30).");
+            _errors.Add(L["cfg.vTime"]);
 
         if (_model.RunOneTimeFullStartupSync && string.IsNullOrWhiteSpace(_model.RunOneTimeFullStartupSyncBatch))
-            _errors.Add("Włączono pełną synchronizację przy starcie, ale nie podano skryptu.");
+            _errors.Add(L["cfg.vStartupScript"]);
 
         if (_model.UpdateRclone.Update && string.IsNullOrWhiteSpace(_model.UpdateRclone.RclonePath))
-            _errors.Add("Włączono auto-aktualizację rclone, ale nie podano ścieżki do rclone.");
+            _errors.Add(L["cfg.vRclonePath"]);
 
         if (_model.UpdateRclone.CheckUpdateHours < 0)
-            _errors.Add("Częstotliwość sprawdzania aktualizacji nie może być ujemna.");
+            _errors.Add(L["cfg.vCheckHours"]);
 
         for (var i = 0; i < _model.Path.Count; i++)
         {
             var p = _model.Path[i];
             if (string.IsNullOrWhiteSpace(p.WatchingPath))
-                _errors.Add($"Ścieżka #{i + 1}: katalog obserwowany jest wymagany.");
+                _errors.Add(L.F("cfg.vWatchDir", i + 1));
             if (string.IsNullOrWhiteSpace(p.RcloneFilesFromPath))
-                _errors.Add($"Ścieżka #{i + 1}: plik --include-from jest wymagany.");
+                _errors.Add(L.F("cfg.vIncludeFrom", i + 1));
         }
 
         return _errors.Count == 0;

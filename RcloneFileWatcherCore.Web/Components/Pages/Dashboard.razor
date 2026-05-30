@@ -6,37 +6,38 @@
 @implements IDisposable
 @inject IStatusService StatusService
 @inject IRuntimeController Controller
+@inject Loc L
 
-<PageTitle>Pulpit — RcloneFileWatcher</PageTitle>
+<PageTitle>@L["nav.dashboard"] — RcloneFileWatcher</PageTitle>
 
 <div class="page-head">
-    <h1>Pulpit</h1>
-    <span class="live-dot" title="Aktualizacja na żywo"></span>
+    <h1>@L["nav.dashboard"]</h1>
+    <span class="live-dot" title="@L["nav.dashboard"]"></span>
 </div>
 
 @if (_status is null)
 {
-    <p>Ładowanie statusu…</p>
+    <p>@L["dash.loading"]</p>
 }
 else
 {
     <div class="cards">
         <div class="card">
-            <div class="card-label">Watcher</div>
+            <div class="card-label">@L["dash.watcher"]</div>
             <div class="card-value @(_status.WatcherRunning ? "ok" : "warn")">
-                @(_status.WatcherRunning ? "Działa" : "Zatrzymany")
+                @(_status.WatcherRunning ? L["dash.running"] : L["dash.stopped"])
             </div>
         </div>
         <div class="card">
-            <div class="card-label">Zmiany w kolejce</div>
+            <div class="card-label">@L["dash.queued"]</div>
             <div class="card-value">@_status.PendingChanges</div>
         </div>
         <div class="card">
-            <div class="card-label">Obserwowane ścieżki</div>
+            <div class="card-label">@L["dash.watchedPaths"]</div>
             <div class="card-value">@(_status.WatchedPaths?.Count ?? 0)</div>
         </div>
         <div class="card">
-            <div class="card-label">Uruchomiono (UTC)</div>
+            <div class="card-label">@L["dash.startedUtc"]</div>
             <div class="card-value small">@(_status.StartedAtUtc?.ToString("yyyy-MM-dd HH:mm:ss") ?? "—")</div>
         </div>
     </div>
@@ -51,19 +52,19 @@ else
     <div class="actions">
         @if (_status.WatcherRunning)
         {
-            <button class="btn btn-secondary" @onclick="StopWatcher">Zatrzymaj watcher</button>
+            <button class="btn btn-secondary" @onclick="StopWatcher">@L["dash.stopWatcher"]</button>
         }
         else
         {
-            <button class="btn" @onclick="StartWatcher">Uruchom watcher</button>
+            <button class="btn" @onclick="StartWatcher">@L["dash.startWatcher"]</button>
         }
-        <button class="btn" @onclick="SyncNow" disabled="@(!_status.WatcherRunning)">Synchronizuj teraz</button>
-        <button class="btn" @onclick="FullSyncNow" disabled="@(!_status.WatcherRunning)">Pełna synchronizacja</button>
+        <button class="btn" @onclick="SyncNow" disabled="@(!_status.WatcherRunning)">@L["dash.syncNow"]</button>
+        <button class="btn" @onclick="FullSyncNow" disabled="@(!_status.WatcherRunning)">@L["dash.fullSync"]</button>
     </div>
 
     @if (_status.WatchedPaths is { Count: > 0 })
     {
-        <h2>Obserwowane katalogi</h2>
+        <h2>@L["dash.watchedDirs"]</h2>
         <ul class="path-list">
             @foreach (var path in _status.WatchedPaths)
             {
@@ -73,8 +74,7 @@ else
     }
     else
     {
-        <p class="muted">Brak skonfigurowanych ścieżek. Dodaj je w sekcji
-            <NavLink href="config">Konfiguracja</NavLink>.</p>
+        <p class="muted">@L["dash.noPaths"]</p>
     }
 }
 
@@ -84,44 +84,6 @@ else
     private CancellationTokenSource _cts;
     private string _message;
     private bool _success;
-
-    private void StartWatcher()
-    {
-        try
-        {
-            Controller.Start();
-            _message = "Watcher uruchomiony.";
-            _success = true;
-        }
-        catch (Exception ex)
-        {
-            _message = $"Nie udało się uruchomić: {ex.Message}";
-            _success = false;
-        }
-        _status = StatusService.GetStatus();
-    }
-
-    private void StopWatcher()
-    {
-        Controller.Stop();
-        _message = "Watcher zatrzymany.";
-        _success = true;
-        _status = StatusService.GetStatus();
-    }
-
-    private void SyncNow()
-    {
-        Controller.SyncNow();
-        _message = "Zlecono synchronizację (sprawdź Logi).";
-        _success = true;
-    }
-
-    private void FullSyncNow()
-    {
-        Controller.FullSyncNow();
-        _message = "Zlecono pełną synchronizację (sprawdź Logi).";
-        _success = true;
-    }
 
     protected override void OnInitialized()
     {
@@ -145,6 +107,44 @@ else
         {
             // component disposed
         }
+    }
+
+    private void StartWatcher()
+    {
+        try
+        {
+            Controller.Start();
+            _message = L["dash.msgStarted"];
+            _success = true;
+        }
+        catch (Exception ex)
+        {
+            _message = L.F("dash.msgStartFailed", ex.Message);
+            _success = false;
+        }
+        _status = StatusService.GetStatus();
+    }
+
+    private void StopWatcher()
+    {
+        Controller.Stop();
+        _message = L["dash.msgStopped"];
+        _success = true;
+        _status = StatusService.GetStatus();
+    }
+
+    private void SyncNow()
+    {
+        Controller.SyncNow();
+        _message = L["dash.msgSyncRequested"];
+        _success = true;
+    }
+
+    private void FullSyncNow()
+    {
+        Controller.FullSyncNow();
+        _message = L["dash.msgFullSyncRequested"];
+        _success = true;
     }
 
     public void Dispose()

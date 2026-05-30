@@ -1,12 +1,31 @@
 @inherits LayoutComponentBase
+@using System.Globalization
+@inject NavigationManager Nav
 
 <div class="page">
     <div class="sidebar">
         <NavMenu />
     </div>
     <main>
+        <div class="topbar">
+            <div class="lang-switch">
+                <a href="@CultureUrl("en")" data-enhance-nav="false" class="@(CurrentLang == "en" ? "active" : "")">EN</a>
+                <a href="@CultureUrl("pl")" data-enhance-nav="false" class="@(CurrentLang == "pl" ? "active" : "")">PL</a>
+            </div>
+            <button type="button" class="iconbtn" onclick="rfwToggleTheme()" title="Light/dark theme">🌓</button>
+        </div>
         <article class="content">
             @Body
         </article>
     </main>
 </div>
+
+@code {
+    private string CurrentLang => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
+    private string CultureUrl(string culture)
+    {
+        var current = new Uri(Nav.Uri).PathAndQuery;
+        return $"/set-culture?culture={culture}&redirect={Uri.EscapeDataString(current)}";
+    }
+}

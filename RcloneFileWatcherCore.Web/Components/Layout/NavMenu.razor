@@ -1,20 +1,21 @@
 @inject IConfiguration Config
+@inject Loc L
 
 <div class="nav-brand">
     <span class="nav-logo">⟳</span> RcloneFileWatcher
 </div>
 <nav class="nav-menu">
     <NavLink class="nav-item" href="" Match="NavLinkMatch.All">
-        <span class="nav-icon">📊</span> Pulpit
+        <span class="nav-icon">📊</span> @L["nav.dashboard"]
     </NavLink>
     <NavLink class="nav-item" href="config">
-        <span class="nav-icon">⚙️</span> Konfiguracja
+        <span class="nav-icon">⚙️</span> @L["nav.config"]
     </NavLink>
     <NavLink class="nav-item" href="rclone">
-        <span class="nav-icon">☁️</span> Rclone
+        <span class="nav-icon">☁️</span> @L["nav.rclone"]
     </NavLink>
     <NavLink class="nav-item" href="logs">
-        <span class="nav-icon">📜</span> Logi
+        <span class="nav-icon">📜</span> @L["nav.logs"]
     </NavLink>
 </nav>
 
@@ -22,7 +23,7 @@
 {
     <form method="post" action="/logout" class="nav-logout">
         <button type="submit" class="nav-item nav-logout-btn">
-            <span class="nav-icon">🚪</span> Wyloguj
+            <span class="nav-icon">🚪</span> @L["nav.logout"]
         </button>
     </form>
 }

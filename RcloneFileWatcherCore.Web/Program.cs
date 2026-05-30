@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Localization;
 using RcloneFileWatcherCore.App;
 using RcloneFileWatcherCore.Config;
 using RcloneFileWatcherCore.DTO;
 using RcloneFileWatcherCore.Infrastructure.Logging;
 using RcloneFileWatcherCore.Web.Components;
+using RcloneFileWatcherCore.Web.Localization;
+using System.Globalization;
 using System.Security.Claims;
 
 const string ConfigFileName = "RcloneFileWatcherCoreConfig.cfg";
@@ -25,6 +28,9 @@ var config = new ConfigLoader(ConfigFileName, logger).LoadConfig() ?? new Config
 builder.Services.AddRcloneFileWatcherCore(config, ConfigFileName, logger);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddSingleton<Loc>();
+
+var supportedCultures = new[] { "en", "pl" };
 
 var guiPassword = builder.Configuration["Gui:Password"];
 var authEnabled = !string.IsNullOrWhiteSpace(guiPassword);
@@ -42,7 +48,32 @@ if (authEnabled)
 
 var app = builder.Build();
 
+var localizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture("en")
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+// English is the default; only an explicit choice (culture cookie set by the language switch)
+// changes it — do not auto-negotiate from the browser's Accept-Language header.
+localizationOptions.RequestCultureProviders = new List<IRequestCultureProvider>
+{
+    new CookieRequestCultureProvider()
+};
+app.UseRequestLocalization(localizationOptions);
+
 app.UseStaticFiles();
+
+// Language switch: store the choice in the culture cookie and reload the target page.
+app.MapGet("/set-culture", (string culture, string redirect, HttpContext ctx) =>
+{
+    if (!string.IsNullOrWhiteSpace(culture))
+    {
+        ctx.Response.Cookies.Append(
+            CookieRequestCultureProvider.DefaultCookieName,
+            CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)),
+            new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), IsEssential = true });
+    }
+    return Results.LocalRedirect(string.IsNullOrWhiteSpace(redirect) ? "/" : redirect);
+});
 
 if (authEnabled)
 {
@@ -117,27 +148,33 @@ internal static class OpenBrowser
 
 internal static class LoginPage
 {
-    public static string Render(bool error) => $$"""
+    public static string Render(bool error)
+    {
+        var loc = new Loc();
+        var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        var errorHtml = error ? $"<div class=\"alert alert-err\">{loc["login.wrong"]}</div>" : "";
+        return $$"""
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="{{lang}}">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Logowanie — RcloneFileWatcher</title>
+    <title>RcloneFileWatcher</title>
     <link rel="stylesheet" href="app.css" />
 </head>
 <body>
     <div class="login-box">
         <h1>RcloneFileWatcher</h1>
-        {{(error ? "<div class=\"alert alert-err\">Nieprawidłowe hasło.</div>" : "")}}
+        {{errorHtml}}
         <form method="post" action="/login">
-            <label>Hasło
+            <label>{{loc["login.password"]}}
                 <input type="password" name="password" autofocus />
             </label>
-            <button class="btn" type="submit">Zaloguj</button>
+            <button class="btn" type="submit">{{loc["login.submit"]}}</button>
         </form>
     </div>
 </body>
 </html>
 """;
+    }
 }

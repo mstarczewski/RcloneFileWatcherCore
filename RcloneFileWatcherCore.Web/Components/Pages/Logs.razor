@@ -6,16 +6,17 @@
 @implements IDisposable
 @inject BroadcastLogWriter LogBuffer
 @inject IJSRuntime JS
+@inject Loc L
 
-<PageTitle>Logi — RcloneFileWatcher</PageTitle>
+<PageTitle>@L["nav.logs"] — RcloneFileWatcher</PageTitle>
 
-<h1>Logi</h1>
+<h1>@L["nav.logs"]</h1>
 
 <div class="toolbar">
     <label>
-        Poziom:
+        @L["log.level"]
         <select @bind="_levelFilter" @bind:after="ApplyFilter">
-            <option value="">Wszystkie</option>
+            <option value="">@L["log.all"]</option>
             @foreach (var level in Levels)
             {
                 <option value="@level">@level</option>
@@ -23,14 +24,14 @@
         </select>
     </label>
     <label class="checkbox">
-        <input type="checkbox" @bind="_autoScroll" /> Auto-przewijanie
+        <input type="checkbox" @bind="_autoScroll" /> @L["log.autoScroll"]
     </label>
     <span class="spacer"></span>
-    <span class="muted">@_filtered.Count / @_lines.Count wpisów</span>
-    <button class="btn btn-sm" @onclick="Clear">Wyczyść widok</button>
+    <span class="muted">@L.F("log.entries", _filtered.Count, _lines.Count)</span>
+    <button class="btn btn-sm" @onclick="Clear">@L["log.clear"]</button>
 </div>
 
-<pre class="log-view" id="logView">@string.Join("\n", _filtered)</pre>
+<pre class="log-view" id="logView">@(_filtered.Count == 0 ? L["log.noEntries"] : string.Join("\n", _filtered))</pre>
 
 @code {
     private static readonly string[] Levels =

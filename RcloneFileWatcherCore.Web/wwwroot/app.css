@@ -8,6 +8,20 @@
     --ok: #4caf78;
     --warn: #e0a83a;
     --border: #3a3d46;
+    --code-bg: #15161a;
+}
+
+[data-theme="light"] {
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --panel-2: #eef0f3;
+    --text: #1e2024;
+    --muted: #5a616b;
+    --accent: #2563eb;
+    --ok: #1f8a52;
+    --warn: #b6791f;
+    --border: #d6dae0;
+    --code-bg: #f0f2f5;
 }
 
 * {
@@ -38,6 +52,51 @@ html, body {
 main {
     flex: 1;
     min-width: 0;
+}
+
+.topbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.iconbtn {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.iconbtn:hover {
+    border-color: var(--accent);
+}
+
+.lang-switch {
+    display: inline-flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.lang-switch a {
+    color: var(--muted);
+    text-decoration: none;
+    padding: 0.2rem 0.45rem;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    border: 1px solid transparent;
+}
+
+.lang-switch a.active {
+    color: var(--text);
+    border-color: var(--border);
+    background: var(--panel-2);
 }
 
 .content {
@@ -186,7 +245,7 @@ code {
 }
 
 .log-view {
-    background: #15161a;
+    background: var(--code-bg);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem;
@@ -379,7 +438,7 @@ textarea {
 
 .cmd-line {
     display: block;
-    background: #15161a;
+    background: var(--code-bg);
     border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.6rem 0.8rem;
@@ -388,7 +447,7 @@ textarea {
     line-height: 1.4;
     white-space: pre-wrap;
     word-break: break-all;
-    color: #cfe3ff;
+    color: var(--text);
 }
 
 .badge {

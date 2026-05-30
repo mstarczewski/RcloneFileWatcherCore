@@ -6,15 +6,13 @@
 @using RcloneFileWatcherCore.Logic.Rclone
 @implements IDisposable
 @inject IConfigService ConfigService
+@inject Loc L
 
-<PageTitle>Rclone — RcloneFileWatcher</PageTitle>
+<PageTitle>@L["nav.rclone"] — RcloneFileWatcher</PageTitle>
 
-<h1>Rclone</h1>
+<h1>@L["nav.rclone"]</h1>
 
-<p class="muted">Podgląd wywołań rclone dla każdej obserwowanej ścieżki. Edycja odbywa się w sekcji
-    <NavLink href="config">Konfiguracja</NavLink>. W trybie <em>Managed</em> komenda jest budowana
-    z pól (z automatycznym <code>--include-from</code>); w trybie <em>Skrypt</em> uruchamiany jest
-    podany plik <code>.bat</code>/<code>.sh</code>.</p>
+<p class="muted">@L["rcl.intro"]</p>
 
 @{
     var cfg = ConfigService.Current;
@@ -22,7 +20,7 @@
 
 @if (cfg.Path is null || cfg.Path.Count == 0)
 {
-    <p class="muted">Brak skonfigurowanych ścieżek.</p>
+    <p class="muted">@L["rcl.noPaths"]</p>
 }
 else
 {
@@ -32,7 +30,7 @@ else
             <div class="path-card-head">
                 <strong><code>@path.WatchingPath</code></strong>
                 <span class="badge @(path.SyncMode == SyncMode.Managed ? "badge-accent" : "")">
-                    @(path.SyncMode == SyncMode.Managed ? "Managed" : "Skrypt")
+                    @(path.SyncMode == SyncMode.Managed ? L["rcl.managed"] : L["rcl.script"])
                 </span>
             </div>
 
@@ -44,12 +42,12 @@ else
                 }
                 else
                 {
-                    <p class="muted">Tryb Managed bez skonfigurowanej komendy.</p>
+                    <p class="muted">@L["rcl.noCommand"]</p>
                 }
             }
             else
             {
-                <p class="muted">Skrypt: <code>@(string.IsNullOrWhiteSpace(path.RcloneBatch) ? "— (nie ustawiono)" : path.RcloneBatch)</code></p>
+                <p class="muted">@L["rcl.scriptLabel"] <code>@(string.IsNullOrWhiteSpace(path.RcloneBatch) ? L["rcl.notSet"] : path.RcloneBatch)</code></p>
             }
         </div>
     }

@@ -5,6 +5,25 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem('rfw-theme') === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                }
+            } catch (e) { }
+        })();
+        window.rfwToggleTheme = function () {
+            var light = document.documentElement.getAttribute('data-theme') === 'light';
+            if (light) {
+                document.documentElement.removeAttribute('data-theme');
+                try { localStorage.setItem('rfw-theme', 'dark'); } catch (e) { }
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                try { localStorage.setItem('rfw-theme', 'light'); } catch (e) { }
+            }
+        };
+    </script>
     <link rel="stylesheet" href="app.css" />
     <link rel="icon" href="data:," />
     <title>RcloneFileWatcher</title>
