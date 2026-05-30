@@ -15,6 +15,10 @@ namespace RcloneFileWatcherCore.Tests
     [TestClass]
     public class SchedulerTests
     {
+        // Generous upper bound for the 1000ms timer to elapse; the wait returns as soon
+        // as the callback fires, so this only bounds the failure case.
+        private const int TimeoutMs = 10000;
+
         private Mock<ILogger> _loggerMock;
         private Mock<IRcloneJobService> _updateProcessMock;
         private Mock<IRcloneJobService> _syncProcessMock;
@@ -60,13 +64,15 @@ namespace RcloneFileWatcherCore.Tests
         public void SetTimer_EnablesTimer()
         {
             // Arrange
+            using var syncCalled = new ManualResetEventSlim();
+            _syncProcessMock.Setup(x => x.Execute(It.IsAny<ConfigDTO>())).Callback(() => syncCalled.Set());
             using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
 
             // Act
             scheduler.SetTimer();
 
-            // Assert - Timer is enabled and will trigger OnTimedEvent
-            Thread.Sleep(2000); // Wait for timer to elapse
+            // Assert - Timer is enabled and triggers OnTimedEvent
+            Assert.IsTrue(syncCalled.Wait(TimeoutMs), "Timer did not elapse and call the sync process within the timeout.");
             _syncProcessMock.Verify(x => x.Execute(It.IsAny<ConfigDTO>()), Times.AtLeastOnce);
         }
 
@@ -76,13 +82,15 @@ namespace RcloneFileWatcherCore.Tests
             // Arrange
             _configDTO.UpdateRclone.Update = true;
             _configDTO.UpdateRclone.CheckUpdateHours = 0; // Ensure update will trigger
+            using var updateCalled = new ManualResetEventSlim();
+            _updateProcessMock.Setup(x => x.Execute(It.IsAny<ConfigDTO>())).Callback(() => updateCalled.Set());
             using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
 
             // Act
             scheduler.SetTimer();
 
             // Assert
-            Thread.Sleep(1000); // Wait for timer to elapse
+            Assert.IsTrue(updateCalled.Wait(TimeoutMs), "Timer did not elapse and call the update process within the timeout.");
             _updateProcessMock.Verify(x => x.Execute(It.IsAny<ConfigDTO>()), Times.AtLeastOnce);
         }
 
@@ -91,13 +99,16 @@ namespace RcloneFileWatcherCore.Tests
         {
             // Arrange
             _configDTO.UpdateRclone.Update = false;
+            using var syncCalled = new ManualResetEventSlim();
+            _syncProcessMock.Setup(x => x.Execute(It.IsAny<ConfigDTO>())).Callback(() => syncCalled.Set());
             using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
 
             // Act
             scheduler.SetTimer();
 
-            // Assert
-            Thread.Sleep(_configDTO.SyncIntervalSeconds); // Wait for timer to elapse
+            // Assert - wait for a full timer cycle (sync runs after the update decision in OnTimedEvent),
+            // then confirm the disabled update process was never invoked.
+            Assert.IsTrue(syncCalled.Wait(TimeoutMs), "Timer did not elapse within the timeout.");
             _updateProcessMock.Verify(x => x.Execute(It.IsAny<ConfigDTO>()), Times.Never);
         }
 
@@ -105,13 +116,15 @@ namespace RcloneFileWatcherCore.Tests
         public void OnTimedEvent_AlwaysCallsSyncProcess()
         {
             // Arrange
+            using var syncCalled = new ManualResetEventSlim();
+            _syncProcessMock.Setup(x => x.Execute(It.IsAny<ConfigDTO>())).Callback(() => syncCalled.Set());
             using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
 
             // Act
             scheduler.SetTimer();
 
             // Assert
-            Thread.Sleep(1000); // Wait for timer to elapse
+            Assert.IsTrue(syncCalled.Wait(TimeoutMs), "Timer did not elapse and call the sync process within the timeout.");
             _syncProcessMock.Verify(x => x.Execute(It.IsAny<ConfigDTO>()), Times.AtLeastOnce);
         }
 
@@ -120,15 +133,16 @@ namespace RcloneFileWatcherCore.Tests
         {
             // Arrange
             _syncProcessMock.Setup(x => x.Execute(It.IsAny<ConfigDTO>())).Throws<Exception>();
+            using var errorLogged = new ManualResetEventSlim();
+            _loggerMock.Setup(x => x.Log(LogLevel.Error, It.IsAny<string>(), It.IsAny<Exception>())).Callback(() => errorLogged.Set());
             using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
 
             // Act
             scheduler.SetTimer();
 
             // Assert
-            Thread.Sleep(2000); // Wait for timer to elapse
+            Assert.IsTrue(errorLogged.Wait(TimeoutMs), "Timer did not elapse and log an error within the timeout.");
             _loggerMock.Verify(x => x.Log(LogLevel.Error, It.IsAny<string>(), It.IsAny<Exception>()), Times.AtLeastOnce);
-
         }
 
         [TestMethod]
