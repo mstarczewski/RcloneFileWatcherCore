@@ -25,12 +25,21 @@ The configuration is optimized for Windows and Linux. On Windows, it is recommen
 ## Key Features
 
 - Real-time file and directory change monitoring
-- Automatically generates `--include-from` file for rclone
-- Executes an rclone batch/command script with proper file filtering
-- Optional full-sync at startup
-- Optional full-sync at specified time of day
-- Optionally auto-updates rclone binary
-- Optional cross-platform **web GUI** (Blazor Server) for configuration, status, live logs and rclone command building
+- Two ways to run rclone per watched path:
+  - **Script mode** – run your own `.bat`/`.sh` (the original behavior)
+  - **Managed mode** – build the rclone command from fields; the app runs rclone directly and injects `--include-from` automatically
+- Changed-file list passed to rclone **via stdin** (`--include-from -`) — no on-disk exchange file needed (handles very large lists)
+- Live rclone output captured into the log (both managed and script mode); `{datetime}`/`{date}`/`{time}`/`{year}` placeholders substituted at run time
+- Optional full-sync at startup and/or daily at a set time — **also configurable as managed commands**
+- Enable/disable individual watched paths or full-sync commands without deleting them
+- Optionally auto-updates the rclone binary
+- Cross-platform **web GUI** (Blazor Server) for configuration, live status/logs and rclone command building:
+  - Live dashboard with start/stop, sync-now, full-sync-now and a **Stop rclone** button
+  - rclone availability + version shown per configured path
+  - Errors are **kept visible** in the log until cleared (they don't scroll away)
+  - Warnings when a command has `--dry-run` enabled or a sync is disabled
+  - GUI-managed password (hashed, runtime on/off), light/dark theme, and English/Polish/German UI
+- Hot-reload: configuration changes apply **without restarting** (the watcher is rebuilt live)
 
 ---
 
@@ -112,6 +121,11 @@ Create a config file named `RcloneFileWatcherCoreConfig.cfg` in the executable f
 * `"RunOneTimeFullStartupSync"` -	Runs a full sync batch at startup
 * `"RunOneTimeFullStartupSyncBatch"` - Path to full sync batch script
 * `"RunStartupScriptEveryDayAt"` - Runs the startup script (full sync) once per day at the specified time.
+
+> The config also supports the **managed** mode used by the GUI: per path `"Enabled"`, `"SyncMode"`
+> (`Script`/`Managed`) and an `"RcloneCommand"` object, plus top-level `"FullSyncMode"` and a
+> `"FullSyncCommands"` list. You don't need to hand-write these — the **Configuration** page builds
+> and saves them for you (and can import an existing script into managed fields).
 
 ### Example rclone script (Linux) (`rclone_livesync_shared.sh`)
 
@@ -206,35 +220,64 @@ Then open <http://localhost:5005>. The GUI looks for `RcloneFileWatcherCoreConfi
 working directory; if it is missing it starts empty so you can create the configuration from the
 browser.
 
+The GUI is localized (English by default, plus Polish and German) with a light/dark theme toggle;
+language is switchable from the top bar and new languages can be added by dropping a
+`locales/<culture>.json` file next to the binary — no recompile.
+
 ### Pages
 
-* **Pulpit (Dashboard)** – live status (watcher state, queued changes, watched paths) and controls:
-  start/stop the watcher, run a sync now, run a full sync now.
-* **Konfiguracja (Configuration)** – edit all parameters and the watched-paths list, then save &
-  apply live.
-* **Rclone** – per-path preview of the effective rclone command line.
-* **Logi (Logs)** – live log stream with a level filter.
+* **Dashboard** – live status (watcher state, queued changes, watched paths) and controls:
+  start/stop the watcher, sync now, full sync now, and **Stop rclone** (kills the running rclone).
+  Shows the rclone version/availability for each configured path and warns when `--dry-run` is on
+  or a sync is disabled.
+* **Configuration** – tabbed editor (General / Full sync / Watched paths). Every field has a `?`
+  tooltip. Each path and full-sync command has an **Enabled** toggle and can be imported from an
+  existing `.bat`/`.sh` (a multi-command full-sync script is split into separate managed commands).
+  Save applies live.
+* **Rclone** – per-path and full-sync preview of the effective rclone command line.
+* **Logs** – live log stream with a level filter and download. **Errors are kept** in a separate
+  panel until you clear them, so a problem stays visible long after it scrolled out of the buffer.
+* **Security** – turn the password requirement on/off and set/change the password (see below).
 
 ### rclone invocation: script vs managed
 
-Each watched path runs rclone in one of two modes:
+Each watched path (and the full sync) runs rclone in one of two modes:
 
-* **Script** – the original behavior: run the `RcloneBatch` `.bat`/`.sh` file (which must contain
-  the full rclone command, including `--include-from`).
-* **Managed** – build the rclone command from fields in the GUI; the app runs rclone directly and
-  injects `--include-from` automatically. Date/time placeholders are substituted at run time:
-  `{datetime}` → `yyyy-MM-dd-HH-mm-ss`, `{date}`, `{time}`, `{year}` — e.g.
-  `--suffix " [{datetime}]"`, `--backup-dir remote:$Archive/Shared/{year}`.
+* **Script** – run the `.bat`/`.sh` file (which must contain the full rclone command, including
+  `--include-from`). Its output is captured into the GUI log.
+* **Managed** – build the rclone command from fields in the GUI; the app runs rclone directly.
+  - `--include-from` is injected automatically; by default the changed-file list is piped to rclone
+    via **stdin** (`--include-from -`) so there is no temporary file on disk.
+  - Common flags are first-class checkboxes/fields: `--bwlimit`, `--transfers`, `--checkers`,
+    `--retries`, `--backup-dir`, `--suffix`, `--log-file`, `--create-empty-src-dirs`, `--use-mmap`,
+    `--fast-list`, `--update`, `--dry-run`; anything else goes in *extra arguments*.
+  - Date/time placeholders are substituted at run time: `{datetime}` → `yyyy-MM-dd-HH-mm-ss`,
+    `{date}`, `{time}`, `{year}` — e.g. `--suffix " [{datetime}]"`,
+    `--backup-dir remote:$Archive/Shared/{year}`.
+
+### Authentication
+
+Access control is managed entirely from the **Security** page (no setting needed): toggle the
+password requirement on/off and set the password at runtime — the change takes effect immediately,
+no restart. The password is stored **hashed** (PBKDF2) in `gui-auth.json` next to the binary (this
+file is gitignored and must never be published). Minimum policy: 8+ characters with a letter and a
+digit. With no password set, access is open (intended for localhost). When exposing the GUI on a
+network, set a password and put it behind an **HTTPS reverse proxy** (over plain HTTP the password
+and cookie travel in clear text).
 
 ### Settings (`appsettings.json` / environment)
 
 * `Gui:Urls` – bind address. Defaults to `http://localhost:5005`. Use e.g. `http://0.0.0.0:5005`
   to expose on the LAN.
-* `Gui:Password` – when set, the GUI requires login. Leave empty for no authentication
-  (localhost use). When exposing on a network, set a password and prefer running behind an
-  HTTPS reverse proxy.
 * `Gui:OpenBrowser` – `true` to open the browser on startup (desktop convenience; keep `false`
   for headless/service deployments).
+
+### Deployment
+
+The web GUI **must be deployed as a folder** — the published output (the `.dll`/apphost together
+with `wwwroot/` and `locales/` beside it), not a single file. Run it with `dotnet
+RcloneFileWatcherCore.Web.dll` or the platform apphost, with the working directory set to that
+folder. On Linux use systemd; on Windows use a service manager such as NSSM.
 
 ---
 

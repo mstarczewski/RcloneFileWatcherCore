@@ -12,89 +12,40 @@ on:
         default: ''
 
 jobs:
+  # Decide ONE version for the whole run so the Windows and Linux artifacts always carry the same
+  # number. From a tag push / dispatch tag it's the tag (without the leading "v"); otherwise it's a
+  # CalVer stamp computed once here: yyyy.MM.dd.HHmms (UTC), matching Directory.Build.props.
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      tag: ${{ steps.v.outputs.tag }}
+    steps:
+      - name: Determine version
+        id: v
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            tag="${{ github.ref_name }}"
+            ver="${tag#v}"
+          elif [ -n "${{ github.event.inputs.tag }}" ]; then
+            tag="${{ github.event.inputs.tag }}"
+            ver="${tag#v}"
+          else
+            t="$(date -u +'%H%M%S')"
+            ver="$(date -u +'%Y.%m.%d').${t:0:5}"
+            tag="v$ver"
+          fi
+          echo "Resolved version=$ver tag=$tag"
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
   build-windows:
+    needs: version
     runs-on: windows-latest
     env:
       Configuration: Release
-      RuntimeId: win-x64
-    outputs:
-      version: ${{ steps.extract_version.outputs.version }}
-      changelog: ${{ steps.changelog.outputs.changelog }}
-    steps:
-      - name: Checkout repo with full history
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      VERSION: ${{ needs.version.outputs.version }}
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Restore
-        run: dotnet restore -r linux-x64
-
-      - name: Build solution
-        run: dotnet build --no-restore -c ${{ env.Configuration }}
-
-      - name: Run tests
-        shell: bash
-        run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
-
-      - name: Publish app
-        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r win-x64 --self-contained false /p:PublishSingleFile=true
-
-      - name: Publish Web GUI
-        run: dotnet publish RcloneFileWatcherCore.Web/RcloneFileWatcherCore.Web.csproj -c Release -r win-x64 --self-contained false -o "${{ github.workspace }}\publish-web-win"
-
-      - name: Prepare release artifacts
-        run: |
-          mkdir "${{ github.workspace }}\artifacts"
-          copy "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\*.exe" "${{ github.workspace }}\artifacts\"
-          Compress-Archive -Path "${{ github.workspace }}\artifacts\*" -DestinationPath "${{ github.workspace }}\artifacts\app-win-x64.zip"
-          Compress-Archive -Path "${{ github.workspace }}\publish-web-win\*" -DestinationPath "${{ github.workspace }}\artifacts\gui-win-x64.zip"
-
-      - name: Extract version from assembly
-        id: extract_version
-        run: |
-          $assemblyPath = "${{ github.workspace }}\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish\RcloneFileWatcherCore.exe"
-          $version = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath).ProductVersion
-          echo "Extracted version: $version"
-          echo "version=$version" >> $env:GITHUB_OUTPUT
-        shell: powershell
-
-      - name: Generate changelog
-        id: changelog
-        shell: bash
-        run: |
-          git fetch --tags
-          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -z "$latest_tag" ]; then
-            echo "No previous tag found, including full history" >&2
-            log=$(git log --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):')
-          else
-            echo "Generating changelog since $latest_tag" >&2
-            log=$(git log "$latest_tag"..HEAD --pretty=format:"- %s [%h] by %an" | grep -E '^- (feat|fix|BREAKING CHANGE):')
-          fi
-          
-          # Multiline output
-          {
-            echo "changelog<<EOF"
-            echo "$log"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
-
-      - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-artifacts
-          path: artifacts/
-
-  build-linux:
-    runs-on: ubuntu-latest
-    env:
-      Configuration: Release
-      RuntimeId: linux-x64
     steps:
       - name: Checkout repo with full history
         uses: actions/checkout@v4
@@ -110,68 +61,162 @@ jobs:
         run: dotnet restore
 
       - name: Build solution
-        run: dotnet build --no-restore -c ${{ env.Configuration }}
+        run: dotnet build --no-restore -c ${{ env.Configuration }} -p:Version=${{ env.VERSION }}
 
       - name: Run tests
         run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
 
-      - name: Publish app
-        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj --no-build -c Release -r linux-x64 --self-contained false /p:PublishSingleFile=true
+      - name: Publish Windows console app
+        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:Version=${{ env.VERSION }}
 
-      - name: Publish Web GUI
-        run: dotnet publish RcloneFileWatcherCore.Web/RcloneFileWatcherCore.Web.csproj -c Release -r linux-x64 --self-contained false -o publish-web-linux
+      - name: Publish Windows web GUI (folder)
+        run: dotnet publish RcloneFileWatcherCore.Web/RcloneFileWatcherCore.Web.csproj -c Release -r win-x64 --self-contained false -p:Version=${{ env.VERSION }}
 
-      - name: Prepare release artifacts
+      - name: Prepare Windows artifacts
+        shell: pwsh
         run: |
-          mkdir -p artifacts
-          cp RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish/* artifacts/
-          cd artifacts && tar -czf app-linux-x64.tar.gz --exclude=app-linux-x64.tar.gz * && cd ..
-          tar -czf artifacts/gui-linux-x64.tar.gz -C publish-web-linux .
+          $ws = "${{ github.workspace }}"
+          New-Item -ItemType Directory -Path "$ws\artifacts" -Force | Out-Null
+
+          # Console: single-file exe (+ version.json if present)
+          $consolePub = "$ws\RcloneFileWatcherCore\bin\Release\net8.0\win-x64\publish"
+          $items = @(Get-ChildItem "$consolePub\*.exe")
+          if (Test-Path "$consolePub\version.json") { $items += Get-Item "$consolePub\version.json" }
+          Compress-Archive -Path $items -DestinationPath "$ws\artifacts\app-win-x64.zip" -Force
+
+          # Web GUI: whole publish folder (dll + wwwroot + locales)
+          $webPub = "$ws\RcloneFileWatcherCore.Web\bin\Release\net8.0\win-x64\publish"
+          Compress-Archive -Path "$webPub\*" -DestinationPath "$ws\artifacts\app-web-win-x64.zip" -Force
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-x64
+          path: ${{ github.workspace }}/artifacts/*.zip
+
+  build-linux:
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      Configuration: Release
+      VERSION: ${{ needs.version.outputs.version }}
+
+    steps:
+      - name: Checkout repo with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --no-restore -c ${{ env.Configuration }} -p:Version=${{ env.VERSION }}
+
+      - name: Run tests
+        run: dotnet test RcloneFileWatcherCore.Tests/RcloneFileWatcherCore.Tests.csproj --no-build -c ${{ env.Configuration }}
+
+      - name: Publish Linux console app
+        run: dotnet publish RcloneFileWatcherCore/RcloneFileWatcherCore.csproj -c Release -r linux-x64 --self-contained false -p:Version=${{ env.VERSION }}
+
+      - name: Publish Linux web GUI (folder)
+        run: dotnet publish RcloneFileWatcherCore.Web/RcloneFileWatcherCore.Web.csproj -c Release -r linux-x64 --self-contained false -p:Version=${{ env.VERSION }}
+
+      - name: Prepare Linux artifacts
+        run: |
+          set -e
+          ws="${{ github.workspace }}"
+          mkdir -p "$ws/artifacts"
+
+          # Console
+          consolePub="$ws/RcloneFileWatcherCore/bin/Release/net8.0/linux-x64/publish"
+          chmod +x "$consolePub/RcloneFileWatcherCore" || true
+          ( cd "$consolePub"
+            files="RcloneFileWatcherCore"
+            [ -f version.json ] && files="$files version.json"
+            zip -r "$ws/artifacts/app-linux-x64.zip" $files )
+
+          # Web GUI: whole publish folder
+          webPub="$ws/RcloneFileWatcherCore.Web/bin/Release/net8.0/linux-x64/publish"
+          chmod +x "$webPub/RcloneFileWatcherCore.Web" || true
+          (cd "$webPub" && zip -r "$ws/artifacts/app-web-linux-x64.zip" .)
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-artifacts
-          path: artifacts/
+          name: linux-x64
+          path: ${{ github.workspace }}/artifacts/*.zip
 
-  release:
-    needs: [build-windows, build-linux]
+  create_release:
+    needs: [version, build-windows, build-linux]
     runs-on: ubuntu-latest
     steps:
-      - name: Download Windows artifacts
-        uses: actions/download-artifact@v4
+      - name: Checkout repo with full history
+        uses: actions/checkout@v4
         with:
-          name: windows-artifacts
-          path: windows-artifacts/
+          fetch-depth: 0
 
-      - name: Download Linux artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: linux-artifacts
-          path: linux-artifacts/
+          path: ${{ github.workspace }}/artifacts
+
+      - name: Flatten artifact files into artifacts/ root
+        run: |
+          set -e
+          ART_DIR="${{ github.workspace }}/artifacts"
+          find "$ART_DIR" -mindepth 2 -name '*.zip' -exec mv -t "$ART_DIR" {} +
+          echo "Artifacts to upload:"
+          ls -la "$ART_DIR"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          git fetch --tags
+          latest_tag=$(git describe --tags --abbrev=0 "HEAD^" 2>/dev/null || git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$latest_tag" ]; then
+            range=""
+          else
+            range="$latest_tag..HEAD"
+          fi
+          # Prefer conventional-commit lines; fall back to all subjects so the notes aren't empty.
+          log=$(git log $range --pretty=format:"- %s [%h]" | grep -E '^- (feat|fix|BREAKING CHANGE)' || true)
+          if [ -z "$log" ]; then
+            log=$(git log $range --pretty=format:"- %s [%h]" || true)
+          fi
+          if [ -z "$log" ]; then
+            log="(no changelog entries found)"
+          fi
+          {
+            echo "changelog<<EOF"
+            echo "$log"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.build-windows.outputs.version }}
-          name: Release ${{ needs.build-windows.outputs.version }}
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: Release ${{ needs.version.outputs.version }}
           body: |
             ### Changes since last release
-            ${{ needs.build-windows.outputs.changelog }}
-            
-            ### Assembly Version
-            `${{ needs.build-windows.outputs.version }}`
-            
-            ### Downloads
-            - **Windows x64 (console)**: `app-win-x64.zip`
-            - **Windows x64 (web GUI)**: `gui-win-x64.zip`
-            - **Linux x64 (console)**: `app-linux-x64.tar.gz`
-            - **Linux x64 (web GUI)**: `gui-linux-x64.tar.gz`
+            ${{ steps.changelog.outputs.changelog }}
+
+            ### Version
+            `${{ needs.version.outputs.version }}`
+
+            ### Artifacts
+            - `app-win-x64.zip` / `app-linux-x64.zip` — headless console app (single file on Windows)
+            - `app-web-win-x64.zip` / `app-web-linux-x64.zip` — web GUI (run as a folder: `dotnet RcloneFileWatcherCore.Web.dll`)
           files: |
-            windows-artifacts/*.exe
-            windows-artifacts/app-win-x64.zip
-            windows-artifacts/gui-win-x64.zip
-            linux-artifacts/app-linux-x64.tar.gz
-            linux-artifacts/gui-linux-x64.tar.gz
+            artifacts/app-win-x64.zip
+            artifacts/app-linux-x64.zip
+            artifacts/app-web-win-x64.zip
+            artifacts/app-web-linux-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
