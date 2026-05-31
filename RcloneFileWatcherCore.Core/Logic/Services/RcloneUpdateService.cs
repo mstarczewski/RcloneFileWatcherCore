@@ -4,6 +4,7 @@ using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Diagnostics;
+using System.Text;
 
 namespace RcloneFileWatcherCore.Logic.Services
 {
@@ -52,22 +53,28 @@ namespace RcloneFileWatcherCore.Logic.Services
             };
             try
             {
-                string output = string.Empty;
-                string error = string.Empty;
-                process.OutputDataReceived += (s, e) => { if (e.Data != null) output += e.Data; };
-                process.ErrorDataReceived += (s, e) => { if (e.Data != null) error += e.Data; };
+                var output = new StringBuilder();
+                var error = new StringBuilder();
+                process.OutputDataReceived += (s, e) => { if (e.Data != null) output.AppendLine(e.Data); };
+                process.ErrorDataReceived += (s, e) => { if (e.Data != null) error.AppendLine(e.Data); };
                 process.Start();
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
                 process.WaitForExit();
-                process.OutputDataReceived -= null;
-                process.ErrorDataReceived -= null;
-                if (!string.IsNullOrWhiteSpace(error))
+
+                // rclone writes its normal NOTICE/INFO output (including "Successfully updated")
+                // to stderr, so stderr is NOT an error signal — surface it as info and judge the
+                // outcome by the exit code plus the success marker found in either stream.
+                if (error.Length > 0)
+                    _logger.Log(LogLevel.Information, $"rclone selfupdate: {error.ToString().Trim()}");
+
+                if (process.ExitCode != 0)
                 {
-                    _logger.Log(LogLevel.Information, $"Update proc DataReceived {error}");
+                    _logger.Log(LogLevel.Warning, $"rclone selfupdate exited with code {process.ExitCode}");
                     return false;
                 }
-                return resultChecker(output);
+
+                return resultChecker(output + error.ToString());
             }
             catch (Exception ex)
             {
@@ -76,9 +83,9 @@ namespace RcloneFileWatcherCore.Logic.Services
             }
         }
 
-        private bool SelfUpdateExecutionCheck(string output)
+        private bool SelfUpdateExecutionCheck(string combinedOutput)
         {
-            return output.Contains(RCLONE_SUCCESS_UPDATE, StringComparison.OrdinalIgnoreCase);
+            return combinedOutput.Contains(RCLONE_SUCCESS_UPDATE, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

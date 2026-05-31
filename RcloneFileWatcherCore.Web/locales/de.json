@@ -36,8 +36,6 @@
   "dash.msgStarted": "Watcher gestartet.",
   "dash.msgStopped": "Watcher gestoppt.",
   "dash.msgStartFailed": "Start fehlgeschlagen: {0}",
-  "dash.msgSyncRequested": "Synchronisierung angefordert (siehe Protokolle).",
-  "dash.msgFullSyncRequested": "Vollständige Synchronisierung angefordert (siehe Protokolle).",
   "dash.jobRunning": "Läuft… (siehe Protokolle)",
   "dash.jobDone": "Fertig.",
   "dash.jobFailed": "Fehlgeschlagen — siehe Protokolle.",

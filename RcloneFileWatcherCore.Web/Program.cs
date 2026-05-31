@@ -50,6 +50,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LoginPath = "/login";
         options.ExpireTimeSpan = TimeSpan.FromHours(12);
         options.SlidingExpiration = true;
+        // Harden the auth cookie: never exposed to JS, sent only same-site, and marked Secure
+        // automatically when served over HTTPS (e.g. behind the recommended TLS reverse proxy).
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
 builder.Services.AddAuthorization(options =>
 {
@@ -58,6 +63,7 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 builder.Services.AddSingleton<IAuthorizationHandler, GuiAuthHandler>();
+builder.Services.AddSingleton<LoginThrottle>();
 
 var app = builder.Build();
 
@@ -104,15 +110,25 @@ app.MapGet("/login", (string error, HttpContext ctx) =>
 app.MapPost("/login", async (HttpContext ctx) =>
 {
     var auth = ctx.RequestServices.GetRequiredService<IAuthService>();
+    var throttle = ctx.RequestServices.GetRequiredService<LoginThrottle>();
+    var clientKey = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+    // Throttle brute-force guessing: after too many failures from one client, refuse for a while.
+    if (throttle.IsLocked(clientKey))
+        return Results.Redirect("/login?error=1");
+
     var form = await ctx.Request.ReadFormAsync();
     if (auth.Enabled && auth.Verify(form["password"].ToString()))
     {
+        throttle.Reset(clientKey);
         var identity = new ClaimsIdentity(
             new[] { new Claim(ClaimTypes.Name, "admin") },
             CookieAuthenticationDefaults.AuthenticationScheme);
         await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
         return Results.LocalRedirect("/");
     }
+
+    throttle.RegisterFailure(clientKey);
     return Results.Redirect("/login?error=1");
 }).DisableAntiforgery();
 
@@ -161,6 +177,40 @@ internal static class OpenBrowser
             logger.Log(RcloneFileWatcherCore.Enums.LogLevel.Warning, $"Could not open browser at {url}", ex);
         }
     }
+}
+
+// Simple in-memory brute-force guard for the login endpoint: after MaxFailures failed attempts
+// from one client (keyed by remote IP), further attempts are refused for LockoutDuration.
+internal sealed class LoginThrottle
+{
+    private const int MaxFailures = 5;
+    private static readonly TimeSpan LockoutDuration = TimeSpan.FromSeconds(30);
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Entry> _entries = new();
+
+    private sealed class Entry
+    {
+        public int Failures;
+        public DateTime LockedUntilUtc;
+    }
+
+    public bool IsLocked(string key)
+        => _entries.TryGetValue(key, out var e) && DateTime.UtcNow < e.LockedUntilUtc;
+
+    public void RegisterFailure(string key)
+    {
+        var e = _entries.GetOrAdd(key, _ => new Entry());
+        lock (e)
+        {
+            e.Failures++;
+            if (e.Failures >= MaxFailures)
+            {
+                e.LockedUntilUtc = DateTime.UtcNow.Add(LockoutDuration);
+                e.Failures = 0;
+            }
+        }
+    }
+
+    public void Reset(string key) => _entries.TryRemove(key, out _);
 }
 
 internal static class LoginPage

@@ -52,7 +52,7 @@ namespace RcloneFileWatcherCore.Logic.Services
                 watcher.Changed += OnChanged;
 
             watcher.Error += (s, e) =>
-               _logger.Log(Enums.LogLevel.Error, $"Watcher error at {path}, e.GetException()");
+               _logger.Log(Enums.LogLevel.Error, $"Watcher error at {path}: {e.GetException()?.Message}", e.GetException());
 
             return watcher;
         }

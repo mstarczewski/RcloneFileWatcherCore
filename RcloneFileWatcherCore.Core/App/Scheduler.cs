@@ -15,12 +15,14 @@ namespace RcloneFileWatcherCore.App
         private DateTime _dateTimeUpdate = DateTime.Now;
         private readonly ConfigDTO _configDTO;
         private readonly Dictionary<Enums.ProcessCode, IRcloneJobService> _processDictionary;
+        private readonly object _jobGate;
         private DateTime? _nextfullSyncAfter;
         private TimeSpan _scheduledTime;
 
-        public Scheduler(ILogger logger, Dictionary<Enums.ProcessCode, IRcloneJobService> processDictionary, ConfigDTO configDTO)
+        public Scheduler(ILogger logger, Dictionary<Enums.ProcessCode, IRcloneJobService> processDictionary, ConfigDTO configDTO, object jobGate)
         {
             _processDictionary = processDictionary;
+            _jobGate = jobGate;
             _logger = logger;
             _configDTO = configDTO;
             var intervalMs = Math.Max(1000, _configDTO.SyncIntervalSeconds * 1000);
@@ -48,13 +50,14 @@ namespace RcloneFileWatcherCore.App
         }
         private void TryFullSyncAtStart()
         {
-            if ((_configDTO?.RunOneTimeFullStartupSync ?? false) && !string.IsNullOrWhiteSpace(_configDTO.RunOneTimeFullStartupSyncBatch))
+            // Works for both Script and Managed full-sync modes: the full-sync service itself
+            // decides whether there is anything to run (a script path or managed commands).
+            if ((_configDTO?.RunOneTimeFullStartupSync ?? false)
+                && _processDictionary.TryGetValue(Enums.ProcessCode.FullSyncRclone, out var fullsyncProcess))
             {
-                if (_processDictionary.TryGetValue(Enums.ProcessCode.FullSyncRclone, out var fullsyncProcess))
-                {
-                    _logger.Log(Enums.LogLevel.Information, "Running full sync at startup.");
+                _logger.Log(Enums.LogLevel.Information, "Running full sync at startup.");
+                lock (_jobGate)
                     fullsyncProcess.Execute(_configDTO);
-                }
             }
         }
 
@@ -67,9 +70,14 @@ namespace RcloneFileWatcherCore.App
         {
             try
             {
-                TryUpdateRclone();
-                TrySyncRclone();
-                TryFullSyncRclone();
+                // Serialize scheduled jobs against manual GUI-triggered runs (RuntimeController
+                // shares this gate) so the same rclone job can't run twice concurrently.
+                lock (_jobGate)
+                {
+                    TryUpdateRclone();
+                    TrySyncRclone();
+                    TryFullSyncRclone();
+                }
             }
             catch (Exception ex)
             {

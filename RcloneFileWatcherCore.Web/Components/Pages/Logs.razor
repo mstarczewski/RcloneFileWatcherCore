@@ -17,7 +17,7 @@
         @L["log.level"]
         <select @bind="_levelFilter" @bind:after="ApplyFilter">
             <option value="">@L["log.all"]</option>
-            @foreach (var level in Levels)
+            @foreach (var level in Loc.LogLevels)
             {
                 <option value="@level">@level</option>
             }
@@ -35,9 +35,6 @@
 <pre class="log-view" id="logView">@(_filtered.Count == 0 ? L["log.noEntries"] : string.Join("\n", _filtered))</pre>
 
 @code {
-    private static readonly string[] Levels =
-        { "Trace", "Debug", "Information", "Warning", "Error", "Critical", "Always" };
-
     private const int MaxLines = 10000;
 
     // Coalesce re-renders: with a large buffer, joining and diffing the whole <pre> on every

@@ -1,0 +1,13 @@
+@* Shared success/error status banner used by the Dashboard, Configuration and Security pages. *@
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="alert @(Success ? "alert-ok" : "alert-err")">
+        <Icon Name="@(Success ? "success" : "error")" />
+        <span>@Message</span>
+    </div>
+}
+
+@code {
+    [Parameter] public string Message { get; set; }
+    [Parameter] public bool Success { get; set; }
+}

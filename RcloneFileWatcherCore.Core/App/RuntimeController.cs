@@ -28,6 +28,9 @@ namespace RcloneFileWatcherCore.App
         private readonly IConfigService _configService;
         private readonly ConcurrentDictionary<string, FileDTO> _fileDTOs;
         private readonly object _lock = new object();
+        // Serializes rclone job execution so a scheduled run and a manual GUI run never overlap.
+        // Shared with the Scheduler. Separate from _lock so a long sync doesn't block Start/Stop.
+        private readonly object _jobGate = new object();
 
         private FileWatcherService _watcher;
         private Scheduler _scheduler;
@@ -110,7 +113,7 @@ namespace RcloneFileWatcherCore.App
                 _logger.Log(LogLevel.Information, message);
                 return Task.Run(() =>
                 {
-                    try { return job.Execute(config); }
+                    try { lock (_jobGate) return job.Execute(config); }
                     catch (Exception ex) { _logger.Log(LogLevel.Error, "Manual job failed", ex); return false; }
                 });
             }
@@ -129,7 +132,7 @@ namespace RcloneFileWatcherCore.App
                 var enabledPaths = config.Path?.Where(p => p.Enabled).ToList() ?? new List<PathDTO>();
                 var processes = BuildProcesses(config, enabledPaths);
                 var watcher = new FileWatcherService(_logger, _fileDTOs, enabledPaths);
-                var scheduler = new Scheduler(_logger, processes, config);
+                var scheduler = new Scheduler(_logger, processes, config, _jobGate);
 
                 // Start the watcher first: if a watched path is invalid it throws here, before
                 // we publish the instances or enable the timer. Initial start lets it propagate

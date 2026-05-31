@@ -9,7 +9,7 @@ namespace RcloneFileWatcherCore.DTO
         public string LogPath { get; set; }
         public List<PathDTO> Path { get; set; }
         public UpdateRcloneDTO UpdateRclone { get; set; }
-        public int SyncIntervalSeconds { get; set; } = 60000;
+        public int SyncIntervalSeconds { get; set; } = 60;
         public bool RunOneTimeFullStartupSync { get; set; } = true;
         public string RunStartupScriptEveryDayAt { get; set; } = "05:30";
 

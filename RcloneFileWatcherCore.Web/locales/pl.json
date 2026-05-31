@@ -36,8 +36,6 @@
   "dash.msgStarted": "Watcher uruchomiony.",
   "dash.msgStopped": "Watcher zatrzymany.",
   "dash.msgStartFailed": "Nie udało się uruchomić: {0}",
-  "dash.msgSyncRequested": "Zlecono synchronizację (sprawdź Logi).",
-  "dash.msgFullSyncRequested": "Zlecono pełną synchronizację (sprawdź Logi).",
   "dash.jobRunning": "W toku… (zobacz Logi)",
   "dash.jobDone": "Zakończono.",
   "dash.jobFailed": "Niepowodzenie — zobacz Logi.",

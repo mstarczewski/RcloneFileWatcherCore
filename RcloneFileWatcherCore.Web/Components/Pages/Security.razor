@@ -9,13 +9,7 @@
 
 <p class="muted">@L["sec.intro"]</p>
 
-@if (_message is not null)
-{
-    <div class="alert @(_success ? "alert-ok" : "alert-err")">
-        <Icon Name="@(_success ? "success" : "error")" />
-        <span>@_message</span>
-    </div>
-}
+<StatusAlert Message="@_message" Success="_success" />
 
 <section class="form-section">
     <div class="form-grid">

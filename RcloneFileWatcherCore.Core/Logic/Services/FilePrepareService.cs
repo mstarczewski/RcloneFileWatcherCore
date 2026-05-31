@@ -162,8 +162,10 @@ namespace RcloneFileWatcherCore.Logic.Services
                     return true;
                 if (!File.Exists(filename))
                     return true;
+                // Opening exclusively (FileShare.None) succeeds only when no other process still
+                // holds the file — that successful open is the readiness signal.
                 using var inputStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.None);
-                return inputStream.Length >= 0;
+                return true;
             }
             catch
             {

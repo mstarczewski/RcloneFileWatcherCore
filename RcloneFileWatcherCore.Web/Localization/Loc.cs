@@ -137,8 +137,6 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["dash.msgStarted"] = "Watcher started.",
             ["dash.msgStopped"] = "Watcher stopped.",
             ["dash.msgStartFailed"] = "Could not start: {0}",
-            ["dash.msgSyncRequested"] = "Sync requested (check Logs).",
-            ["dash.msgFullSyncRequested"] = "Full sync requested (check Logs).",
             ["dash.jobRunning"] = "Running… (see Logs)",
             ["dash.jobDone"] = "Done.",
             ["dash.jobFailed"] = "Failed — see Logs.",
@@ -285,6 +283,11 @@ namespace RcloneFileWatcherCore.Web.Localization
 
         /// <summary>The full set of translation keys (defined by the English baseline).</summary>
         public static IReadOnlyCollection<string> Keys => English.Keys;
+
+        /// <summary>Selectable log levels shown in the GUI (Configuration multi-select and the
+        /// Logs filter). Single source of truth so the two pages can't drift apart.</summary>
+        public static readonly string[] LogLevels =
+            { "Trace", "Debug", "Information", "Warning", "Error", "Critical", "Always" };
     }
 
     public sealed record LanguageInfo(string Code, string Label, string Name)

@@ -19,13 +19,7 @@
 
 <p class="muted">@L.F("cfg.intro", ConfigService.FilePath)</p>
 
-@if (_message is not null)
-{
-    <div class="alert @(_success ? "alert-ok" : "alert-err")">
-        <Icon Name="@(_success ? "success" : "error")" />
-        <span>@_message</span>
-    </div>
-}
+<StatusAlert Message="@_message" Success="_success" />
 
 @if (_errors.Count > 0)
 {
@@ -55,7 +49,7 @@
             <div class="field">
                 <span class="field-label">@L["cfg.logLevel"] <Hint Text="@L["cfg.logLevel.h"]" /></span>
                 <div class="checkbox-row">
-                    @foreach (var lvl in LogLevels)
+                    @foreach (var lvl in Loc.LogLevels)
                     {
                         <label class="checkbox">
                             <input type="checkbox" checked="@_selectedLevels.Contains(lvl)"
@@ -266,9 +260,6 @@
         _errors.Clear();
     }
 
-    private static readonly string[] LogLevels =
-        { "Trace", "Debug", "Information", "Warning", "Error", "Critical", "Always" };
-
     private HashSet<string> _selectedLevels = new(StringComparer.OrdinalIgnoreCase);
 
     private static HashSet<string> ParseLevels(string value)
@@ -278,7 +269,7 @@
         {
             foreach (var part in value.Split(new[] { '|', ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var canonical = LogLevels.FirstOrDefault(l => string.Equals(l, part.Trim(), StringComparison.OrdinalIgnoreCase));
+                var canonical = Loc.LogLevels.FirstOrDefault(l => string.Equals(l, part.Trim(), StringComparison.OrdinalIgnoreCase));
                 if (canonical != null)
                     set.Add(canonical);
             }
@@ -290,7 +281,7 @@
     {
         if (on) _selectedLevels.Add(level);
         else _selectedLevels.Remove(level);
-        _model.LogLevel = string.Join("|", LogLevels.Where(_selectedLevels.Contains));
+        _model.LogLevel = string.Join("|", Loc.LogLevels.Where(_selectedLevels.Contains));
     }
 
     private void AddPath()

@@ -41,7 +41,7 @@ namespace RcloneFileWatcherCore.Config
                                ".tmp",
                                ".drivedownload1"
                            }),
-                        RcloneBatch = "@d:\rclone_Test1.bat",
+                        RcloneBatch = @"d:\rclone_Test1.bat",
                         RcloneFilesFromPath = @"d:\files-from-test1.txt",
                         WatchingPath = @"d:\Test1\"
                     }

@@ -12,7 +12,13 @@ namespace RcloneFileWatcherCore.Globals
             var version = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
             var author = asm.GetCustomAttribute<AssemblyCompanyAttribute>()?.Company;
             var product = asm.GetCustomAttribute<AssemblyProductAttribute>()?.Product;
-            return ($"{product} v{version} by {author}") ?? "Unknown Version";
+
+            // If the executable carries no version attributes (e.g. some test/host contexts),
+            // fall back to a fixed label instead of rendering an empty " v by ".
+            if (string.IsNullOrWhiteSpace(product) && string.IsNullOrWhiteSpace(version) && string.IsNullOrWhiteSpace(author))
+                return "Unknown Version";
+
+            return $"{product} v{version} by {author}";
         }
     }
 }

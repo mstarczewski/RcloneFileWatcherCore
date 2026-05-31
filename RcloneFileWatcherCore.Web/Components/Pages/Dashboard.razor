@@ -66,13 +66,7 @@ else
 
     <p class="muted">@_status.Version</p>
 
-    @if (_message is not null)
-    {
-        <div class="alert @(_success ? "alert-ok" : "alert-err")">
-            <Icon Name="@(_success ? "success" : "error")" />
-            <span>@_message</span>
-        </div>
-    }
+    <StatusAlert Message="@_message" Success="_success" />
 
     <div class="actions">
         @{

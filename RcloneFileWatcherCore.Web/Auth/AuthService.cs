@@ -27,15 +27,27 @@ namespace RcloneFileWatcherCore.Web.Auth
             _state = Load() ?? new State();
         }
 
-        public bool Enabled => _state.Enabled;
+        public bool Enabled
+        {
+            get { lock (_lock) return _state.Enabled; }
+        }
 
-        public bool HasPassword => !string.IsNullOrEmpty(_state.PasswordHash);
+        public bool HasPassword
+        {
+            get { lock (_lock) return !string.IsNullOrEmpty(_state.PasswordHash); }
+        }
 
         public bool Verify(string password)
         {
-            if (string.IsNullOrEmpty(password) || !HasPassword)
+            if (string.IsNullOrEmpty(password))
                 return false;
-            return VerifyHash(password, _state.PasswordHash);
+
+            // Snapshot the hash under the lock so a concurrent SetPassword can't be observed mid-update.
+            string hash;
+            lock (_lock)
+                hash = _state.PasswordHash;
+
+            return !string.IsNullOrEmpty(hash) && VerifyHash(password, hash);
         }
 
         public void SetPassword(string password)

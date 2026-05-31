@@ -54,7 +54,7 @@ namespace RcloneFileWatcherCore.Tests
         public void Constructor_InitializesTimerCorrectly()
         {
             // Act
-            using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
+            using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO, new object());
 
             // Assert
             Assert.IsNotNull(scheduler);
@@ -66,7 +66,7 @@ namespace RcloneFileWatcherCore.Tests
             // Arrange
             using var syncCalled = new ManualResetEventSlim();
             _syncProcessMock.Setup(x => x.Execute(It.IsAny<ConfigDTO>())).Callback(() => syncCalled.Set());
-            using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
+            using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO, new object());
 
             // Act
             scheduler.SetTimer();
@@ -84,7 +84,7 @@ namespace RcloneFileWatcherCore.Tests
             _configDTO.UpdateRclone.CheckUpdateHours = 0; // Ensure update will trigger
             using var updateCalled = new ManualResetEventSlim();
             _updateProcessMock.Setup(x => x.Execute(It.IsAny<ConfigDTO>())).Callback(() => updateCalled.Set());
-            using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
+            using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO, new object());
 
             // Act
             scheduler.SetTimer();
@@ -101,7 +101,7 @@ namespace RcloneFileWatcherCore.Tests
             _configDTO.UpdateRclone.Update = false;
             using var syncCalled = new ManualResetEventSlim();
             _syncProcessMock.Setup(x => x.Execute(It.IsAny<ConfigDTO>())).Callback(() => syncCalled.Set());
-            using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
+            using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO, new object());
 
             // Act
             scheduler.SetTimer();
@@ -118,7 +118,7 @@ namespace RcloneFileWatcherCore.Tests
             // Arrange
             using var syncCalled = new ManualResetEventSlim();
             _syncProcessMock.Setup(x => x.Execute(It.IsAny<ConfigDTO>())).Callback(() => syncCalled.Set());
-            using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
+            using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO, new object());
 
             // Act
             scheduler.SetTimer();
@@ -135,7 +135,7 @@ namespace RcloneFileWatcherCore.Tests
             _syncProcessMock.Setup(x => x.Execute(It.IsAny<ConfigDTO>())).Throws<Exception>();
             using var errorLogged = new ManualResetEventSlim();
             _loggerMock.Setup(x => x.Log(LogLevel.Error, It.IsAny<string>(), It.IsAny<Exception>())).Callback(() => errorLogged.Set());
-            using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
+            using var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO, new object());
 
             // Act
             scheduler.SetTimer();
@@ -149,7 +149,7 @@ namespace RcloneFileWatcherCore.Tests
         public void Dispose_DisposesTimer()
         {
             // Arrange
-            var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO);
+            var scheduler = new Scheduler(_loggerMock.Object, _processDictionary, _configDTO, new object());
 
             // Act
             scheduler.Dispose();
