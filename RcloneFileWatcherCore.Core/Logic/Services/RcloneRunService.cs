@@ -234,16 +234,29 @@ namespace RcloneFileWatcherCore.Logic.Services
             _logger.Log(MapRcloneLevel(line), $"[rclone] {line}");
         }
 
-        /// <summary>Maps rclone's own log severity (ERROR/NOTICE/INFO/DEBUG) to our LogLevel so
-        /// the GUI level filter works and errors stand out.</summary>
+        // rclone prints its level as a word followed by a colon, e.g. "... ERROR : msg" or
+        // "... CRITICAL: msg" (spacing varies) — match the word + colon rather than " LEVEL ".
+        private static readonly System.Text.RegularExpressions.Regex RcloneLevel =
+            new System.Text.RegularExpressions.Regex(
+                @"\b(ERROR|CRITICAL|FATAL|WARNING|NOTICE|INFO|DEBUG)\b\s*:",
+                System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        /// <summary>Maps rclone's own log severity (ERROR/CRITICAL/WARNING/NOTICE/INFO/DEBUG) to our
+        /// LogLevel so the GUI level filter works, errors are retained, and they stand out.</summary>
         private static LogLevel MapRcloneLevel(string line)
         {
-            if (line.Contains(" ERROR ") || line.Contains(" CRITICAL ") || line.StartsWith("ERROR", StringComparison.Ordinal))
-                return LogLevel.Error;
-            if (line.Contains(" WARNING "))
-                return LogLevel.Warning;
-            if (line.Contains(" DEBUG "))
-                return LogLevel.Debug;
+            var match = RcloneLevel.Match(line);
+            if (match.Success)
+            {
+                switch (match.Groups[1].Value.ToUpperInvariant())
+                {
+                    case "ERROR":
+                    case "CRITICAL":
+                    case "FATAL": return LogLevel.Error;
+                    case "WARNING": return LogLevel.Warning;
+                    case "DEBUG": return LogLevel.Debug;
+                }
+            }
             // NOTICE / INFO and lines without a level (e.g. transfer stats) -> Information.
             return LogLevel.Information;
         }
