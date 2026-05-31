@@ -7,10 +7,12 @@
     <Company>mstarczewski</Company>
     <Authors>mstarczewski</Authors>
 
-    <!-- CalVer: human-readable and automatically increments by build date (Year.Month.Day).
-         AssemblyVersion/FileVersion/InformationalVersion all derive from this. The git commit
-         hash is NOT appended, so the GUI shows a clean "vYYYY.MM.DD". -->
+    <!-- CalVer that auto-increments by build time. The displayed InformationalVersion carries the
+         time (Year.Month.Day.HHmmss, UTC) so several builds the same day are distinct, e.g.
+         "v2026.05.31.105412". AssemblyVersion/FileVersion stay date-only because each of their
+         numeric fields must be <= 65534 (HHmmss like 105412 would overflow). No git-hash suffix. -->
     <Version>$([System.DateTime]::UtcNow.ToString("yyyy.MM.dd"))</Version>
+    <InformationalVersion>$([System.DateTime]::UtcNow.ToString("yyyy.MM.dd.HHmmss"))</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
