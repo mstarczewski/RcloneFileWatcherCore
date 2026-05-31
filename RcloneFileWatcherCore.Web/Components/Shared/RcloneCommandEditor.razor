@@ -5,50 +5,64 @@
 @if (Command is not null)
 {
     <div class="form-grid">
-        <label>@L["cfg.rclonePath"]
+        <label>
+            <span class="lbl">@L["cfg.rclonePath"] <Hint Text="@L["cfg.h.rclonePath"]" /></span>
             <input @bind="Command.RclonePath" />
         </label>
-        <label>@L["cfg.cmdCommand"]
+        <label>
+            <span class="lbl">@L["cfg.cmdCommand"] <Hint Text="@L["cfg.cmdCommand.h"]" /></span>
             <select @bind="Command.Command">
                 <option value="sync">sync</option>
                 <option value="copy">copy</option>
                 <option value="move">move</option>
             </select>
         </label>
-        <label>@L["cfg.cmdSource"]
+        <label>
+            <span class="lbl">@L["cfg.cmdSource"] <Hint Text="@L["cfg.cmdSource.h"]" /></span>
             <input @bind="Command.Source" />
         </label>
-        <label>@L["cfg.cmdDest"]
+        <label>
+            <span class="lbl">@L["cfg.cmdDest"] <Hint Text="@L["cfg.cmdDest.h"]" /></span>
             <input @bind="Command.Destination" />
         </label>
-        <label>--config
+        <label>
+            <span class="lbl">--config <Hint Text="@L["cfg.h.config"]" /></span>
             <input @bind="Command.ConfigFile" />
         </label>
-        <label>--bwlimit
+        <label>
+            <span class="lbl">--bwlimit <Hint Text="@L["cfg.h.bwlimit"]" /></span>
             <input @bind="Command.BwLimit" />
         </label>
-        <label>--transfers
+        <label>
+            <span class="lbl">--transfers <Hint Text="@L["cfg.h.transfers"]" /></span>
             <input type="number" min="0" @bind="Command.Transfers" />
         </label>
-        <label>--checkers
+        <label>
+            <span class="lbl">--checkers <Hint Text="@L["cfg.h.checkers"]" /></span>
             <input type="number" min="0" @bind="Command.Checkers" />
         </label>
-        <label>--retries
+        <label>
+            <span class="lbl">--retries <Hint Text="@L["cfg.h.retries"]" /></span>
             <input type="number" min="0" @bind="Command.Retries" />
         </label>
-        <label>--retries-sleep
+        <label>
+            <span class="lbl">--retries-sleep <Hint Text="@L["cfg.h.retriesSleep"]" /></span>
             <input @bind="Command.RetriesSleep" />
         </label>
-        <label>--backup-dir
+        <label>
+            <span class="lbl">--backup-dir <Hint Text="@L["cfg.h.backupDir"]" /></span>
             <input @bind="Command.BackupDir" />
         </label>
-        <label>--suffix
+        <label>
+            <span class="lbl">--suffix <Hint Text="@L["cfg.h.suffix"]" /></span>
             <input @bind="Command.Suffix" />
         </label>
-        <label>--log-file
+        <label>
+            <span class="lbl">--log-file <Hint Text="@L["cfg.h.logFile"]" /></span>
             <input @bind="Command.LogFile" />
         </label>
-        <label>--log-level
+        <label>
+            <span class="lbl">--log-level <Hint Text="@L["cfg.h.logLevel"]" /></span>
             <input @bind="Command.LogLevel" />
         </label>
     </div>
@@ -56,20 +70,21 @@
         @if (ShowIncludeFrom)
         {
             <label class="checkbox">
-                <input type="checkbox" @bind="Command.IncludeFrom" /> @L["cfg.includeFromInject"]
+                <input type="checkbox" @bind="Command.IncludeFrom" /> @L["cfg.includeFromInject"] <Hint Text="@L["cfg.includeFromInject.h"]" />
             </label>
             <label class="checkbox">
-                <input type="checkbox" @bind="Command.IncludeFromStdin" disabled="@(!Command.IncludeFrom)" /> @L["cfg.includeFromStdin"]
+                <input type="checkbox" @bind="Command.IncludeFromStdin" disabled="@(!Command.IncludeFrom)" /> @L["cfg.includeFromStdin"] <Hint Text="@L["cfg.includeFromStdin.h"]" />
             </label>
         }
         <label class="checkbox">
-            <input type="checkbox" @bind="Command.CreateEmptySrcDirs" /> --create-empty-src-dirs
+            <input type="checkbox" @bind="Command.CreateEmptySrcDirs" /> --create-empty-src-dirs <Hint Text="@L["cfg.h.createEmptySrcDirs"]" />
         </label>
         <label class="checkbox">
-            <input type="checkbox" @bind="Command.UseMmap" /> --use-mmap
+            <input type="checkbox" @bind="Command.UseMmap" /> --use-mmap <Hint Text="@L["cfg.h.useMmap"]" />
         </label>
     </div>
-    <label>@L["cfg.extraArgs"]
+    <label>
+        <span class="lbl">@L["cfg.extraArgs"] <Hint Text="@L["cfg.extraArgs.h"]" /></span>
         <textarea rows="2" @bind="Command.ExtraArgs"></textarea>
     </label>
     <div class="cmd-preview">

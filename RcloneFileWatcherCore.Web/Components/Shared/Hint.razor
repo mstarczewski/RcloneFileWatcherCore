@@ -1,0 +1,9 @@
+@* Small "?" badge that shows an explanatory tooltip on hover/focus (native title). *@
+@if (!string.IsNullOrWhiteSpace(Text))
+{
+    <span class="hint" title="@Text" tabindex="0" role="img" aria-label="@Text">?</span>
+}
+
+@code {
+    [Parameter] public string Text { get; set; }
+}

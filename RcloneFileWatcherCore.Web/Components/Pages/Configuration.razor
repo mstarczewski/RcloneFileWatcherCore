@@ -42,153 +42,180 @@
 
 @if (_model is not null)
 {
-    <section class="form-section">
-        <h2>@L["cfg.general"]</h2>
-        <div class="field">
-            <span class="field-label">@L["cfg.logLevel"]</span>
-            <div class="checkbox-row">
-                @foreach (var lvl in LogLevels)
-                {
-                    <label class="checkbox">
-                        <input type="checkbox" checked="@_selectedLevels.Contains(lvl)"
-                               @onchange="e => ToggleLevel(lvl, (bool?)e.Value ?? false)" /> @lvl
-                    </label>
-                }
-            </div>
-            <span class="muted">@L["cfg.logLevelHint"]</span>
-        </div>
-        <div class="form-grid">
-            <label>@L["cfg.logPath"]
-                <input @bind="_model.LogPath" />
-            </label>
-            <label>@L["cfg.syncInterval"]
-                <input type="number" min="1" @bind="_model.SyncIntervalSeconds" />
-            </label>
-        </div>
-    </section>
+    <div class="tabs">
+        <button class="tab @(_activeTab == Tab.General ? "active" : "")" @onclick="() => _activeTab = Tab.General">@L["cfg.tabGeneral"]</button>
+        <button class="tab @(_activeTab == Tab.FullSync ? "active" : "")" @onclick="() => _activeTab = Tab.FullSync">@L["cfg.tabFullSync"]</button>
+        <button class="tab @(_activeTab == Tab.Paths ? "active" : "")" @onclick="() => _activeTab = Tab.Paths">@L.F("cfg.tabPaths", _model.Path.Count)</button>
+    </div>
 
-    <section class="form-section">
-        <h2>@L["cfg.fullSyncTitle"]</h2>
-        <div class="form-grid">
-            <label class="checkbox">
-                <input type="checkbox" @bind="_model.RunOneTimeFullStartupSync" />
-                @L["cfg.fullSyncStartup"]
-            </label>
-            <label>@L["cfg.fullSyncDaily"]
-                <input @bind="_model.RunStartupScriptEveryDayAt" placeholder="05:30" />
-            </label>
-            <label>@L["cfg.runMode"]
-                <select @bind="_model.FullSyncMode">
-                    <option value="@SyncMode.Script">@L["cfg.modeScript"]</option>
-                    <option value="@SyncMode.Managed">@L["cfg.modeManaged"]</option>
-                </select>
-            </label>
-        </div>
-
-        @if (_model.FullSyncMode == SyncMode.Script)
-        {
-            <label>@L["cfg.fullSyncScript"]
-                <input @bind="_model.RunOneTimeFullStartupSyncBatch" />
-            </label>
-            <button class="btn btn-sm" @onclick="ImportFullSyncFromScript">@L["cfg.importThisScript"]</button>
-        }
-        else
-        {
-            <div class="section-head">
-                <h3 class="subhead">@L.F("cfg.fullSyncCommands", _model.FullSyncCommands.Count)</h3>
-                <button class="btn btn-sm" @onclick="AddFullSyncCommand">@L["cfg.addCommand"]</button>
-            </div>
-            @if (_model.FullSyncCommands.Count == 0)
-            {
-                <p class="muted">@L["cfg.noFullSyncCommands"]</p>
-            }
-            @for (var i = 0; i < _model.FullSyncCommands.Count; i++)
-            {
-                var ci = i;
-                <div class="path-card">
-                    <div class="path-card-head">
-                        <strong>@L.F("cfg.commandN", ci + 1)</strong>
-                        <button class="btn btn-sm btn-danger" @onclick="() => RemoveFullSyncCommand(ci)">@L["cfg.remove"]</button>
-                    </div>
-                    <RcloneCommandEditor Command="_model.FullSyncCommands[ci]" ShowIncludeFrom="false" />
+    @if (_activeTab == Tab.General)
+    {
+        <section class="form-section">
+            <h2>@L["cfg.general"]</h2>
+            <div class="field">
+                <span class="field-label">@L["cfg.logLevel"] <Hint Text="@L["cfg.logLevel.h"]" /></span>
+                <div class="checkbox-row">
+                    @foreach (var lvl in LogLevels)
+                    {
+                        <label class="checkbox">
+                            <input type="checkbox" checked="@_selectedLevels.Contains(lvl)"
+                                   @onchange="e => ToggleLevel(lvl, (bool?)e.Value ?? false)" /> @lvl
+                        </label>
+                    }
                 </div>
-            }
-        }
-    </section>
-
-    <section class="form-section">
-        <h2>@L["cfg.autoUpdate"]</h2>
-        <div class="form-grid">
-            <label class="checkbox">
-                <input type="checkbox" @bind="_model.UpdateRclone.Update" />
-                @L["cfg.enableAutoUpdate"]
-            </label>
-            <label>@L["cfg.rclonePath"]
-                <input @bind="_model.UpdateRclone.RclonePath" />
-            </label>
-            <label>@L["cfg.checkEvery"]
-                <input type="number" min="0" @bind="_model.UpdateRclone.CheckUpdateHours" />
-            </label>
-        </div>
-    </section>
-
-    <section class="form-section">
-        <div class="section-head">
-            <h2>@L.F("cfg.watchedPaths", _model.Path.Count)</h2>
-            <div class="section-head-actions">
-                <button class="btn btn-sm btn-secondary" @onclick="ImportAllFromScripts">@L["cfg.importScripts"]</button>
-                <button class="btn btn-sm" @onclick="AddPath">@L["cfg.addPath"]</button>
+                <span class="muted">@L["cfg.logLevelHint"]</span>
             </div>
-        </div>
-
-        @if (_model.Path.Count == 0)
-        {
-            <p class="muted">@L["cfg.noPaths"]</p>
-        }
-
-        @for (var i = 0; i < _model.Path.Count; i++)
-        {
-            var index = i;
-            <div class="path-card">
-                <div class="path-card-head">
-                    <strong>@L.F("cfg.pathN", index + 1)</strong>
-                    <button class="btn btn-sm btn-danger" @onclick="() => RemovePath(index)">@L["cfg.remove"]</button>
-                </div>
-                <div class="form-grid">
-                    <label>@L["cfg.watchDir"]
-                        <input @bind="_model.Path[index].WatchingPath" />
-                    </label>
-                    <label>@L["cfg.includeFromFile"]
-                        <input @bind="_model.Path[index].RcloneFilesFromPath" />
-                    </label>
-                    <label>@L["cfg.runMode"]
-                        <select @bind="_model.Path[index].SyncMode" @bind:after="() => OnModeChanged(index)">
-                            <option value="@SyncMode.Script">@L["cfg.modeScript"]</option>
-                            <option value="@SyncMode.Managed">@L["cfg.modeManaged"]</option>
-                        </select>
-                    </label>
-                </div>
-
-                @if (_model.Path[index].SyncMode == SyncMode.Script)
-                {
-                    <label>@L["cfg.scriptFile"]
-                        <input @bind="_model.Path[index].RcloneBatch" />
-                    </label>
-                    <button class="btn btn-sm btn-secondary" @onclick="() => ImportFromScript(index)">
-                        @L["cfg.importThisScript"]
-                    </button>
-                }
-                else
-                {
-                    <RcloneCommandEditor Command="GetCommand(index)" IncludeFromPath="@_model.Path[index].RcloneFilesFromPath" />
-                }
-
-                <label>@L["cfg.exclude"]
-                    <textarea rows="3" @bind="_excludeRaw[index]"></textarea>
+            <div class="form-grid">
+                <label>
+                    <span class="lbl">@L["cfg.logPath"] <Hint Text="@L["cfg.logPath.h"]" /></span>
+                    <input @bind="_model.LogPath" />
+                </label>
+                <label>
+                    <span class="lbl">@L["cfg.syncInterval"] <Hint Text="@L["cfg.syncInterval.h"]" /></span>
+                    <input type="number" min="1" @bind="_model.SyncIntervalSeconds" />
                 </label>
             </div>
-        }
-    </section>
+        </section>
+
+        <section class="form-section">
+            <h2>@L["cfg.autoUpdate"]</h2>
+            <div class="form-grid">
+                <label class="checkbox">
+                    <input type="checkbox" @bind="_model.UpdateRclone.Update" />
+                    @L["cfg.enableAutoUpdate"] <Hint Text="@L["cfg.enableAutoUpdate.h"]" />
+                </label>
+                <label>
+                    <span class="lbl">@L["cfg.rclonePath"] <Hint Text="@L["cfg.rclonePath.h"]" /></span>
+                    <input @bind="_model.UpdateRclone.RclonePath" />
+                </label>
+                <label>
+                    <span class="lbl">@L["cfg.checkEvery"] <Hint Text="@L["cfg.checkEvery.h"]" /></span>
+                    <input type="number" min="0" @bind="_model.UpdateRclone.CheckUpdateHours" />
+                </label>
+            </div>
+        </section>
+    }
+
+    @if (_activeTab == Tab.FullSync)
+    {
+        <section class="form-section">
+            <h2>@L["cfg.fullSyncTitle"]</h2>
+            <div class="form-grid">
+                <label class="checkbox">
+                    <input type="checkbox" @bind="_model.RunOneTimeFullStartupSync" />
+                    @L["cfg.fullSyncStartup"] <Hint Text="@L["cfg.fullSyncStartup.h"]" />
+                </label>
+                <label>
+                    <span class="lbl">@L["cfg.fullSyncDaily"] <Hint Text="@L["cfg.fullSyncDaily.h"]" /></span>
+                    <input @bind="_model.RunStartupScriptEveryDayAt" placeholder="05:30" />
+                </label>
+                <label>
+                    <span class="lbl">@L["cfg.runMode"] <Hint Text="@L["cfg.runMode.h"]" /></span>
+                    <select @bind="_model.FullSyncMode">
+                        <option value="@SyncMode.Script">@L["cfg.modeScript"]</option>
+                        <option value="@SyncMode.Managed">@L["cfg.modeManaged"]</option>
+                    </select>
+                </label>
+            </div>
+
+            @if (_model.FullSyncMode == SyncMode.Script)
+            {
+                <label>
+                    <span class="lbl">@L["cfg.fullSyncScript"] <Hint Text="@L["cfg.fullSyncScript.h"]" /></span>
+                    <input @bind="_model.RunOneTimeFullStartupSyncBatch" />
+                </label>
+                <button class="btn btn-sm" @onclick="ImportFullSyncFromScript">@L["cfg.importThisScript"]</button>
+            }
+            else
+            {
+                <div class="section-head">
+                    <h3 class="subhead">@L.F("cfg.fullSyncCommands", _model.FullSyncCommands.Count)</h3>
+                    <button class="btn btn-sm" @onclick="AddFullSyncCommand">@L["cfg.addCommand"]</button>
+                </div>
+                @if (_model.FullSyncCommands.Count == 0)
+                {
+                    <p class="muted">@L["cfg.noFullSyncCommands"]</p>
+                }
+                @for (var i = 0; i < _model.FullSyncCommands.Count; i++)
+                {
+                    var ci = i;
+                    <div class="path-card">
+                        <div class="path-card-head">
+                            <strong>@L.F("cfg.commandN", ci + 1)</strong>
+                            <button class="btn btn-sm btn-danger" @onclick="() => RemoveFullSyncCommand(ci)">@L["cfg.remove"]</button>
+                        </div>
+                        <RcloneCommandEditor Command="_model.FullSyncCommands[ci]" ShowIncludeFrom="false" />
+                    </div>
+                }
+            }
+        </section>
+    }
+
+    @if (_activeTab == Tab.Paths)
+    {
+        <section class="form-section">
+            <div class="section-head">
+                <h2>@L.F("cfg.watchedPaths", _model.Path.Count)</h2>
+                <div class="section-head-actions">
+                    <button class="btn btn-sm btn-secondary" @onclick="ImportAllFromScripts">@L["cfg.importScripts"]</button>
+                    <button class="btn btn-sm" @onclick="AddPath">@L["cfg.addPath"]</button>
+                </div>
+            </div>
+
+            @if (_model.Path.Count == 0)
+            {
+                <p class="muted">@L["cfg.noPaths"]</p>
+            }
+
+            @for (var i = 0; i < _model.Path.Count; i++)
+            {
+                var index = i;
+                <div class="path-card">
+                    <div class="path-card-head">
+                        <strong>@L.F("cfg.pathN", index + 1)</strong>
+                        <button class="btn btn-sm btn-danger" @onclick="() => RemovePath(index)">@L["cfg.remove"]</button>
+                    </div>
+                    <div class="form-grid">
+                        <label>
+                            <span class="lbl">@L["cfg.watchDir"] <Hint Text="@L["cfg.watchDir.h"]" /></span>
+                            <input @bind="_model.Path[index].WatchingPath" />
+                        </label>
+                        <label>
+                            <span class="lbl">@L["cfg.includeFromFile"] <Hint Text="@L["cfg.includeFromFile.h"]" /></span>
+                            <input @bind="_model.Path[index].RcloneFilesFromPath" />
+                        </label>
+                        <label>
+                            <span class="lbl">@L["cfg.runMode"] <Hint Text="@L["cfg.runMode.h"]" /></span>
+                            <select @bind="_model.Path[index].SyncMode" @bind:after="() => OnModeChanged(index)">
+                                <option value="@SyncMode.Script">@L["cfg.modeScript"]</option>
+                                <option value="@SyncMode.Managed">@L["cfg.modeManaged"]</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    @if (_model.Path[index].SyncMode == SyncMode.Script)
+                    {
+                        <label>
+                            <span class="lbl">@L["cfg.scriptFile"] <Hint Text="@L["cfg.scriptFile.h"]" /></span>
+                            <input @bind="_model.Path[index].RcloneBatch" />
+                        </label>
+                        <button class="btn btn-sm btn-secondary" @onclick="() => ImportFromScript(index)">
+                            @L["cfg.importThisScript"]
+                        </button>
+                    }
+                    else
+                    {
+                        <RcloneCommandEditor Command="GetCommand(index)" IncludeFromPath="@_model.Path[index].RcloneFilesFromPath" />
+                    }
+
+                    <label>
+                        <span class="lbl">@L["cfg.exclude"] <Hint Text="@L["cfg.exclude.h"]" /></span>
+                        <textarea rows="3" @bind="_excludeRaw[index]"></textarea>
+                    </label>
+                </div>
+            }
+        </section>
+    }
 
     <div class="actions">
         <button class="btn" @onclick="Save">@L["cfg.save"]</button>
@@ -203,6 +230,9 @@
     private string _message;
     private bool _success;
     private bool _scrollPending;
+
+    private enum Tab { General, FullSync, Paths }
+    private Tab _activeTab = Tab.General;
 
     protected override void OnInitialized() => LoadFromCurrent();
 
