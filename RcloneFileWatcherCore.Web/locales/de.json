@@ -192,6 +192,7 @@
   "notif.host": "Host",
   "notif.port": "Port",
   "notif.security": "Sicherheit",
+  "notif.secAuto": "Auto (nach Port)",
   "notif.secNone": "Keine",
   "notif.from": "Absenderadresse",
   "notif.user": "Benutzername",

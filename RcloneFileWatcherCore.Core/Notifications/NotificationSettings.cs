@@ -8,7 +8,9 @@ namespace RcloneFileWatcherCore.Notifications
     {
         None = 0,
         StartTls = 1,
-        SslOnConnect = 2
+        SslOnConnect = 2,
+        /// <summary>Let the client choose by port (SSL/TLS on 465, STARTTLS otherwise).</summary>
+        Auto = 3
     }
 
     /// <summary>
@@ -34,7 +36,7 @@ namespace RcloneFileWatcherCore.Notifications
     {
         public string Host { get; set; }
         public int Port { get; set; } = 587;
-        public SmtpSecurity Security { get; set; } = SmtpSecurity.StartTls;
+        public SmtpSecurity Security { get; set; } = SmtpSecurity.Auto;
         public string User { get; set; }
         public string From { get; set; }
 

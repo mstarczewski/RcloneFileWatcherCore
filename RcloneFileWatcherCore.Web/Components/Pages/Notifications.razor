@@ -47,8 +47,9 @@
             <label>
                 <span class="lbl">@L["notif.security"]</span>
                 <select @bind="_model.Smtp.Security">
-                    <option value="@SmtpSecurity.StartTls">STARTTLS</option>
-                    <option value="@SmtpSecurity.SslOnConnect">SSL/TLS</option>
+                    <option value="@SmtpSecurity.Auto">@L["notif.secAuto"]</option>
+                    <option value="@SmtpSecurity.StartTls">STARTTLS (587)</option>
+                    <option value="@SmtpSecurity.SslOnConnect">SSL/TLS (465)</option>
                     <option value="@SmtpSecurity.None">@L["notif.secNone"]</option>
                 </select>
             </label>

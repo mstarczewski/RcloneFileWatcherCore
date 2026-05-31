@@ -294,6 +294,7 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["notif.host"] = "Host",
             ["notif.port"] = "Port",
             ["notif.security"] = "Security",
+            ["notif.secAuto"] = "Auto (by port)",
             ["notif.secNone"] = "None",
             ["notif.from"] = "From address",
             ["notif.user"] = "Username",

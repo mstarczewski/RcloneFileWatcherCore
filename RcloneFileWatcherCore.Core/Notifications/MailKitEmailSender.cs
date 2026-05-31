@@ -39,10 +39,11 @@ namespace RcloneFileWatcherCore.Notifications
             {
                 SmtpSecurity.SslOnConnect => SecureSocketOptions.SslOnConnect,
                 SmtpSecurity.StartTls => SecureSocketOptions.StartTls,
+                SmtpSecurity.Auto => SecureSocketOptions.Auto,   // SSL on 465, STARTTLS otherwise
                 _ => SecureSocketOptions.None
             };
 
-            using var client = new SmtpClient();
+            using var client = new SmtpClient { Timeout = 30000 }; // fail fast (30s) instead of hanging
             await client.ConnectAsync(smtp.Host, smtp.Port, secure, ct);
             if (!string.IsNullOrWhiteSpace(smtp.User))
                 await client.AuthenticateAsync(smtp.User, smtp.Password ?? string.Empty, ct);
