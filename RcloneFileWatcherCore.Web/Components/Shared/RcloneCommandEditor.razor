@@ -70,7 +70,7 @@
         @if (ShowIncludeFrom)
         {
             <label class="checkbox">
-                <input type="checkbox" @bind="Command.IncludeFrom" /> @L["cfg.includeFromInject"] <Hint Text="@L["cfg.includeFromInject.h"]" />
+                <input type="checkbox" @bind="Command.IncludeFrom" @bind:after="OnIncludeFromChanged" /> @L["cfg.includeFromInject"] <Hint Text="@L["cfg.includeFromInject.h"]" />
             </label>
             <label class="checkbox">
                 <input type="checkbox" @bind="Command.IncludeFromStdin" disabled="@(!Command.IncludeFrom)" /> @L["cfg.includeFromStdin"] <Hint Text="@L["cfg.includeFromStdin.h"]" />
@@ -116,4 +116,12 @@
 
     private string PreviewIncludeFrom =>
         ShowIncludeFrom && Command.IncludeFrom && Command.IncludeFromStdin ? "-" : IncludeFromPath;
+
+    // Clear the (now-irrelevant) stdin flag when --include-from injection is turned off, so a
+    // disabled option isn't silently persisted as true.
+    private void OnIncludeFromChanged()
+    {
+        if (!Command.IncludeFrom)
+            Command.IncludeFromStdin = false;
+    }
 }

@@ -1,5 +1,5 @@
 @page "/config"
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using System.Collections.Generic
 @using System.Linq
 @using System.IO
@@ -243,13 +243,20 @@
         if (_scrollPending)
         {
             _scrollPending = false;
-            await JS.InvokeVoidAsync("scrollTo", new { top = 0, behavior = "smooth" });
+            try
+            {
+                await JS.InvokeVoidAsync("scrollTo", new { top = 0, behavior = "smooth" });
+            }
+            catch (JSDisconnectedException)
+            {
+                // Circuit gone before the interop ran — ignore.
+            }
         }
     }
 
     private void LoadFromCurrent()
     {
-        _model = Clone(ConfigService.Current);
+        _model = Clone(ConfigService.Current ?? new ConfigDTO());
         _model.Path ??= new List<PathDTO>();
         _model.UpdateRclone ??= new UpdateRcloneDTO();
         _model.FullSyncCommands ??= new List<RcloneCommandDTO>();

@@ -17,6 +17,8 @@
   "sec.save": "Speichern",
   "sec.saved": "Sicherheitseinstellungen gespeichert.",
   "sec.mismatch": "Die Passwörter stimmen nicht überein.",
+  "sec.weakPassword": "Das Passwort muss mindestens 8 Zeichen lang sein und einen Buchstaben sowie eine Ziffer enthalten.",
+  "sec.passwordRule": "Mindestens 8 Zeichen, davon ein Buchstabe und eine Ziffer.",
   "sec.needPassword": "Lege ein Passwort fest, bevor du die Anforderung aktivierst.",
   "sec.tlsHint": "Im Netzwerk die GUI hinter einen HTTPS-Reverse-Proxy stellen (über HTTP werden Passwort und Cookie im Klartext übertragen).",
 

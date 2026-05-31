@@ -55,14 +55,27 @@ namespace RcloneFileWatcherCore.Logic.Services
                 return false;
             }
 
-            using (var process = new Process())
+            var startInfo = new ProcessStartInfo
             {
-                process.StartInfo.FileName = batchPath;
-                process.StartInfo.CreateNoWindow = false;
-                process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                FileName = batchPath,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+
+            using (var process = new Process { StartInfo = startInfo })
+            {
+                // Capture the script's output (the rclone it runs) so it shows in the GUI log too,
+                // matching managed mode — previously script-mode output was lost.
+                process.OutputDataReceived += (s, e) => { if (e.Data != null) LogRcloneLine(e.Data); };
+                process.ErrorDataReceived += (s, e) => { if (e.Data != null) LogRcloneLine(e.Data); };
+
                 _logger.Log(LogLevel.Information, $"Starting Rclone with batch file: {batchPath}");
                 process.Start();
                 _running[process.Id] = process;
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
                 try
                 {
                     process.WaitForExit();
@@ -125,13 +138,19 @@ namespace RcloneFileWatcherCore.Logic.Services
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
 
-                // Pipe the changed-files list to rclone's stdin (--include-from -). stdout/stderr
-                // are already drained asynchronously above, so this won't deadlock on big lists.
+                // Pipe the changed-files list to rclone's stdin (--include-from -) on a separate
+                // task: a very large list can fill the stdin pipe buffer, so writing it off the
+                // calling thread (while stdout/stderr drain asynchronously) avoids any back-pressure
+                // stall. Closing the stream signals EOF so rclone proceeds.
+                Task stdinTask = null;
                 if (includeFromStdin != null)
                 {
-                    using var stdin = process.StandardInput;
-                    foreach (var line in includeFromStdin)
-                        stdin.WriteLine(line);
+                    stdinTask = Task.Run(() =>
+                    {
+                        using var stdin = process.StandardInput;
+                        foreach (var line in includeFromStdin)
+                            stdin.WriteLine(line);
+                    });
                 }
 
                 Task tailTask = null;
@@ -144,6 +163,7 @@ namespace RcloneFileWatcherCore.Logic.Services
                 }
 
                 process.WaitForExit();
+                try { stdinTask?.Wait(2000); } catch { /* best effort */ }
 
                 if (tailCts != null)
                 {

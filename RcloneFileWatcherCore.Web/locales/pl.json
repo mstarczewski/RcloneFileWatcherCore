@@ -17,6 +17,8 @@
   "sec.save": "Zapisz",
   "sec.saved": "Ustawienia bezpieczeństwa zapisane.",
   "sec.mismatch": "Hasła nie są zgodne.",
+  "sec.weakPassword": "Hasło musi mieć co najmniej 8 znaków oraz zawierać literę i cyfrę.",
+  "sec.passwordRule": "Co najmniej 8 znaków, w tym litera i cyfra.",
   "sec.needPassword": "Ustaw hasło zanim włączysz wymóg.",
   "sec.tlsHint": "W sieci umieść GUI za reverse-proxy z HTTPS (po HTTP hasło i cookie lecą otwartym tekstem).",
 

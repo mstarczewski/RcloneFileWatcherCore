@@ -118,6 +118,8 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["sec.save"] = "Save",
             ["sec.saved"] = "Security settings saved.",
             ["sec.mismatch"] = "Passwords do not match.",
+            ["sec.weakPassword"] = "Password must be at least 8 characters and include a letter and a digit.",
+            ["sec.passwordRule"] = "At least 8 characters, including a letter and a digit.",
             ["sec.needPassword"] = "Set a password before enabling the requirement.",
             ["sec.tlsHint"] = "Over a network, put the GUI behind an HTTPS reverse proxy (the password and cookie travel in clear text over HTTP).",
 

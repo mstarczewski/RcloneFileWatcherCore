@@ -26,6 +26,8 @@ namespace RcloneFileWatcherCore.Web.Auth
         {
             if (!_auth.Enabled || context.User?.Identity?.IsAuthenticated == true)
                 context.Succeed(requirement);
+            else
+                context.Fail(); // enabled + unauthenticated → explicit deny (challenge → login)
 
             return Task.CompletedTask;
         }

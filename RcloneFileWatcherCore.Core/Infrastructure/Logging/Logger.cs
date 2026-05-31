@@ -6,8 +6,11 @@ namespace RcloneFileWatcherCore.Infrastructure.Logging
 {
     public class Logger : ILogger, IDisposable
     {
-        private readonly object _lock = new object();
-        private ILogWriter _logWriter;
+        // Only the writer reference is shared mutable state; each writer is itself thread-safe
+        // (FileLogWriter locks, BroadcastLogWriter locks, Console is synchronized), so we publish
+        // the reference with volatile and don't hold a lock across Write — a slow disk flush in the
+        // file sink no longer blocks the GUI broadcast or the console.
+        private volatile ILogWriter _logWriter;
 
         public LogLevel EnabledLevels { get; set; } = LogLevel.All;
 
@@ -23,13 +26,7 @@ namespace RcloneFileWatcherCore.Infrastructure.Logging
 
         public void SetLogWriter(ILogWriter logWriter)
         {
-            if (logWriter == null)
-                throw new ArgumentNullException(nameof(logWriter), "Log writer cannot be null");
-
-            lock (_lock)
-            {
-                _logWriter = logWriter;
-            }
+            _logWriter = logWriter ?? throw new ArgumentNullException(nameof(logWriter), "Log writer cannot be null");
         }
 
         public void Log(LogLevel level, string message, Exception exception = null)
@@ -41,16 +38,14 @@ namespace RcloneFileWatcherCore.Infrastructure.Logging
             if (exception != null)
                 output += Environment.NewLine + exception;
 
+            var writer = _logWriter;
             try
             {
-                lock (_lock)
-                {
-                    _logWriter.Write(output);
-                }
+                writer.Write(output);
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[LoggerError] {_logWriter.GetType().Name} failed: {ex.Message}");
+                Console.Error.WriteLine($"[LoggerError] {writer.GetType().Name} failed: {ex.Message}");
             }
         }
 

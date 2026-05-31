@@ -1,5 +1,5 @@
 @page "/logs"
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using System.Collections.Generic
 @using System.Linq
 @using RcloneFileWatcherCore.Infrastructure.Logging
@@ -86,8 +86,16 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_autoScroll)
+        if (!_autoScroll)
+            return;
+        try
+        {
             await JS.InvokeVoidAsync("rfwScrollToBottom", "logView");
+        }
+        catch (JSDisconnectedException)
+        {
+            // The circuit was torn down (navigation/refresh) before the interop ran — ignore.
+        }
     }
 
     private void ApplyFilter()
@@ -106,7 +114,12 @@
     {
         var open = line.IndexOf('[');
         var close = open >= 0 ? line.IndexOf(']', open + 1) : -1;
-        return close > open ? line.Substring(open + 1, close - open - 1) : "";
+        if (close <= open)
+            return "";
+        var token = line.Substring(open + 1, close - open - 1);
+        // Only treat the bracketed token as a level if it actually is one, so a "[...]" elsewhere
+        // in the message can't be mistaken for the level tag.
+        return Loc.LogLevels.Contains(token) ? token : "";
     }
 
     private async Task Download()

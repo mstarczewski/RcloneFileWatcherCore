@@ -1,5 +1,6 @@
 @page "/security"
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using System.Linq
 @inject RcloneFileWatcherCore.Web.Auth.IAuthService Auth
 @inject Loc L
 
@@ -28,6 +29,7 @@
         </label>
     </div>
     <p class="muted">@L["sec.changeHint"]</p>
+    <p class="muted">@L["sec.passwordRule"]</p>
     @if (Auth.HasPassword)
     {
         <p class="muted">@L["sec.passwordIsSet"]</p>
@@ -59,6 +61,12 @@
                 _success = false;
                 return;
             }
+            if (!IsStrongPassword(_newPassword))
+            {
+                _message = L["sec.weakPassword"];
+                _success = false;
+                return;
+            }
             Auth.SetPassword(_newPassword);
         }
 
@@ -75,4 +83,8 @@
         _message = L["sec.saved"];
         _success = true;
     }
+
+    // Minimum policy: at least 8 characters, containing at least one letter and one digit.
+    private static bool IsStrongPassword(string password)
+        => password.Length >= 8 && password.Any(char.IsLetter) && password.Any(char.IsDigit);
 }
