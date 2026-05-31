@@ -142,6 +142,7 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["dash.jobRunning"] = "Running… (see Logs)",
             ["dash.jobDone"] = "Done.",
             ["dash.jobFailed"] = "Failed — see Logs.",
+            ["dash.dryRunWarning"] = "Dry-run is enabled on at least one managed command — syncs will only report what would happen and will NOT transfer anything. Uncheck --dry-run in Configuration to sync for real.",
             ["dash.stopRclone"] = "Stop rclone",
             ["dash.rcloneStopping"] = "Stopping rclone…",
             ["dash.rcloneStopped"] = "rclone stopped.",

@@ -1,11 +1,16 @@
 @page "/"
 @rendermode InteractiveServer
 @using System.Threading
+@using System.Linq
 @using RcloneFileWatcherCore.App
+@using RcloneFileWatcherCore.Config
+@using RcloneFileWatcherCore.DTO
+@using RcloneFileWatcherCore.Enums
 @using RcloneFileWatcherCore.Status
 @implements IDisposable
 @inject IStatusService StatusService
 @inject IRuntimeController Controller
+@inject IConfigService ConfigService
 @inject Loc L
 
 <PageTitle>@L["nav.dashboard"] — RcloneFileWatcher</PageTitle>
@@ -14,6 +19,14 @@
     <h1>@L["nav.dashboard"]</h1>
     <span class="live-dot" title="@L["nav.dashboard"]"></span>
 </div>
+
+@if (DryRunActive())
+{
+    <div class="alert alert-warn">
+        <Icon Name="warning" />
+        <span>@L["dash.dryRunWarning"]</span>
+    </div>
+}
 
 @if (_status is null)
 {
@@ -95,6 +108,20 @@ else
     private CancellationTokenSource _cts;
     private string _message;
     private bool _success;
+
+    // True when any managed rclone command (per-path or full sync) has --dry-run enabled, so
+    // nothing it runs will actually transfer — surfaced as a dashboard warning.
+    private bool DryRunActive()
+    {
+        var cfg = ConfigService.Current;
+        if (cfg is null)
+            return false;
+
+        var pathDryRun = cfg.Path?.Any(p => p.SyncMode == SyncMode.Managed && p.RcloneCommand?.DryRun == true) ?? false;
+        var fullDryRun = cfg.FullSyncMode == SyncMode.Managed
+            && (cfg.FullSyncCommands?.Any(c => c?.DryRun == true) ?? false);
+        return pathDryRun || fullDryRun;
+    }
 
     protected override void OnInitialized()
     {

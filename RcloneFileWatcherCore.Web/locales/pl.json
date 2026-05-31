@@ -41,6 +41,7 @@
   "dash.jobRunning": "W toku… (zobacz Logi)",
   "dash.jobDone": "Zakończono.",
   "dash.jobFailed": "Niepowodzenie — zobacz Logi.",
+  "dash.dryRunWarning": "Próbny przebieg (--dry-run) jest włączony w co najmniej jednej komendzie managed — synchronizacja tylko pokaże, co by zrobiła, i NIE prześle niczego. Odznacz --dry-run w Konfiguracji, aby synchronizować naprawdę.",
   "dash.stopRclone": "Zatrzymaj rclone",
   "dash.rcloneStopping": "Zatrzymywanie rclone…",
   "dash.rcloneStopped": "rclone zatrzymany.",

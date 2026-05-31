@@ -527,6 +527,12 @@ textarea {
     color: #f0c4bf;
 }
 
+.alert-warn {
+    background: rgba(224, 168, 58, 0.15);
+    border: 1px solid var(--warn);
+    color: var(--warn);
+}
+
 .alert ul {
     margin: 0;
     padding-left: 1.2rem;
