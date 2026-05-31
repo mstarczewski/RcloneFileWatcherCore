@@ -296,6 +296,18 @@ folder. On Linux use systemd; on Windows use a service manager such as NSSM.
 
 ---
 
+## Windows tray (optional)
+
+`app-tray-win-x64.zip` is a small **system-tray companion** (Windows only). It shows a coloured dot
+near the clock reflecting the watcher state — **green** syncing, **gray** idle, **red** errors,
+**hollow** offline — with a right-click menu (*Open GUI* / *Re-check* / *Exit*). It reads the web
+app's `/api/status`. Drop `RcloneFileWatcherCore.Tray.exe` into the published web folder and it
+launches the web app on start (and stops it on exit); or run it standalone pointing at a URL:
+`RcloneFileWatcherCore.Tray.exe http://localhost:5005`. Framework-dependent build → needs the
+.NET 8 **Desktop** Runtime.
+
+---
+
 ## Releases
 
 Release builds (Windows + Linux: the console app and the web GUI) are produced by GitHub Actions

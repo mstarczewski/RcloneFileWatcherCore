@@ -138,6 +138,19 @@ app.MapPost("/logout", async (HttpContext ctx) =>
     return Results.LocalRedirect("/");
 }).DisableAntiforgery();
 
+// Lightweight status for the Windows tray companion (anonymous — only non-sensitive booleans/counts).
+app.MapGet("/api/status", (RcloneFileWatcherCore.Status.IStatusService status, RcloneFileWatcherCore.Infrastructure.Logging.BroadcastLogWriter logBuffer) =>
+{
+    var s = status.GetStatus();
+    return Results.Json(new
+    {
+        watcherRunning = s.WatcherRunning,
+        rcloneRunning = s.RcloneRunning,
+        pendingChanges = s.PendingChanges,
+        errors = logBuffer.GetErrors().Count
+    });
+});
+
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()

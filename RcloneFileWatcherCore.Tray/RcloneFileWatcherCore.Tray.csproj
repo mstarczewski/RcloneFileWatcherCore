@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Windows-only system-tray companion. Deliberately NOT part of RcloneFileWatcherCore.sln:
+       net8.0-windows / WinForms can't build on the Linux CI job. The release workflow's Windows
+       job publishes it separately. It's a thin client of the web app's /api/status endpoint. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <RootNamespace>RcloneFileWatcherCore.Tray</RootNamespace>
+    <AssemblyName>RcloneFileWatcherCore.Tray</AssemblyName>
+    <ApplicationIcon></ApplicationIcon>
+  </PropertyGroup>
+
+</Project>

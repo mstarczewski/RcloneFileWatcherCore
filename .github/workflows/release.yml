@@ -91,6 +91,10 @@ jobs:
       - name: Publish Windows web GUI (folder)
         run: dotnet publish RcloneFileWatcherCore.Web/RcloneFileWatcherCore.Web.csproj -c Release -r win-x64 --self-contained false -p:Version=${{ env.VERSION }}
 
+      # Windows-only tray companion (not in the solution, so build it explicitly here).
+      - name: Publish Windows tray app
+        run: dotnet publish RcloneFileWatcherCore.Tray/RcloneFileWatcherCore.Tray.csproj -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:Version=${{ env.VERSION }}
+
       - name: Prepare Windows artifacts
         shell: pwsh
         run: |
@@ -106,6 +110,10 @@ jobs:
           # Web GUI: whole publish folder (dll + wwwroot + locales)
           $webPub = "$ws\RcloneFileWatcherCore.Web\bin\Release\net8.0\win-x64\publish"
           Compress-Archive -Path "$webPub\*" -DestinationPath "$ws\artifacts\app-web-win-x64.zip" -Force
+
+          # Tray: single-file exe
+          $trayPub = "$ws\RcloneFileWatcherCore.Tray\bin\Release\net8.0-windows\win-x64\publish"
+          Compress-Archive -Path "$trayPub\*.exe" -DestinationPath "$ws\artifacts\app-tray-win-x64.zip" -Force
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -232,10 +240,12 @@ jobs:
             ### Artifacts
             - `app-win-x64.zip` / `app-linux-x64.zip` — headless console app (single file on Windows)
             - `app-web-win-x64.zip` / `app-web-linux-x64.zip` — web GUI (run as a folder: `dotnet RcloneFileWatcherCore.Web.dll`)
+            - `app-tray-win-x64.zip` — Windows system-tray companion (drop the exe into the web folder to auto-launch it)
           files: |
             artifacts/app-win-x64.zip
             artifacts/app-linux-x64.zip
             artifacts/app-web-win-x64.zip
             artifacts/app-web-linux-x64.zip
+            artifacts/app-tray-win-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
