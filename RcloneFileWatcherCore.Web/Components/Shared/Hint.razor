@@ -1,7 +1,7 @@
-@* Small "?" badge that shows an explanatory tooltip on hover/focus (native title). *@
+@* Small info icon that shows an explanatory tooltip on hover/focus (native title). *@
 @if (!string.IsNullOrWhiteSpace(Text))
 {
-    <span class="hint" title="@Text" tabindex="0" role="img" aria-label="@Text">?</span>
+    <span class="hint" title="@Text" tabindex="0" role="img" aria-label="@Text"><Icon Name="info" Size="15" /></span>
 }
 
 @code {

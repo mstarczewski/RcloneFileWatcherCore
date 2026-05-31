@@ -1,5 +1,6 @@
 @page "/rclone"
 @rendermode InteractiveServer
+@using System.Collections.Generic
 @using RcloneFileWatcherCore.Config
 @using RcloneFileWatcherCore.DTO
 @using RcloneFileWatcherCore.Enums
@@ -17,6 +18,8 @@
 @{
     var cfg = ConfigService.Current;
 }
+
+<h2>@L["rcl.liveSyncTitle"]</h2>
 
 @if (cfg.Path is null || cfg.Path.Count == 0)
 {
@@ -53,7 +56,48 @@ else
     }
 }
 
+<h2>@L["cfg.fullSyncTitle"]</h2>
+
+<div class="path-card">
+    <div class="path-card-head">
+        <strong>@FullSyncSchedule(cfg)</strong>
+        <span class="badge @(cfg.FullSyncMode == SyncMode.Managed ? "badge-accent" : "")">
+            @(cfg.FullSyncMode == SyncMode.Managed ? L["rcl.managed"] : L["rcl.script"])
+        </span>
+    </div>
+
+    @if (cfg.FullSyncMode == SyncMode.Managed)
+    {
+        @if (cfg.FullSyncCommands is { Count: > 0 })
+        {
+            @foreach (var command in cfg.FullSyncCommands)
+            {
+                <pre class="cmd-line">@RcloneCommandBuilder.BuildPreview(command, null)</pre>
+            }
+        }
+        else
+        {
+            <p class="muted">@L["rcl.fullSyncEmpty"]</p>
+        }
+    }
+    else
+    {
+        <p class="muted">@L["rcl.scriptLabel"] <code>@(string.IsNullOrWhiteSpace(cfg.RunOneTimeFullStartupSyncBatch) ? L["rcl.notSet"] : cfg.RunOneTimeFullStartupSyncBatch)</code></p>
+    }
+</div>
+
 @code {
+    // Human-readable summary of when the full sync runs (daily time and/or at startup).
+    private string FullSyncSchedule(ConfigDTO cfg)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(cfg.RunStartupScriptEveryDayAt))
+            parts.Add(L.F("rcl.dailyAt", cfg.RunStartupScriptEveryDayAt));
+        if (cfg.RunOneTimeFullStartupSync)
+            parts.Add(L["rcl.atStartup"]);
+        return parts.Count > 0 ? string.Join(" · ", parts) : L["rcl.manualOnly"];
+    }
+
     protected override void OnInitialized() => ConfigService.Changed += OnConfigChanged;
 
     private void OnConfigChanged(ConfigDTO config) => _ = InvokeAsync(StateHasChanged);
