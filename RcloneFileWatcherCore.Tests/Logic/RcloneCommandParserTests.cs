@@ -100,6 +100,27 @@ rclone.exe move e:\Old pcloud:Archive --retries 5
         }
 
         [TestMethod]
+        public void Parse_MapsKnownBooleanFlagsToExplicitOptions()
+        {
+            var cmd = RcloneCommandParser.Parse(
+                "rclone sync /src remote:dst --fast-list --update --dry-run");
+
+            Assert.IsTrue(cmd.FastList);
+            Assert.IsTrue(cmd.Update);
+            Assert.IsTrue(cmd.DryRun);
+            Assert.IsTrue(string.IsNullOrEmpty(cmd.ExtraArgs)); // none routed to free-form args
+        }
+
+        [TestMethod]
+        public void Parse_ShortUpdateFlag_DoesNotSwallowNextToken()
+        {
+            var cmd = RcloneCommandParser.Parse("rclone sync /src remote:dst -u --transfers 6");
+
+            Assert.IsTrue(cmd.Update);
+            Assert.AreEqual(6, cmd.Transfers); // -u is boolean, must not consume "--transfers"
+        }
+
+        [TestMethod]
         public void Parse_WindowsBatchVariables_BecomePlaceholders()
         {
             var cmd = RcloneCommandParser.Parse(

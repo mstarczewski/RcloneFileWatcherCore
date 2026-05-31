@@ -26,7 +26,7 @@ namespace RcloneFileWatcherCore.Logic.Rclone
         private static readonly HashSet<string> BooleanFlags = new(StringComparer.OrdinalIgnoreCase)
         {
             "--create-empty-src-dirs", "--use-mmap", "--fast-list", "--dry-run",
-            "--progress", "--checksum", "--update", "--verbose"
+            "--progress", "--checksum", "--update", "-u", "--verbose"
         };
 
         private static readonly Regex SubCommand =
@@ -103,6 +103,9 @@ namespace RcloneFileWatcherCore.Logic.Rclone
                     case "--log-level": cmd.LogLevel = value; break;
                     case "--create-empty-src-dirs": cmd.CreateEmptySrcDirs = true; break;
                     case "--use-mmap": cmd.UseMmap = true; break;
+                    case "--fast-list": cmd.FastList = true; break;
+                    case "--update": case "-u": cmd.Update = true; break;
+                    case "--dry-run": cmd.DryRun = true; break;
                     default:
                         extra.Add(flag);
                         if (value != null)

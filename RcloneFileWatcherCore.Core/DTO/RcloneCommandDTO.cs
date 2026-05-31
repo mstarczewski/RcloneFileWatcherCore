@@ -39,6 +39,15 @@ namespace RcloneFileWatcherCore.DTO
         /// </summary>
         public bool UseMmap { get; set; }
 
+        /// <summary>--fast-list: list the remote recursively in bulk (fewer API calls, more memory).</summary>
+        public bool FastList { get; set; }
+
+        /// <summary>--update: skip files that are newer on the destination (don't overwrite newer).</summary>
+        public bool Update { get; set; }
+
+        /// <summary>--dry-run: report what would happen without making any changes (for testing).</summary>
+        public bool DryRun { get; set; }
+
         public string LogFile { get; set; }
         public string LogLevel { get; set; }
 

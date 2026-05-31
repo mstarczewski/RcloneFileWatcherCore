@@ -82,6 +82,15 @@
         <label class="checkbox">
             <input type="checkbox" @bind="Command.UseMmap" /> --use-mmap <Hint Text="@L["cfg.h.useMmap"]" />
         </label>
+        <label class="checkbox">
+            <input type="checkbox" @bind="Command.FastList" /> --fast-list <Hint Text="@L["cfg.h.fastList"]" />
+        </label>
+        <label class="checkbox">
+            <input type="checkbox" @bind="Command.Update" /> --update <Hint Text="@L["cfg.h.update"]" />
+        </label>
+        <label class="checkbox">
+            <input type="checkbox" @bind="Command.DryRun" /> --dry-run <Hint Text="@L["cfg.h.dryRun"]" />
+        </label>
     </div>
     <label>
         <span class="lbl">@L["cfg.extraArgs"] <Hint Text="@L["cfg.extraArgs.h"]" /></span>

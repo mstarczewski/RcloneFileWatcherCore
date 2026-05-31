@@ -246,6 +246,9 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["cfg.includeFromStdin.h"] = "Send the changed-files list through stdin instead of writing a temporary file. Handles very large lists.",
             ["cfg.h.createEmptySrcDirs"] = "Also create empty source directories on the destination.",
             ["cfg.h.useMmap"] = "Allocate transfer buffers via mmap so memory is returned to the OS promptly. Lowers and stabilises memory use.",
+            ["cfg.h.fastList"] = "List the remote recursively in one bulk pass — fewer API calls and often faster on large trees, at the cost of more memory. Mainly helps full syncs.",
+            ["cfg.h.update"] = "Skip a file when the destination copy is newer than the source, so a newer remote version is never overwritten. Safe one-way-mirror guard.",
+            ["cfg.h.dryRun"] = "Report what would be transferred/deleted without making any changes. Use to test a command before running it for real.",
             ["cfg.extraArgs.h"] = "Any additional rclone flags, one token per line (e.g. --exclude on one line, then its value on the next).",
 
             ["rcl.intro"] = "Preview of the rclone invocation for each watched path. Editing is done under Configuration. In Managed mode the command is built from fields (with automatic --include-from); in Script mode the given .bat/.sh file is run.",

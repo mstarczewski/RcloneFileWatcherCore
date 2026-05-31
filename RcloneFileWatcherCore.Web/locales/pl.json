@@ -144,6 +144,9 @@
   "cfg.includeFromStdin.h": "Wysyła listę zmienionych plików przez stdin zamiast tworzyć plik tymczasowy. Obsługuje bardzo duże listy.",
   "cfg.h.createEmptySrcDirs": "Tworzy też puste katalogi źródłowe w miejscu docelowym.",
   "cfg.h.useMmap": "Alokuje bufory transferu przez mmap, aby pamięć szybko wracała do systemu. Niższe i stabilniejsze zużycie pamięci.",
+  "cfg.h.fastList": "Listuje remote rekurencyjnie jednym hurtowym przebiegiem — mniej zapytań do API i często szybciej dla dużych drzew, kosztem większej pamięci. Pomaga głównie przy pełnej synchronizacji.",
+  "cfg.h.update": "Pomija plik, gdy kopia docelowa jest nowsza niż źródło, więc nowsza wersja w chmurze nie zostanie nadpisana. Asekuracja mirrora jednokierunkowego.",
+  "cfg.h.dryRun": "Pokazuje, co zostałoby przesłane/usunięte, bez wprowadzania zmian. Do przetestowania komendy przed realnym uruchomieniem.",
   "cfg.extraArgs.h": "Dowolne dodatkowe flagi rclone, jeden token na linię (np. --exclude w jednej linii, jego wartość w następnej).",
 
   "rcl.intro": "Podgląd wywołania rclone dla każdej obserwowanej ścieżki. Edycja odbywa się w sekcji Konfiguracja. W trybie Managed komenda jest budowana z pól (z automatycznym --include-from); w trybie Skrypt uruchamiany jest podany plik .bat/.sh.",

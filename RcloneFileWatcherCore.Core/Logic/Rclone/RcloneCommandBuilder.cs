@@ -38,6 +38,12 @@ namespace RcloneFileWatcherCore.Logic.Rclone
                 args.Add("--create-empty-src-dirs");
             if (command.UseMmap)
                 args.Add("--use-mmap");
+            if (command.FastList)
+                args.Add("--fast-list");
+            if (command.Update)
+                args.Add("--update");
+            if (command.DryRun)
+                args.Add("--dry-run");
             AddFlag(args, "--log-file", command.LogFile);
             AddFlag(args, "--log-level", command.LogLevel);
 
