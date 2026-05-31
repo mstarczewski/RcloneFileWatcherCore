@@ -32,6 +32,16 @@ builder.WebHost.UseStaticWebAssets();
 var logger = new Logger();
 var config = new ConfigLoader(ConfigFileName, logger).LoadConfig() ?? new ConfigDTO();
 
+// If Gui:Urls requests an https endpoint, serve it with a certificate (self-signed by default,
+// persisted next to the app). This lets the reverse proxy ↔ backend hop be encrypted too; the
+// exported gui-cert.crt can be handed to the proxy (Caddy tls_trusted_ca_certs) to trust it.
+var guiUrls = builder.Configuration["Gui:Urls"] ?? "http://localhost:5005";
+if (guiUrls.Contains("https", StringComparison.OrdinalIgnoreCase))
+{
+    var cert = RcloneFileWatcherCore.Web.HttpsSetup.LoadOrCreate(builder.Environment.ContentRootPath, builder.Configuration, logger);
+    builder.WebHost.ConfigureKestrel(o => o.ConfigureHttpsDefaults(h => h.ServerCertificate = cert));
+}
+
 builder.Services.AddRcloneFileWatcherCore(config, ConfigFileName, logger);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

@@ -287,6 +287,25 @@ and cookie travel in clear text).
 * `Gui:OpenBrowser` – `true` to open the browser on startup (desktop convenience; keep `false`
   for headless/service deployments).
 
+### HTTPS (optional — encrypt the proxy → backend hop)
+
+By default the GUI serves plain HTTP and TLS terminates at the reverse proxy. To encrypt the
+proxy ↔ backend hop too, set an https endpoint — e.g. `Gui:Urls=https://0.0.0.0:5005`. With no
+certificate configured the app **generates and persists a self-signed one** (`gui-cert.pfx`) next
+to the binary and exports its public part to **`gui-cert.crt`**. Tell the proxy to trust it — Caddy:
+
+```caddyfile
+reverse_proxy https://127.0.0.1:5005 {
+    transport http {
+        tls_trusted_ca_certs /opt/RcloneFileWatcherCoreWeb/gui-cert.crt
+    }
+}
+```
+
+…or skip verification with `transport http { tls_insecure_skip_verify }`. Optional settings:
+`Gui:CertPath` + `Gui:CertPassword` to use your own PFX instead, and `Gui:CertHost` to add a SAN
+hostname the proxy dials. `gui-cert.pfx`/`gui-cert.crt` are gitignored.
+
 ### Deployment
 
 The web GUI **must be deployed as a folder** — the published output (the `.dll`/apphost together

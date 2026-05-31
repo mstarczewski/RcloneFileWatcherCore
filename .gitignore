@@ -361,3 +361,9 @@ notifications.json
 **/notifications.json
 keys/
 **/keys/
+
+# Self-signed HTTPS certificate (per-deployment)
+gui-cert.pfx
+**/gui-cert.pfx
+gui-cert.crt
+**/gui-cert.crt
