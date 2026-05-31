@@ -145,6 +145,11 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["dash.stopRclone"] = "Stop rclone",
             ["dash.rcloneStopping"] = "Stopping rclone…",
             ["dash.rcloneStopped"] = "rclone stopped.",
+            ["dash.rcloneTitle"] = "rclone availability",
+            ["dash.rcloneChecking"] = "Checking rclone…",
+            ["dash.rcloneNone"] = "No managed rclone path configured (script mode embeds its own path).",
+            ["dash.rcloneNotFound"] = "Not found",
+            ["dash.rcloneRefresh"] = "Re-check",
 
             ["cfg.intro"] = "Changes are saved to {0} and applied live (the watcher is reloaded). Changing LogPath requires a restart.",
             ["cfg.general"] = "General",

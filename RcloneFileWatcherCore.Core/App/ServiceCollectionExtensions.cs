@@ -38,6 +38,7 @@ namespace RcloneFileWatcherCore.App
             services.AddSingleton(new ConcurrentDictionary<string, FileDTO>());
             services.AddSingleton<IFileSystem, FileSystemService>();
             services.AddSingleton<IBatchExecutionService, RcloneRunService>();
+            services.AddSingleton<IRcloneVersionService, RcloneVersionService>();
             services.AddSingleton<IStatusService, StatusService>();
             services.AddSingleton<IConfigService>(sp =>
                 new ConfigService(config, configFilePath, sp.GetRequiredService<ILogger>()));

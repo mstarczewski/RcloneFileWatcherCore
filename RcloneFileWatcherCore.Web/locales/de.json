@@ -44,6 +44,11 @@
   "dash.stopRclone": "Rclone stoppen",
   "dash.rcloneStopping": "Rclone wird gestoppt…",
   "dash.rcloneStopped": "Rclone gestoppt.",
+  "dash.rcloneTitle": "Rclone-Verfügbarkeit",
+  "dash.rcloneChecking": "Rclone wird geprüft…",
+  "dash.rcloneNone": "Kein verwalteter Rclone-Pfad konfiguriert (im Skript-Modus steckt der Pfad in der Datei).",
+  "dash.rcloneNotFound": "Nicht gefunden",
+  "dash.rcloneRefresh": "Erneut prüfen",
 
   "cfg.intro": "Änderungen werden in {0} gespeichert und live angewendet (der Watcher wird neu geladen). Eine Änderung von LogPath erfordert einen Neustart.",
   "cfg.general": "Allgemein",

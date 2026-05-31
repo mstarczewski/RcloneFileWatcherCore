@@ -44,6 +44,11 @@
   "dash.stopRclone": "Zatrzymaj rclone",
   "dash.rcloneStopping": "Zatrzymywanie rclone…",
   "dash.rcloneStopped": "rclone zatrzymany.",
+  "dash.rcloneTitle": "Dostępność rclone",
+  "dash.rcloneChecking": "Sprawdzanie rclone…",
+  "dash.rcloneNone": "Brak skonfigurowanej ścieżki rclone w trybie managed (tryb Skrypt ma ścieżkę w pliku).",
+  "dash.rcloneNotFound": "Nie znaleziono",
+  "dash.rcloneRefresh": "Sprawdź ponownie",
 
   "cfg.intro": "Zmiany zapisywane są do {0} i stosowane na żywo (watcher zostaje przeładowany). Zmiana LogPath wymaga restartu aplikacji.",
   "cfg.general": "Ogólne",

@@ -2,15 +2,18 @@
 @rendermode InteractiveServer
 @using System.Threading
 @using System.Linq
+@using System.Collections.Generic
 @using RcloneFileWatcherCore.App
 @using RcloneFileWatcherCore.Config
 @using RcloneFileWatcherCore.DTO
 @using RcloneFileWatcherCore.Enums
+@using RcloneFileWatcherCore.Logic.Interfaces
 @using RcloneFileWatcherCore.Status
 @implements IDisposable
 @inject IStatusService StatusService
 @inject IRuntimeController Controller
 @inject IConfigService ConfigService
+@inject IRcloneVersionService RcloneVersion
 @inject Loc L
 
 <PageTitle>@L["nav.dashboard"] — RcloneFileWatcher</PageTitle>
@@ -102,6 +105,44 @@ else
     {
         <p class="muted">@L["dash.noPaths"]</p>
     }
+
+    <div class="section-head">
+        <h2>@L["dash.rcloneTitle"]</h2>
+        <button class="btn btn-sm btn-secondary" @onclick="RefreshProbesAsync" disabled="@_probing">
+            <Icon Name="refresh" Size="14" /> @L["dash.rcloneRefresh"]
+        </button>
+    </div>
+    @if (_rcloneProbes is null)
+    {
+        <p class="muted">@L["dash.rcloneChecking"]</p>
+    }
+    else if (_rcloneProbes.Count == 0)
+    {
+        <p class="muted">@L["dash.rcloneNone"]</p>
+    }
+    else
+    {
+        <ul class="path-list">
+            @foreach (var probe in _rcloneProbes)
+            {
+                <li>
+                    <code>@probe.Path</code>
+                    @if (probe.Available)
+                    {
+                        <span class="badge badge-ok">@probe.Version</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-off">@L["dash.rcloneNotFound"]</span>
+                        @if (!string.IsNullOrWhiteSpace(probe.Error))
+                        {
+                            <span class="muted"> — @probe.Error</span>
+                        }
+                    }
+                </li>
+            }
+        </ul>
+    }
 }
 
 @code {
@@ -110,6 +151,9 @@ else
     private CancellationTokenSource _cts;
     private string _message;
     private bool _success;
+
+    private List<RcloneVersionInfo> _rcloneProbes;
+    private bool _probing;
 
     // True when any managed rclone command (per-path or full sync) has --dry-run enabled, so
     // nothing it runs will actually transfer — surfaced as a dashboard warning.
@@ -146,6 +190,57 @@ else
         _cts = new CancellationTokenSource();
         _timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
         _ = RunLoopAsync(_cts.Token);
+        _ = RefreshProbesAsync();
+    }
+
+    // Probe each distinct rclone path referenced by the config (managed commands + auto-update).
+    // Done once on load / on demand — NOT on the status poll — since each probe spawns a process.
+    private async Task RefreshProbesAsync()
+    {
+        if (_probing)
+            return;
+        _probing = true;
+        _rcloneProbes = null;
+        try
+        {
+            await InvokeAsync(StateHasChanged);
+            var paths = DistinctRclonePaths();
+            var results = await Task.Run(() => paths.Select(RcloneVersion.Probe).ToList());
+            _rcloneProbes = results;
+            _probing = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            // Fire-and-forget from OnInitialized: ignore if the circuit/component went away.
+            _probing = false;
+        }
+    }
+
+    // The set of rclone executables actually used: each enabled managed command's path and the
+    // auto-update path. Empty path = "rclone" from PATH. Script-mode paths live inside the .bat/.sh
+    // and are not known here, so they aren't probed.
+    private List<string> DistinctRclonePaths()
+    {
+        var cfg = ConfigService.Current;
+        var paths = new List<string>();
+        if (cfg is not null)
+        {
+            foreach (var p in cfg.Path ?? new List<PathDTO>())
+                if (p.Enabled && p.SyncMode == SyncMode.Managed && p.RcloneCommand is not null)
+                    paths.Add(Normalize(p.RcloneCommand.RclonePath));
+
+            if (cfg.FullSyncMode == SyncMode.Managed)
+                foreach (var c in cfg.FullSyncCommands ?? new List<RcloneCommandDTO>())
+                    if (c is { Enabled: true })
+                        paths.Add(Normalize(c.RclonePath));
+
+            if (!string.IsNullOrWhiteSpace(cfg.UpdateRclone?.RclonePath))
+                paths.Add(cfg.UpdateRclone.RclonePath.Trim());
+        }
+        return paths.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+        static string Normalize(string path) => string.IsNullOrWhiteSpace(path) ? "rclone" : path.Trim();
     }
 
     private async Task RunLoopAsync(CancellationToken ct)
