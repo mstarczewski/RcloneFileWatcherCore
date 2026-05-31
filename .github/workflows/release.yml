@@ -17,6 +17,11 @@ on:
 permissions:
   contents: write
 
+# Run the JS-based actions on Node 24 now (they ship on the deprecated Node 20 runtime).
+# This silences the deprecation warning; it becomes a no-op once Node 24 is the runner default.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # Decide ONE version for the whole run so the Windows and Linux artifacts always carry the same
   # number. From a tag push / dispatch tag it's the tag (without the leading "v"); otherwise it's a
