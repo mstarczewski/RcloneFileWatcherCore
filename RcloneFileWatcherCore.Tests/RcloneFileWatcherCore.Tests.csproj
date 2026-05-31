@@ -15,7 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Needed to reference the Blazor Web project's ASP.NET types (auth handler) from tests. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\RcloneFileWatcherCore.Core\RcloneFileWatcherCore.Core.csproj" />
+    <ProjectReference Include="..\RcloneFileWatcherCore.Web\RcloneFileWatcherCore.Web.csproj" />
   </ItemGroup>
 
 </Project>
