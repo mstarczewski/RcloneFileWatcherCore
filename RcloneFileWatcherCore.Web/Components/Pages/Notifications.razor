@@ -3,9 +3,12 @@
 @using System.Collections.Generic
 @using System.Linq
 @using RcloneFileWatcherCore.Notifications
+@using RcloneFileWatcherCore.Enums
+@using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces
 @inject INotificationSettingsStore Store
 @inject IEmailSender Sender
 @inject PgpKeyServer KeyServer
+@inject ILogger Logger
 @inject Loc L
 
 <PageTitle>@L["nav.notifications"] — RcloneFileWatcher</PageTitle>
@@ -220,18 +223,24 @@
         _busy = true;
         int ok = 0;
         var errors = new List<string>();
+        var smtp = _model.Smtp;
+        Logger.Log(LogLevel.Information,
+            $"Sending test email to {_model.Recipients.Count} recipient(s) via {smtp.Host}:{smtp.Port} ({smtp.Security}), from '{smtp.From}', auth user '{smtp.User}'.");
         try
         {
             foreach (var r in _model.Recipients)
             {
                 try
                 {
-                    await Sender.SendAsync(_model.Smtp, r, "RcloneFileWatcher: test", "Test message from RcloneFileWatcher.");
+                    await Sender.SendAsync(smtp, r, "RcloneFileWatcher: test", "Test message from RcloneFileWatcher.");
                     ok++;
+                    Logger.Log(LogLevel.Information, $"Test email accepted by the SMTP server for {r.Email}" + (r.Encrypt ? " (OpenPGP-encrypted)." : "."));
                 }
                 catch (Exception ex)
                 {
                     errors.Add($"{r.Email}: {ex.Message}");
+                    // Warning (not Error) so a failed test email doesn't itself trigger an error email.
+                    Logger.Log(LogLevel.Warning, $"Test email to {r.Email} failed", ex);
                 }
             }
         }
