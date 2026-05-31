@@ -519,7 +519,7 @@ textarea {
 .alert-warn {
     background: rgba(224, 168, 58, 0.15);
     border: 1px solid var(--warn);
-    color: var(--warn);
+    color: #f0d9a8;
 }
 
 .alert ul {
