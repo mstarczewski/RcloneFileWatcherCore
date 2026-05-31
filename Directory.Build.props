@@ -1,0 +1,17 @@
+<Project>
+
+  <!-- Shared product identity and versioning for every project in the solution, so the name
+       and version are defined in one place and stay consistent (console, Web GUI, Core). -->
+  <PropertyGroup>
+    <Product>RcloneFileWatcher</Product>
+    <Company>mstarczewski</Company>
+    <Authors>mstarczewski</Authors>
+
+    <!-- CalVer: human-readable and automatically increments by build date (Year.Month.Day).
+         AssemblyVersion/FileVersion/InformationalVersion all derive from this. The git commit
+         hash is NOT appended, so the GUI shows a clean "vYYYY.MM.DD". -->
+    <Version>$([System.DateTime]::UtcNow.ToString("yyyy.MM.dd"))</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+</Project>

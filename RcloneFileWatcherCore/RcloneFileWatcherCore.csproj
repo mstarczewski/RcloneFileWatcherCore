@@ -8,15 +8,7 @@
     <!-- Debug settings -->
     <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
-    <!-- Auto-increment build version based on date/time -->
-    <Version>0.8.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</Version>
-    <AssemblyVersion>0.8.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</AssemblyVersion>
-    <FileVersion>0.8.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</FileVersion>
-    <InformationalVersion>0.8.$([System.DateTime]::Now.DayOfYear).$([System.DateTime]::Now.Hour)</InformationalVersion>
-    <!-- App info -->
-    <Authors>mstarczewski</Authors>
-    <Company>mstarczewski</Company>
-    <Product>RcloneFileWatcherCore</Product>
+    <!-- Product identity and CalVer versioning are defined once in Directory.Build.props. -->
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/mstarczewski/RcloneFileWatcherCore</RepositoryUrl>
     <!-- Deployment: PublishSingleFile / SelfContained are passed at publish time
@@ -24,7 +16,6 @@
     <!-- General build -->
     <Platforms>AnyCPU;x64</Platforms>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 	
   </PropertyGroup>
   

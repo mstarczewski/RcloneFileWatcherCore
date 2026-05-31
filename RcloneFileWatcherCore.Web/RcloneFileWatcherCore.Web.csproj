@@ -7,9 +7,7 @@
     <RootNamespace>RcloneFileWatcherCore.Web</RootNamespace>
     <AssemblyName>RcloneFileWatcherCore.Web</AssemblyName>
     <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
-    <Product>RcloneFileWatcherCore</Product>
-    <Company>mstarczewski</Company>
-    <Authors>mstarczewski</Authors>
+    <!-- Product/Company/Authors and the CalVer version come from Directory.Build.props. -->
   </PropertyGroup>
 
   <ItemGroup>
