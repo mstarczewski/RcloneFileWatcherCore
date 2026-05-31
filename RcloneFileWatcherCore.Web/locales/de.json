@@ -180,6 +180,8 @@
   "log.clear": "Ansicht leeren",
   "log.download": "Protokoll herunterladen",
   "log.noEntries": "(keine Einträge)",
+  "log.errorsTitle": "Aufbewahrte Fehler ({0})",
+  "log.clearErrors": "Fehler löschen",
 
   "login.password": "Passwort",
   "login.submit": "Anmelden",

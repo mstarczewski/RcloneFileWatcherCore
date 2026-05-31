@@ -180,6 +180,8 @@
   "log.clear": "Wyczyść widok",
   "log.download": "Pobierz log",
   "log.noEntries": "(brak wpisów)",
+  "log.errorsTitle": "Zachowane błędy ({0})",
+  "log.clearErrors": "Wyczyść błędy",
 
   "login.password": "Hasło",
   "login.submit": "Zaloguj",

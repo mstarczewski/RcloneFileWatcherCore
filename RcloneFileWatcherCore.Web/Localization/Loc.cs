@@ -282,6 +282,8 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["log.clear"] = "Clear view",
             ["log.download"] = "Download log",
             ["log.noEntries"] = "(no entries)",
+            ["log.errorsTitle"] = "Errors kept ({0})",
+            ["log.clearErrors"] = "Clear errors",
 
             ["login.password"] = "Password",
             ["login.submit"] = "Log in",

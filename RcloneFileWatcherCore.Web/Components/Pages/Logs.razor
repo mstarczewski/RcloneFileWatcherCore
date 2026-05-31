@@ -32,6 +32,15 @@
     <button class="btn btn-sm" @onclick="Clear">@L["log.clear"]</button>
 </div>
 
+@if (_keptErrors.Count > 0)
+{
+    <div class="errors-head">
+        <strong class="card-value warn">@L.F("log.errorsTitle", _keptErrors.Count)</strong>
+        <button class="btn btn-sm btn-danger" @onclick="ClearErrors">@L["log.clearErrors"]</button>
+    </div>
+    <pre class="log-view log-errors">@string.Join("\n", _keptErrors)</pre>
+}
+
 <pre class="log-view" id="logView">@(_filtered.Count == 0 ? L["log.noEntries"] : string.Join("\n", _filtered))</pre>
 
 @code {
@@ -41,7 +50,12 @@
     // incoming line is expensive, so render at most once per this interval under heavy logging.
     private const int RenderIntervalMs = 200;
 
+    // Errors/criticals are mirrored from the server's retained error buffer and never rolled off
+    // here either — they stay visible until the user clears them.
+    private const int MaxErrors = 5000;
+
     private readonly List<string> _lines = new();
+    private readonly List<string> _keptErrors = new();
     private List<string> _filtered = new();
     private string _levelFilter = "";
     private bool _autoScroll = true;
@@ -50,6 +64,7 @@
     protected override void OnInitialized()
     {
         _lines.AddRange(LogBuffer.GetRecent());
+        _keptErrors.AddRange(LogBuffer.GetErrors());
         ApplyFilter();
         LogBuffer.MessageWritten += OnMessage;
     }
@@ -61,6 +76,13 @@
             _lines.Add(message);
             if (_lines.Count > MaxLines)
                 _lines.RemoveRange(0, _lines.Count - MaxLines);
+
+            if (BroadcastLogWriter.IsErrorLine(message))
+            {
+                _keptErrors.Add(message);
+                if (_keptErrors.Count > MaxErrors)
+                    _keptErrors.RemoveRange(0, _keptErrors.Count - MaxErrors);
+            }
 
             if (Matches(message))
                 _filtered.Add(message);
@@ -133,6 +155,12 @@
     {
         _lines.Clear();
         _filtered.Clear();
+    }
+
+    private void ClearErrors()
+    {
+        LogBuffer.ClearErrors();
+        _keptErrors.Clear();
     }
 
     public void Dispose()

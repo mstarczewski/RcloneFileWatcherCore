@@ -522,6 +522,20 @@ textarea {
     color: #f0d9a8;
 }
 
+.errors-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.log-errors {
+    margin-top: 0.4rem;
+    max-height: 30vh;
+    border-color: #c0493f;
+}
+
 .alert ul {
     margin: 0;
     padding-left: 1.2rem;
