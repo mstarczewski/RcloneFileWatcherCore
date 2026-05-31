@@ -2,8 +2,10 @@ name: Build & Release
 
 on:
   push:
+    branches:
+      - master      # release only when the commit message contains "[release]" (gated below)
     tags:
-      - 'v*.*'
+      - 'v*.*'      # an explicit version tag always releases
   workflow_dispatch:
     inputs:
       tag:
@@ -11,12 +13,24 @@ on:
         required: false
         default: ''
 
+# The release step creates the tag, so the token needs write access to repo contents.
+permissions:
+  contents: write
+
 jobs:
   # Decide ONE version for the whole run so the Windows and Linux artifacts always carry the same
   # number. From a tag push / dispatch tag it's the tag (without the leading "v"); otherwise it's a
   # CalVer stamp computed once here: yyyy.MM.dd.HHmms (UTC), matching Directory.Build.props.
+  #
+  # This job also gates the whole workflow: it runs (and so do the jobs that need it) only for a
+  # version tag, a manual dispatch, or a push to master whose head commit contains "[release]".
+  # A plain master push without that marker skips everything — no accidental releases.
   version:
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[release]'))
     outputs:
       version: ${{ steps.v.outputs.version }}
       tag: ${{ steps.v.outputs.tag }}
@@ -24,14 +38,14 @@ jobs:
       - name: Determine version
         id: v
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            tag="${{ github.ref_name }}"
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            tag="${{ github.ref_name }}"          # tag push: use the tag verbatim
             ver="${tag#v}"
           elif [ -n "${{ github.event.inputs.tag }}" ]; then
-            tag="${{ github.event.inputs.tag }}"
+            tag="${{ github.event.inputs.tag }}"  # manual dispatch with an explicit tag
             ver="${tag#v}"
           else
-            t="$(date -u +'%H%M%S')"
+            t="$(date -u +'%H%M%S')"              # master push / dispatch: CalVer stamp
             ver="$(date -u +'%Y.%m.%d').${t:0:5}"
             tag="v$ver"
           fi

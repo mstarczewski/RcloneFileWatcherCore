@@ -291,6 +291,20 @@ folder. On Linux use systemd; on Windows use a service manager such as NSSM.
 
 ---
 
+## Releases
+
+Release builds (Windows + Linux: the console app and the web GUI) are produced by GitHub Actions
+and attached to a GitHub Release. A release is cut when **any** of these happens:
+
+- a commit pushed to `master` has `[release]` in its message, or
+- a version tag `v*.*` is pushed, or
+- the workflow is run manually (Actions → *Build & Release* → *Run workflow*).
+
+The version is CalVer `YYYY.MM.DD.HHmms` (UTC), taken from the tag when one is given. Ordinary
+pushes to `master` (without `[release]`) do **not** create a release.
+
+---
+
 ### Additional Notes
 
 * On Linux, you can run it as a background service using systemd or nohup.
