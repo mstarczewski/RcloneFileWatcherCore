@@ -17,7 +17,7 @@ namespace RcloneFileWatcherCore.Infrastructure.Logging
 
         public event Action<string> MessageWritten;
 
-        public BroadcastLogWriter(int capacity = 1000)
+        public BroadcastLogWriter(int capacity = 10000)
         {
             _capacity = Math.Max(1, capacity);
             _buffer = new Queue<string>(_capacity);

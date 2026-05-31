@@ -38,12 +38,17 @@
     private static readonly string[] Levels =
         { "Trace", "Debug", "Information", "Warning", "Error", "Critical", "Always" };
 
-    private const int MaxLines = 1000;
+    private const int MaxLines = 10000;
+
+    // Coalesce re-renders: with a large buffer, joining and diffing the whole <pre> on every
+    // incoming line is expensive, so render at most once per this interval under heavy logging.
+    private const int RenderIntervalMs = 200;
 
     private readonly List<string> _lines = new();
     private List<string> _filtered = new();
     private string _levelFilter = "";
     private bool _autoScroll = true;
+    private bool _renderQueued;
 
     protected override void OnInitialized()
     {
@@ -63,6 +68,21 @@
             if (Matches(message))
                 _filtered.Add(message);
 
+            QueueRender();
+        });
+    }
+
+    // Render at most once per RenderIntervalMs: messages arriving during the window are batched
+    // into a single re-render so a burst of log lines can't swamp the UI/SignalR circuit.
+    private void QueueRender()
+    {
+        if (_renderQueued)
+            return;
+        _renderQueued = true;
+        _ = InvokeAsync(async () =>
+        {
+            await Task.Delay(RenderIntervalMs);
+            _renderQueued = false;
             StateHasChanged();
         });
     }
