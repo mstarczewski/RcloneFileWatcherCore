@@ -212,6 +212,7 @@ namespace RcloneFileWatcherCore.Web.Localization
 
             ["cfg.tabGeneral"] = "General",
             ["cfg.tabFullSync"] = "Full sync",
+            ["cfg.tabFullSyncN"] = "Full sync ({0})",
             ["cfg.tabPaths"] = "Watched paths ({0})",
 
             // Tooltips (the "?" badges).

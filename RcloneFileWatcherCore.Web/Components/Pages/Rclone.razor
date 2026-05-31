@@ -57,34 +57,37 @@ else
 }
 
 <h2>@L["cfg.fullSyncTitle"]</h2>
+<p class="muted">@FullSyncSchedule(cfg)</p>
 
-<div class="path-card">
-    <div class="path-card-head">
-        <strong>@FullSyncSchedule(cfg)</strong>
-        <span class="badge @(cfg.FullSyncMode == SyncMode.Managed ? "badge-accent" : "")">
-            @(cfg.FullSyncMode == SyncMode.Managed ? L["rcl.managed"] : L["rcl.script"])
-        </span>
-    </div>
-
-    @if (cfg.FullSyncMode == SyncMode.Managed)
+@if (cfg.FullSyncMode == SyncMode.Managed)
+{
+    @if (cfg.FullSyncCommands is { Count: > 0 })
     {
-        @if (cfg.FullSyncCommands is { Count: > 0 })
+        @foreach (var command in cfg.FullSyncCommands)
         {
-            @foreach (var command in cfg.FullSyncCommands)
-            {
+            <div class="path-card">
+                <div class="path-card-head">
+                    <strong><code>@(string.IsNullOrWhiteSpace(command.Source) ? L["rcl.notSet"] : command.Source)</code></strong>
+                    <span class="badge badge-accent">@L["rcl.managed"]</span>
+                </div>
                 <pre class="cmd-line">@RcloneCommandBuilder.BuildPreview(command, null)</pre>
-            }
-        }
-        else
-        {
-            <p class="muted">@L["rcl.fullSyncEmpty"]</p>
+            </div>
         }
     }
     else
     {
-        <p class="muted">@L["rcl.scriptLabel"] <code>@(string.IsNullOrWhiteSpace(cfg.RunOneTimeFullStartupSyncBatch) ? L["rcl.notSet"] : cfg.RunOneTimeFullStartupSyncBatch)</code></p>
+        <p class="muted">@L["rcl.fullSyncEmpty"]</p>
     }
-</div>
+}
+else
+{
+    <div class="path-card">
+        <div class="path-card-head">
+            <strong><code>@(string.IsNullOrWhiteSpace(cfg.RunOneTimeFullStartupSyncBatch) ? L["rcl.notSet"] : cfg.RunOneTimeFullStartupSyncBatch)</code></strong>
+            <span class="badge">@L["rcl.script"]</span>
+        </div>
+    </div>
+}
 
 @code {
     // Human-readable summary of when the full sync runs (daily time and/or at startup).

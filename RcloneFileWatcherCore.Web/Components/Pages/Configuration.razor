@@ -44,7 +44,7 @@
 {
     <div class="tabs">
         <button class="tab @(_activeTab == Tab.General ? "active" : "")" @onclick="() => _activeTab = Tab.General">@L["cfg.tabGeneral"]</button>
-        <button class="tab @(_activeTab == Tab.FullSync ? "active" : "")" @onclick="() => _activeTab = Tab.FullSync">@L["cfg.tabFullSync"]</button>
+        <button class="tab @(_activeTab == Tab.FullSync ? "active" : "")" @onclick="() => _activeTab = Tab.FullSync">@(_model.FullSyncMode == SyncMode.Managed ? L.F("cfg.tabFullSyncN", _model.FullSyncCommands.Count) : L["cfg.tabFullSync"])</button>
         <button class="tab @(_activeTab == Tab.Paths ? "active" : "")" @onclick="() => _activeTab = Tab.Paths">@L.F("cfg.tabPaths", _model.Path.Count)</button>
     </div>
 

@@ -111,6 +111,7 @@
 
   "cfg.tabGeneral": "Ogólne",
   "cfg.tabFullSync": "Pełna synchronizacja",
+  "cfg.tabFullSyncN": "Pełna synchronizacja ({0})",
   "cfg.tabPaths": "Obserwowane ścieżki ({0})",
 
   "cfg.logLevel.h": "Które poziomy aplikacja zapisuje do własnego logu. Brak zaznaczenia = wszystkie poziomy.",
