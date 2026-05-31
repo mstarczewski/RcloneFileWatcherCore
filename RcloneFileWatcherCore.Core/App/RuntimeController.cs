@@ -125,8 +125,10 @@ namespace RcloneFileWatcherCore.App
                     return;
 
                 var config = _configService.Current;
-                var processes = BuildProcesses(config);
-                var watcher = new FileWatcherService(_logger, _fileDTOs, config.Path);
+                // Disabled paths stay in the config but are neither watched nor synced.
+                var enabledPaths = config.Path?.Where(p => p.Enabled).ToList() ?? new List<PathDTO>();
+                var processes = BuildProcesses(config, enabledPaths);
+                var watcher = new FileWatcherService(_logger, _fileDTOs, enabledPaths);
                 var scheduler = new Scheduler(_logger, processes, config);
 
                 // Start the watcher first: if a watched path is invalid it throws here, before
@@ -137,7 +139,7 @@ namespace RcloneFileWatcherCore.App
                 _watcher = watcher;
                 _scheduler = scheduler;
                 _processes = processes;
-                _status.MarkWatcherStarted(config.Path?.Select(p => p.WatchingPath).ToList() ?? new List<string>());
+                _status.MarkWatcherStarted(enabledPaths.Select(p => p.WatchingPath).ToList());
                 _logger.Log(LogLevel.Information, "Watcher started");
 
                 if (runStartupSync)
@@ -148,9 +150,9 @@ namespace RcloneFileWatcherCore.App
             }
         }
 
-        private Dictionary<ProcessCode, IRcloneJobService> BuildProcesses(ConfigDTO config)
+        private Dictionary<ProcessCode, IRcloneJobService> BuildProcesses(ConfigDTO config, List<PathDTO> enabledPaths)
         {
-            var filePrepare = new FilePrepareService(_logger, config.Path, _fileDTOs, _fileSystem);
+            var filePrepare = new FilePrepareService(_logger, enabledPaths, _fileDTOs, _fileSystem);
             return new Dictionary<ProcessCode, IRcloneJobService>
             {
                 { ProcessCode.SyncRclone, new RcloneSyncService(_logger, filePrepare, _fileDTOs, _rcloneRunner) },

@@ -139,10 +139,13 @@
                 @for (var i = 0; i < _model.FullSyncCommands.Count; i++)
                 {
                     var ci = i;
-                    <div class="path-card">
+                    <div class="path-card @(_model.FullSyncCommands[ci].Enabled ? "" : "card-disabled")">
                         <div class="path-card-head">
                             <strong>@L.F("cfg.commandN", ci + 1)</strong>
-                            <button class="btn btn-sm btn-danger" @onclick="() => RemoveFullSyncCommand(ci)">@L["cfg.remove"]</button>
+                            <div class="section-head-actions">
+                                <label class="checkbox"><input type="checkbox" @bind="_model.FullSyncCommands[ci].Enabled" /> @L["cfg.enabled"]</label>
+                                <button class="btn btn-sm btn-danger" @onclick="() => RemoveFullSyncCommand(ci)">@L["cfg.remove"]</button>
+                            </div>
                         </div>
                         <RcloneCommandEditor Command="_model.FullSyncCommands[ci]" ShowIncludeFrom="false" />
                     </div>
@@ -170,10 +173,13 @@
             @for (var i = 0; i < _model.Path.Count; i++)
             {
                 var index = i;
-                <div class="path-card">
+                <div class="path-card @(_model.Path[index].Enabled ? "" : "card-disabled")">
                     <div class="path-card-head">
                         <strong>@L.F("cfg.pathN", index + 1)</strong>
-                        <button class="btn btn-sm btn-danger" @onclick="() => RemovePath(index)">@L["cfg.remove"]</button>
+                        <div class="section-head-actions">
+                            <label class="checkbox"><input type="checkbox" @bind="_model.Path[index].Enabled" /> @L["cfg.enabled"]</label>
+                            <button class="btn btn-sm btn-danger" @onclick="() => RemovePath(index)">@L["cfg.remove"]</button>
+                        </div>
                     </div>
                     <div class="form-grid">
                         <label>

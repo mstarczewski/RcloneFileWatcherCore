@@ -3,6 +3,7 @@ using RcloneFileWatcherCore.Enums;
 using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
+using System.Linq;
 
 namespace RcloneFileWatcherCore.Logic.Services
 {
@@ -21,10 +22,11 @@ namespace RcloneFileWatcherCore.Logic.Services
             {
                 if (configDTO.FullSyncMode == SyncMode.Managed)
                 {
-                    var commands = configDTO.FullSyncCommands;
+                    // Disabled commands stay in the config but are skipped here.
+                    var commands = configDTO.FullSyncCommands?.Where(c => c != null && c.Enabled).ToList();
                     if (commands == null || commands.Count == 0)
                     {
-                        _logger.Log(LogLevel.Information, "Skipping full sync (no managed commands configured).");
+                        _logger.Log(LogLevel.Information, "Skipping full sync (no enabled managed commands configured).");
                         return false;
                     }
 

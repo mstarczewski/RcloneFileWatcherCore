@@ -29,11 +29,16 @@ else
 {
     @foreach (var path in cfg.Path)
     {
-        <div class="path-card">
+        <div class="path-card @(path.Enabled ? "" : "card-disabled")">
             <div class="path-card-head">
                 <strong><code>@path.WatchingPath</code></strong>
-                <span class="badge @(path.SyncMode == SyncMode.Managed ? "badge-accent" : "")">
-                    @(path.SyncMode == SyncMode.Managed ? L["rcl.managed"] : L["rcl.script"])
+                <span class="badge-group">
+                    <span class="badge @(path.SyncMode == SyncMode.Managed ? "badge-accent" : "")">
+                        @(path.SyncMode == SyncMode.Managed ? L["rcl.managed"] : L["rcl.script"])
+                    </span>
+                    <span class="badge @(path.Enabled ? "badge-ok" : "badge-off")">
+                        @(path.Enabled ? L["rcl.enabled"] : L["rcl.disabled"])
+                    </span>
                 </span>
             </div>
 
@@ -65,10 +70,15 @@ else
     {
         @foreach (var command in cfg.FullSyncCommands)
         {
-            <div class="path-card">
+            <div class="path-card @(command.Enabled ? "" : "card-disabled")">
                 <div class="path-card-head">
                     <strong><code>@(string.IsNullOrWhiteSpace(command.Source) ? L["rcl.notSet"] : command.Source)</code></strong>
-                    <span class="badge badge-accent">@L["rcl.managed"]</span>
+                    <span class="badge-group">
+                        <span class="badge badge-accent">@L["rcl.managed"]</span>
+                        <span class="badge @(command.Enabled ? "badge-ok" : "badge-off")">
+                            @(command.Enabled ? L["rcl.enabled"] : L["rcl.disabled"])
+                        </span>
+                    </span>
                 </div>
                 <pre class="cmd-line">@RcloneCommandBuilder.BuildPreview(command, null)</pre>
             </div>

@@ -28,6 +28,14 @@
     </div>
 }
 
+@if (DisabledCount() is var disabled && disabled > 0)
+{
+    <div class="alert alert-warn">
+        <Icon Name="warning" />
+        <span>@L.F("dash.disabledWarning", disabled)</span>
+    </div>
+}
+
 @if (_status is null)
 {
     <p>@L["dash.loading"]</p>
@@ -121,6 +129,21 @@ else
         var fullDryRun = cfg.FullSyncMode == SyncMode.Managed
             && (cfg.FullSyncCommands?.Any(c => c?.DryRun == true) ?? false);
         return pathDryRun || fullDryRun;
+    }
+
+    // Number of disabled syncs (watched paths + managed full-sync commands) kept in the config
+    // but not running — surfaced as a dashboard warning.
+    private int DisabledCount()
+    {
+        var cfg = ConfigService.Current;
+        if (cfg is null)
+            return 0;
+
+        var paths = cfg.Path?.Count(p => p is { Enabled: false }) ?? 0;
+        var full = cfg.FullSyncMode == SyncMode.Managed
+            ? (cfg.FullSyncCommands?.Count(c => c is { Enabled: false }) ?? 0)
+            : 0;
+        return paths + full;
     }
 
     protected override void OnInitialized()

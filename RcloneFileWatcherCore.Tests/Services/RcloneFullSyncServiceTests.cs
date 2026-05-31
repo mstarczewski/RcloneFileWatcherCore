@@ -52,6 +52,48 @@ namespace RcloneFileWatcherCore.Tests.Services
         }
 
         [TestMethod]
+        public void Managed_SkipsDisabledCommands()
+        {
+            var runner = new Mock<IBatchExecutionService>();
+            var service = Create(runner);
+            var config = new ConfigDTO
+            {
+                FullSyncMode = SyncMode.Managed,
+                FullSyncCommands = new List<RcloneCommandDTO>
+                {
+                    new RcloneCommandDTO { Command = "sync", Source = "/a", Destination = "r:a", Enabled = true },
+                    new RcloneCommandDTO { Command = "sync", Source = "/b", Destination = "r:b", Enabled = false },
+                }
+            };
+
+            var result = service.Execute(config);
+
+            Assert.IsTrue(result);
+            // Only the enabled command runs.
+            runner.Verify(x => x.ExecuteCommand(It.IsAny<RcloneCommandDTO>(), null, It.IsAny<IReadOnlyList<string>>()), Times.Once);
+        }
+
+        [TestMethod]
+        public void Managed_AllDisabled_DoesNothing()
+        {
+            var runner = new Mock<IBatchExecutionService>();
+            var service = Create(runner);
+            var config = new ConfigDTO
+            {
+                FullSyncMode = SyncMode.Managed,
+                FullSyncCommands = new List<RcloneCommandDTO>
+                {
+                    new RcloneCommandDTO { Command = "sync", Source = "/a", Enabled = false },
+                }
+            };
+
+            var result = service.Execute(config);
+
+            Assert.IsFalse(result);
+            runner.Verify(x => x.ExecuteCommand(It.IsAny<RcloneCommandDTO>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()), Times.Never);
+        }
+
+        [TestMethod]
         public void Script_RunsBatch()
         {
             var runner = new Mock<IBatchExecutionService>();

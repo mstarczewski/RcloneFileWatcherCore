@@ -5,6 +5,9 @@ namespace RcloneFileWatcherCore.DTO
 {
     public class PathDTO
     {
+        /// <summary>When false, this path is kept in the config but neither watched nor synced.</summary>
+        public bool Enabled { get; set; } = true;
+
         public string WatchingPath { get; set; }
         public string RcloneFilesFromPath { get; set; }
         public string RcloneBatch { get; set; }

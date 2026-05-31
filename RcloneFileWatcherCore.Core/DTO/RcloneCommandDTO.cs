@@ -8,6 +8,10 @@ namespace RcloneFileWatcherCore.DTO
     /// </summary>
     public class RcloneCommandDTO
     {
+        /// <summary>When false, this command is kept in the config but skipped at run time
+        /// (used for individual full-sync commands).</summary>
+        public bool Enabled { get; set; } = true;
+
         public string RclonePath { get; set; } = "rclone";
         public string Command { get; set; } = "sync";
         public string Source { get; set; }

@@ -44,7 +44,7 @@ namespace RcloneFileWatcherCore.Logic.Services
                         continue;
 
                     var path = configDTO.Path?.FirstOrDefault(p => p.WatchingPath == sourcePath);
-                    if (path == null)
+                    if (path == null || !path.Enabled)
                         continue;
 
                     if (path.SyncMode == Enums.SyncMode.Managed)

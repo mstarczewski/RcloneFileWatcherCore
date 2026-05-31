@@ -563,6 +563,27 @@ textarea {
     color: var(--accent);
 }
 
+.badge-ok {
+    border-color: var(--ok);
+    color: var(--ok);
+}
+
+.badge-off {
+    border-color: var(--warn);
+    color: var(--warn);
+}
+
+.badge-group {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.card-disabled {
+    opacity: 0.6;
+}
+
 .login-box {
     max-width: 360px;
     margin: 12vh auto;
