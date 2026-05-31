@@ -13,6 +13,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+    <!-- Error-email notifications: SMTP (MailKit), OpenPGP (PgpCore/BouncyCastle),
+         and at-rest encryption of the SMTP password (Data Protection). -->
+    <PackageReference Include="MailKit" Version="4.17.0" />
+    <PackageReference Include="PgpCore" Version="6.5.1" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.Extensions" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

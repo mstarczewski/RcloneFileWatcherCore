@@ -50,6 +50,7 @@ preview, **Logs** (with kept errors), and **Security**:
   - Warnings when a command has `--dry-run` enabled or a sync is disabled
   - GUI-managed password (hashed, runtime on/off), light/dark theme, and English/Polish/German UI
 - Hot-reload: configuration changes apply **without restarting** (the watcher is rebuilt live)
+- **Email alerts on errors** — batched (first error opens a delay window so a burst becomes one mail), optionally **OpenPGP-encrypted** per recipient (public key fetched from keys.openpgp.org or pasted); SMTP password stored encrypted at rest
 
 ---
 
@@ -247,6 +248,10 @@ language is switchable from the top bar and new languages can be added by droppi
 * **Rclone** – per-path and full-sync preview of the effective rclone command line.
 * **Logs** – live log stream with a level filter and download. **Errors are kept** in a separate
   panel until you clear them, so a problem stays visible long after it scrolled out of the buffer.
+* **Notifications** – error-email alerts: SMTP server, batch window (delay from the first error),
+  and per-recipient **OpenPGP** encryption (fetch the public key from keys.openpgp.org or paste it),
+  with a *Send test email* button. Settings live in a gitignored `notifications.json`; the SMTP
+  password is encrypted at rest (Data Protection).
 * **Security** – turn the password requirement on/off and set/change the password (see below).
 
 ### rclone invocation: script vs managed

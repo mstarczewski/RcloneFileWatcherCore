@@ -5,8 +5,10 @@ using RcloneFileWatcherCore.Infrastructure.Logging;
 using RcloneFileWatcherCore.Infrastructure.Logging.Interfaces;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using RcloneFileWatcherCore.Logic.Services;
+using RcloneFileWatcherCore.Notifications;
 using RcloneFileWatcherCore.Status;
 using System.Collections.Concurrent;
+using System.IO;
 
 namespace RcloneFileWatcherCore.App
 {
@@ -43,6 +45,20 @@ namespace RcloneFileWatcherCore.App
             services.AddSingleton<IConfigService>(sp =>
                 new ConfigService(config, configFilePath, sp.GetRequiredService<ILogger>()));
             services.AddSingleton<IRuntimeController, RuntimeController>();
+
+            // Error-email notifications: settings (with the SMTP password encrypted at rest next to
+            // the config), the SMTP sender, the keyserver client, and the notifier that batches and
+            // emails Error/Critical log lines.
+            var configDir = Path.GetDirectoryName(Path.GetFullPath(configFilePath));
+            if (string.IsNullOrEmpty(configDir))
+                configDir = Directory.GetCurrentDirectory();
+            var notificationsPath = Path.Combine(configDir, "notifications.json");
+            var keysDir = Path.Combine(configDir, "keys");
+            services.AddSingleton<INotificationSettingsStore>(_ =>
+                new NotificationSettingsStore(notificationsPath, keysDir, logger));
+            services.AddSingleton<IEmailSender, MailKitEmailSender>();
+            services.AddSingleton<PgpKeyServer>();
+            services.AddHostedService<ErrorMailNotifier>();
 
             services.AddHostedService<WatcherHostedService>();
             return services;

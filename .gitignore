@@ -355,3 +355,9 @@ gui-auth.json
 # Local rclone binary (never publish)
 rclone.exe
 **/rclone.exe
+
+# Notification settings (contains encrypted SMTP password) + Data Protection key ring
+notifications.json
+**/notifications.json
+keys/
+**/keys/

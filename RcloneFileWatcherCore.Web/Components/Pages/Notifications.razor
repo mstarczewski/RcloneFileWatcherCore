@@ -1,0 +1,248 @@
+@page "/notifications"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using System.Collections.Generic
+@using System.Linq
+@using RcloneFileWatcherCore.Notifications
+@inject INotificationSettingsStore Store
+@inject IEmailSender Sender
+@inject PgpKeyServer KeyServer
+@inject Loc L
+
+<PageTitle>@L["nav.notifications"] — RcloneFileWatcher</PageTitle>
+
+<h1>@L["nav.notifications"]</h1>
+
+<p class="muted">@L["notif.intro"]</p>
+
+<StatusAlert Message="@_message" Success="_success" />
+
+@if (_model is not null)
+{
+    <section class="form-section">
+        <div class="form-grid">
+            <label class="checkbox">
+                <input type="checkbox" @bind="_model.Enabled" /> @L["notif.enabled"]
+            </label>
+            <label>
+                <span class="lbl">@L["notif.delay"] <Hint Text="@L["notif.delay.h"]" /></span>
+                <input type="number" min="0" @bind="_model.DelaySeconds" />
+            </label>
+        </div>
+    </section>
+
+    <section class="form-section">
+        <h2>@L["notif.smtpTitle"]</h2>
+        <div class="form-grid">
+            <label>
+                <span class="lbl">@L["notif.host"]</span>
+                <input @bind="_model.Smtp.Host" placeholder="smtp.example.com" />
+            </label>
+            <label>
+                <span class="lbl">@L["notif.port"]</span>
+                <input type="number" min="1" @bind="_model.Smtp.Port" />
+            </label>
+            <label>
+                <span class="lbl">@L["notif.security"]</span>
+                <select @bind="_model.Smtp.Security">
+                    <option value="@SmtpSecurity.StartTls">STARTTLS</option>
+                    <option value="@SmtpSecurity.SslOnConnect">SSL/TLS</option>
+                    <option value="@SmtpSecurity.None">@L["notif.secNone"]</option>
+                </select>
+            </label>
+            <label>
+                <span class="lbl">@L["notif.from"]</span>
+                <input @bind="_model.Smtp.From" placeholder="alerts@example.com" />
+            </label>
+            <label>
+                <span class="lbl">@L["notif.user"]</span>
+                <input @bind="_model.Smtp.User" autocomplete="off" />
+            </label>
+            <label>
+                <span class="lbl">@L["notif.password"] <Hint Text="@L["notif.password.h"]" /></span>
+                <input type="password" @bind="_newPassword" autocomplete="new-password" placeholder="@(Store.Current.Smtp.Password is { Length: > 0 } ? L["notif.passwordSet"] : "")" />
+            </label>
+        </div>
+    </section>
+
+    <section class="form-section">
+        <div class="section-head">
+            <h2>@L.F("notif.recipients", _model.Recipients.Count)</h2>
+            <button class="btn btn-sm" @onclick="AddRecipient">@L["notif.addRecipient"]</button>
+        </div>
+
+        @if (_model.Recipients.Count == 0)
+        {
+            <p class="muted">@L["notif.noRecipients"]</p>
+        }
+
+        @for (var i = 0; i < _model.Recipients.Count; i++)
+        {
+            var index = i;
+            var r = _model.Recipients[index];
+            <div class="path-card">
+                <div class="path-card-head">
+                    <strong>@L.F("notif.recipientN", index + 1)</strong>
+                    <button class="btn btn-sm btn-danger" @onclick="() => RemoveRecipient(index)">@L["cfg.remove"]</button>
+                </div>
+                <div class="form-grid">
+                    <label>
+                        <span class="lbl">@L["notif.email"]</span>
+                        <input @bind="r.Email" placeholder="ops@example.com" />
+                    </label>
+                    <label class="checkbox">
+                        <input type="checkbox" @bind="r.Encrypt" /> @L["notif.encrypt"] <Hint Text="@L["notif.encrypt.h"]" />
+                    </label>
+                </div>
+                @if (r.Encrypt)
+                {
+                    <div class="section-head">
+                        <span class="lbl">@L["notif.publicKey"]
+                            @if (!string.IsNullOrWhiteSpace(r.PublicKey))
+                            {
+                                <span class="badge badge-ok">@L["notif.keySet"]</span>
+                            }
+                        </span>
+                        <button class="btn btn-sm btn-secondary" @onclick="() => FetchKey(index)" disabled="@_busy">@L["notif.fetchKey"]</button>
+                    </div>
+                    <textarea rows="4" @bind="r.PublicKey" placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----"></textarea>
+                }
+            </div>
+        }
+    </section>
+
+    <div class="actions">
+        <button class="btn" @onclick="Save">@L["notif.save"]</button>
+        <button class="btn btn-secondary" @onclick="TestSend" disabled="@_busy">@L["notif.test"]</button>
+    </div>
+}
+
+@code {
+    private NotificationSettings _model;
+    private string _newPassword = "";
+    private string _message;
+    private bool _success;
+    private bool _busy;
+
+    protected override void OnInitialized() => _model = Clone(Store.Current);
+
+    private static NotificationSettings Clone(NotificationSettings s)
+    {
+        s ??= new NotificationSettings();
+        s.Smtp ??= new SmtpSettings();
+        return new NotificationSettings
+        {
+            Enabled = s.Enabled,
+            DelaySeconds = s.DelaySeconds,
+            Smtp = new SmtpSettings
+            {
+                Host = s.Smtp.Host,
+                Port = s.Smtp.Port,
+                Security = s.Smtp.Security,
+                User = s.Smtp.User,
+                From = s.Smtp.From,
+                Password = s.Smtp.Password,
+                PasswordProtected = s.Smtp.PasswordProtected
+            },
+            Recipients = (s.Recipients ?? new List<NotificationRecipient>())
+                .Select(r => new NotificationRecipient { Email = r.Email, Encrypt = r.Encrypt, PublicKey = r.PublicKey })
+                .ToList()
+        };
+    }
+
+    private void AddRecipient() => _model.Recipients.Add(new NotificationRecipient());
+
+    private void RemoveRecipient(int index) => _model.Recipients.RemoveAt(index);
+
+    private void ApplyTypedPassword()
+    {
+        if (!string.IsNullOrEmpty(_newPassword))
+            _model.Smtp.Password = _newPassword; // else keep the existing in-memory password
+    }
+
+    private void Save()
+    {
+        ApplyTypedPassword();
+        Store.Save(_model);
+        _newPassword = "";
+        _model = Clone(Store.Current);
+        _message = L["notif.saved"];
+        _success = true;
+    }
+
+    private async Task FetchKey(int index)
+    {
+        var email = _model.Recipients[index].Email;
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            _message = L["notif.fetchNoEmail"];
+            _success = false;
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var key = await KeyServer.FetchByEmailAsync(email);
+            if (key == null)
+            {
+                _message = L.F("notif.fetchNone", email);
+                _success = false;
+            }
+            else
+            {
+                _model.Recipients[index].PublicKey = key;
+                _model.Recipients[index].Encrypt = true;
+                _message = L.F("notif.fetchOk", email);
+                _success = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _message = L.F("notif.fetchErr", ex.Message);
+            _success = false;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task TestSend()
+    {
+        ApplyTypedPassword();
+        if (_model.Recipients.Count == 0)
+        {
+            _message = L["notif.noRecipients"];
+            _success = false;
+            return;
+        }
+
+        _busy = true;
+        int ok = 0;
+        var errors = new List<string>();
+        try
+        {
+            foreach (var r in _model.Recipients)
+            {
+                try
+                {
+                    await Sender.SendAsync(_model.Smtp, r, "RcloneFileWatcher: test", "Test message from RcloneFileWatcher.");
+                    ok++;
+                }
+                catch (Exception ex)
+                {
+                    errors.Add($"{r.Email}: {ex.Message}");
+                }
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+
+        _success = errors.Count == 0;
+        _message = errors.Count == 0
+            ? L.F("notif.testSent", ok)
+            : L.F("notif.testFailed", string.Join("; ", errors));
+    }
+}
