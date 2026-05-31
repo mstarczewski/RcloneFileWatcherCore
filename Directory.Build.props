@@ -7,12 +7,14 @@
     <Company>mstarczewski</Company>
     <Authors>mstarczewski</Authors>
 
-    <!-- CalVer that auto-increments by build time. The displayed InformationalVersion carries the
-         time (Year.Month.Day.HHmmss, UTC) so several builds the same day are distinct, e.g.
-         "v2026.05.31.105412". AssemblyVersion/FileVersion stay date-only because each of their
-         numeric fields must be <= 65534 (HHmmss like 105412 would overflow). No git-hash suffix. -->
-    <Version>$([System.DateTime]::UtcNow.ToString("yyyy.MM.dd"))</Version>
-    <InformationalVersion>$([System.DateTime]::UtcNow.ToString("yyyy.MM.dd.HHmmss"))</InformationalVersion>
+    <!-- CalVer that auto-increments by build time: Year.Month.Day.HHmms (UTC), e.g.
+         "v2026.05.31.10541" for 10:54:1x. The 4th field is HHmm plus the tens-of-seconds digit
+         (HHmmss truncated to 5 chars), so it stays <= 23595 and fits the 65534 cap on each
+         AssemblyVersion/FileVersion field — one consistent version everywhere, distinct down to
+         a 10-second window. No git-hash suffix. -->
+    <_BuildDate>$([System.DateTime]::UtcNow.ToString("yyyy.MM.dd"))</_BuildDate>
+    <_BuildTimeRev>$([System.DateTime]::UtcNow.ToString("HHmmss").Substring(0, 5))</_BuildTimeRev>
+    <Version>$(_BuildDate).$(_BuildTimeRev)</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
