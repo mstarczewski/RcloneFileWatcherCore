@@ -352,3 +352,6 @@ gui-auth.json
 
 # Keep the shared web GUI publish profile (overrides the global *.pubxml ignore)
 !RcloneFileWatcherCore.Web/Properties/PublishProfiles/DebianFolder.pubxml
+# Local rclone binary (never publish)
+rclone.exe
+**/rclone.exe

@@ -22,6 +22,16 @@ The configuration is optimized for Windows and Linux. On Windows, it is recommen
 
 ---
 
+## Web GUI preview
+
+The optional cross-platform web GUI (shown in English; Polish and German are also built in). The
+slideshow cycles through the main pages — **Dashboard**, **Configuration**, **Rclone** command
+preview, **Logs** (with kept errors), and **Security**:
+
+![RcloneFileWatcher web GUI](docs/screenshots/gui-slideshow.gif)
+
+---
+
 ## Key Features
 
 - Real-time file and directory change monitoring
