@@ -77,9 +77,12 @@ namespace RcloneFileWatcherCore.Logic.Services
             var isDir = watcher.NotifyFilter.HasFlag(NotifyFilters.DirectoryName);
             var relativeOldPath = GetRelativePath(watcher.Path, e.OldFullPath);
             var syncPath = isDir ? $"{relativeOldPath}/**" : relativeOldPath;
-            var key = $"{watcher.Path};{GetRelativePath(watcher.Path, e.FullPath)};{timestamp};{WatcherChangeTypes.Deleted}";
+            // Key by the OLD path + kind (no timestamp/change-type) so repeated events for the same
+            // path collapse to one entry, and the rename's old-path delete coexists with the new-path
+            // entry. Latest event wins (upsert).
+            var key = $"{watcher.Path};{relativeOldPath};{(isDir ? "D" : "F")}";
 
-            _fileDTOs.TryAdd(key, new FileDTO
+            _fileDTOs[key] = new FileDTO
             {
                 SourcePath = watcher.Path,
                 PathPreparedToSync = syncPath,
@@ -88,7 +91,7 @@ namespace RcloneFileWatcherCore.Logic.Services
                 WatcherChangeTypes = WatcherChangeTypes.Deleted,
                 TimeStampTicks = timestamp,
                 EnqueuedUtcTicks = DateTime.UtcNow.Ticks
-            });
+            };
 
             _logger.Log(Enums.LogLevel.Debug, $"Action:{WatcherChangeTypes.Deleted} - {syncPath}");
         }
@@ -98,9 +101,11 @@ namespace RcloneFileWatcherCore.Logic.Services
             var isDir = watcher.NotifyFilter.HasFlag(NotifyFilters.DirectoryName);
             var relativePath = GetRelativePath(watcher.Path, e.FullPath);
             var syncPath = isDir ? $"{relativePath}/**" : relativePath;
-            var key = $"{watcher.Path};{relativePath};{timestamp};{e.ChangeType}";
+            // Key by path + kind only (no timestamp/change-type), latest event wins (upsert): a
+            // file's Created+Changed and repeated Changes collapse to a single queue entry.
+            var key = $"{watcher.Path};{relativePath};{(isDir ? "D" : "F")}";
 
-            _fileDTOs.TryAdd(key, new FileDTO
+            _fileDTOs[key] = new FileDTO
             {
                 SourcePath = watcher.Path,
                 PathPreparedToSync = syncPath,
@@ -109,7 +114,7 @@ namespace RcloneFileWatcherCore.Logic.Services
                 WatcherChangeTypes = e.ChangeType,
                 TimeStampTicks = timestamp,
                 EnqueuedUtcTicks = DateTime.UtcNow.Ticks
-            });
+            };
             _logger.Log(Enums.LogLevel.Debug, $"Action:{e.ChangeType} - {syncPath}");
         }
 
