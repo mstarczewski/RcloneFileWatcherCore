@@ -227,6 +227,8 @@ namespace RcloneFileWatcherCore.Web.Localization
             ["cfg.logLevel.h"] = "Which severities the app writes to its own log. None selected = log every level.",
             ["cfg.logPath.h"] = "File the app writes its own log to. Empty = log to the console only. Changing this needs a restart.",
             ["cfg.syncInterval.h"] = "How often (seconds) the watcher batches detected changes and runs rclone.",
+            ["cfg.collapseDirs"] = "Collapse whole-directory changes",
+            ["cfg.collapseDirs.h"] = "When a whole directory is created/renamed/deleted, pass rclone a single 'dir/**' rule instead of every file under it — rclone then walks just that subtree. Helps with bursts of thousands of files. Off by default.",
             ["cfg.enableAutoUpdate.h"] = "Periodically run 'rclone selfupdate' to keep the rclone binary current.",
             ["cfg.rclonePath.h"] = "Full path to the rclone executable used for the self-update check.",
             ["cfg.checkEvery.h"] = "How often (hours) to check for an rclone update. 0 = only at startup.",

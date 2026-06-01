@@ -143,5 +143,35 @@ namespace RcloneFileWatcherCore.Tests.Services
             Assert.IsNull(result);
             _loggerMock.Verify(x => x.Log(LogLevel.Error, It.IsAny<string>(), null), Times.Once);
         }
+
+        [TestMethod]
+        public void CollapseDirectoryRules_DropsEntriesUnderADirectoryRule()
+        {
+            var input = new List<string> { "a/**", "a/f1.txt", "a/sub/f2.txt", "b/f3.txt" };
+
+            var result = FilePrepareService.CollapseDirectoryRules(input);
+
+            CollectionAssert.AreEquivalent(new List<string> { "a/**", "b/f3.txt" }, result);
+        }
+
+        [TestMethod]
+        public void CollapseDirectoryRules_DropsNestedRuleCoveredByAShorterOne()
+        {
+            var input = new List<string> { "a/**", "a/sub/**", "a/sub/x.txt" };
+
+            var result = FilePrepareService.CollapseDirectoryRules(input);
+
+            CollectionAssert.AreEquivalent(new List<string> { "a/**" }, result);
+        }
+
+        [TestMethod]
+        public void CollapseDirectoryRules_NoDirectoryRules_ReturnsUnchanged()
+        {
+            var input = new List<string> { "a/f1.txt", "b/c/f2.txt" };
+
+            var result = FilePrepareService.CollapseDirectoryRules(input);
+
+            CollectionAssert.AreEquivalent(input, result);
+        }
     }
 }

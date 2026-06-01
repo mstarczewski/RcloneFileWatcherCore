@@ -43,6 +43,10 @@ namespace RcloneFileWatcherCore.Logic.Services
                     if (files == null || files.Count == 0)
                         continue;
 
+                    // Optionally collapse whole-directory changes into a single "dir/**" rule.
+                    if (configDTO.CollapseDirectoryChanges)
+                        files = FilePrepareService.CollapseDirectoryRules(files);
+
                     var path = configDTO.Path?.FirstOrDefault(p => p.WatchingPath == sourcePath);
                     if (path == null || !path.Enabled)
                         continue;

@@ -125,6 +125,8 @@
   "cfg.logLevel.h": "Welche Ebenen die App in ihr eigenes Protokoll schreibt. Keine Auswahl = alle Ebenen.",
   "cfg.logPath.h": "Datei, in die die App ihr eigenes Protokoll schreibt. Leer = nur Konsole. Eine Änderung erfordert einen Neustart.",
   "cfg.syncInterval.h": "Wie oft (Sekunden) der Watcher erkannte Änderungen sammelt und rclone ausführt.",
+  "cfg.collapseDirs": "Ganze Verzeichnisänderungen zusammenfassen",
+  "cfg.collapseDirs.h": "Wenn ein ganzes Verzeichnis erstellt/umbenannt/gelöscht wird, erhält rclone eine einzige 'dir/**'-Regel statt jeder Datei — rclone durchläuft dann nur diesen Teilbaum. Hilft bei Tausenden Dateien auf einmal. Standardmäßig aus.",
   "cfg.enableAutoUpdate.h": "Führt regelmäßig 'rclone selfupdate' aus, um die rclone-Binärdatei aktuell zu halten.",
   "cfg.rclonePath.h": "Vollständiger Pfad zur rclone-Binärdatei, die für die Update-Prüfung verwendet wird.",
   "cfg.checkEvery.h": "Wie oft (Stunden) auf ein rclone-Update geprüft wird. 0 = nur beim Start.",

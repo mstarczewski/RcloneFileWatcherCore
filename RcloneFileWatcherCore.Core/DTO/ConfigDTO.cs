@@ -10,6 +10,13 @@ namespace RcloneFileWatcherCore.DTO
         public List<PathDTO> Path { get; set; }
         public UpdateRcloneDTO UpdateRclone { get; set; }
         public int SyncIntervalSeconds { get; set; } = 60;
+
+        /// <summary>
+        /// When true, a whole newly-created/renamed/deleted directory is passed to rclone as a single
+        /// "<c>dir/**</c>" include rule instead of listing every file under it — collapsing thousands
+        /// of per-file entries into one (rclone then walks only that subtree). Off by default.
+        /// </summary>
+        public bool CollapseDirectoryChanges { get; set; }
         public bool RunOneTimeFullStartupSync { get; set; } = true;
         public string RunStartupScriptEveryDayAt { get; set; } = "05:30";
 

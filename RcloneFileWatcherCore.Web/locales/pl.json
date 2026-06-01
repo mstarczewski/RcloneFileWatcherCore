@@ -125,6 +125,8 @@
   "cfg.logLevel.h": "Które poziomy aplikacja zapisuje do własnego logu. Brak zaznaczenia = wszystkie poziomy.",
   "cfg.logPath.h": "Plik, do którego aplikacja zapisuje własny log. Puste = tylko konsola. Zmiana wymaga restartu.",
   "cfg.syncInterval.h": "Co ile sekund watcher zbiera wykryte zmiany i uruchamia rclone.",
+  "cfg.collapseDirs": "Zwijaj zmiany całych katalogów",
+  "cfg.collapseDirs.h": "Gdy cały katalog jest tworzony/zmieniany/usuwany, przekaż rclone jedną regułę 'dir/**' zamiast każdego pliku — rclone przejdzie tylko ten podkatalog. Pomaga przy lawinie tysięcy plików. Domyślnie wyłączone.",
   "cfg.enableAutoUpdate.h": "Okresowo uruchamia 'rclone selfupdate', aby utrzymać aktualny plik rclone.",
   "cfg.rclonePath.h": "Pełna ścieżka do pliku wykonywalnego rclone używanego do auto-aktualizacji.",
   "cfg.checkEvery.h": "Co ile godzin sprawdzać aktualizację rclone. 0 = tylko przy starcie.",

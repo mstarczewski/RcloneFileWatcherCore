@@ -69,6 +69,45 @@ namespace RcloneFileWatcherCore.Logic.Services
             return filesToWrite.ToList();
         }
 
+        /// <summary>
+        /// Collapses the change list when a whole directory was created/renamed/deleted: such an
+        /// event is represented as a "<c>dir/**</c>" rule, so every individual entry under that
+        /// directory (and any nested "<c>dir/sub/**</c>" rule) is redundant and removed. Turns a
+        /// burst of thousands of per-file lines into one rule that rclone resolves by walking just
+        /// that subtree. No-op when there are no directory rules.
+        /// </summary>
+        public static List<string> CollapseDirectoryRules(List<string> entries)
+        {
+            if (entries == null || entries.Count == 0)
+                return entries;
+
+            // A directory rule is "<prefix>/**"; keep the prefix WITH its trailing slash, e.g. "a/b/".
+            var ruleBases = entries
+                .Where(e => e.EndsWith("/**", StringComparison.Ordinal))
+                .Select(e => e.Substring(0, e.Length - 2))
+                .ToList();
+            if (ruleBases.Count == 0)
+                return entries;
+
+            var result = new List<string>(entries.Count);
+            foreach (var e in entries)
+            {
+                if (e.EndsWith("/**", StringComparison.Ordinal))
+                {
+                    var prefix = e.Substring(0, e.Length - 2);
+                    // Drop a nested rule (a/b/**) when a shorter rule (a/**) already covers it.
+                    var coveredByShorter = ruleBases.Any(b => b.Length < prefix.Length && prefix.StartsWith(b, StringComparison.Ordinal));
+                    if (!coveredByShorter)
+                        result.Add(e);
+                }
+                else if (!ruleBases.Any(b => e.StartsWith(b, StringComparison.Ordinal)))
+                {
+                    result.Add(e); // a file not under any directory rule
+                }
+            }
+            return result;
+        }
+
         /// <summary>Writes the --include-from lines to a file (used in script mode and when the
         /// managed command is configured to read the filter from a file rather than stdin).</summary>
         public bool WriteIncludeFromFile(string path, IEnumerable<string> lines)

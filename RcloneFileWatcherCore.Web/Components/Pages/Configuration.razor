@@ -69,6 +69,10 @@
                     <input type="number" min="1" @bind="_model.SyncIntervalSeconds" />
                 </label>
             </div>
+            <label class="checkbox">
+                <input type="checkbox" @bind="_model.CollapseDirectoryChanges" />
+                @L["cfg.collapseDirs"] <Hint Text="@L["cfg.collapseDirs.h"]" />
+            </label>
         </section>
 
         <section class="form-section">
