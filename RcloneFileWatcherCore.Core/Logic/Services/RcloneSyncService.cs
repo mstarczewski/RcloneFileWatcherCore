@@ -51,6 +51,9 @@ namespace RcloneFileWatcherCore.Logic.Services
                     if (path == null || !path.Enabled)
                         continue;
 
+                    // Visibility: how many entries this cycle hands to rclone (after collapsing).
+                    _logger.Log(Enums.LogLevel.Information, $"Sync {sourcePath}: passing {files.Count} item(s) to rclone");
+
                     if (path.SyncMode == Enums.SyncMode.Managed)
                     {
                         var cmd = path.RcloneCommand;
