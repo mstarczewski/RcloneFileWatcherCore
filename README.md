@@ -314,7 +314,7 @@ RcloneFileWatcherCore.Web.dll` or the platform apphost, with the working directo
 folder. On Linux use systemd; on Windows use a service manager such as NSSM.
 
 One-click publishers (Windows, no Visual Studio needed): **`publish-web-win.cmd`** (Windows web
-folder), **`publish-web.cmd`** (Debian/Linux web folder), **`publish-tray.cmd`** (tray exe).
+folder), **`publish-web-linux.cmd`** (Debian/Linux web folder), **`publish-tray.cmd`** (tray exe).
 
 ---
 
