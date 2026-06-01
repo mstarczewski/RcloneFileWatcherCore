@@ -86,7 +86,8 @@ namespace RcloneFileWatcherCore.Logic.Services
                 FullPath = e.OldFullPath,
                 NotifyFilters = watcher.NotifyFilter,
                 WatcherChangeTypes = WatcherChangeTypes.Deleted,
-                TimeStampTicks = timestamp
+                TimeStampTicks = timestamp,
+                EnqueuedUtcTicks = DateTime.UtcNow.Ticks
             });
 
             _logger.Log(Enums.LogLevel.Debug, $"Action:{WatcherChangeTypes.Deleted} - {syncPath}");
@@ -106,7 +107,8 @@ namespace RcloneFileWatcherCore.Logic.Services
                 FullPath = e.FullPath,
                 NotifyFilters = watcher.NotifyFilter,
                 WatcherChangeTypes = e.ChangeType,
-                TimeStampTicks = timestamp
+                TimeStampTicks = timestamp,
+                EnqueuedUtcTicks = DateTime.UtcNow.Ticks
             });
             _logger.Log(Enums.LogLevel.Debug, $"Action:{e.ChangeType} - {syncPath}");
         }

@@ -26,6 +26,34 @@ namespace RcloneFileWatcherCore.Logic.Services
         {
             try
             {
+                // Optional quiet-period debounce: while changes keep arriving (e.g. a long copy),
+                // wait until they settle (no new change for QuietPeriodSeconds) before syncing,
+                // capped by QuietPeriodMaxWaitSeconds so continuous activity can't starve the sync.
+                if (configDTO.QuietPeriodSeconds > 0)
+                {
+                    long newest = long.MinValue, oldest = long.MaxValue;
+                    var count = 0;
+                    foreach (var dto in _fileDTOs.Values)
+                    {
+                        count++;
+                        if (dto.EnqueuedUtcTicks > newest) newest = dto.EnqueuedUtcTicks;
+                        if (dto.EnqueuedUtcTicks < oldest) oldest = dto.EnqueuedUtcTicks;
+                    }
+                    if (count > 0)
+                    {
+                        var nowTicks = DateTime.UtcNow.Ticks;
+                        var quietS = (nowTicks - newest) / (double)TimeSpan.TicksPerSecond;
+                        var waitedS = (nowTicks - oldest) / (double)TimeSpan.TicksPerSecond;
+                        var maxWait = configDTO.QuietPeriodMaxWaitSeconds > 0 ? configDTO.QuietPeriodMaxWaitSeconds : int.MaxValue;
+                        if (quietS < configDTO.QuietPeriodSeconds && waitedS < maxWait)
+                        {
+                            _logger.Log(Enums.LogLevel.Information,
+                                $"Deferring sync (quiet period): {count} change(s) queued, last {quietS:F0}s ago (<{configDTO.QuietPeriodSeconds}s), waited {waitedS:F0}s.");
+                            return true;
+                        }
+                    }
+                }
+
                 long lastTimeStamp = Globals.TimeStamp.GetTimestampTicks();
                 Globals.TimeStamp.SetTimestampTicks();
                 var sourcePathList = _fileDTOs

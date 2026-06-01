@@ -51,6 +51,33 @@ namespace RcloneFileWatcherCore.Tests.Services
         }
 
         [TestMethod]
+        public void QuietPeriod_DefersWhileChangesAreFresh()
+        {
+            var config = new ConfigDTO
+            {
+                QuietPeriodSeconds = 30,
+                QuietPeriodMaxWaitSeconds = 300,
+                Path = new List<PathDTO> { ManagedPath("/watched") }
+            };
+            var (svc, runner, queue) = Build(config.Path);
+
+            // A change enqueued just now → within the quiet window → sync is deferred.
+            queue["k"] = new FileDTO
+            {
+                SourcePath = "/watched",
+                PathPreparedToSync = "x.txt",
+                FullPath = "/watched/x.txt",
+                EnqueuedUtcTicks = System.DateTime.UtcNow.Ticks,
+                TimeStampTicks = 1
+            };
+
+            var result = svc.Execute(config);
+
+            Assert.IsTrue(result);
+            VerifyNoRclone(runner);
+        }
+
+        [TestMethod]
         public void QueuedChangeForUnknownPath_DoesNotInvokeRclone()
         {
             var config = new ConfigDTO { Path = new List<PathDTO> { ManagedPath("/watched") } };

@@ -73,6 +73,16 @@
                 <input type="checkbox" @bind="_model.CollapseDirectoryChanges" />
                 @L["cfg.collapseDirs"] <Hint Text="@L["cfg.collapseDirs.h"]" />
             </label>
+            <div class="form-grid">
+                <label>
+                    <span class="lbl">@L["cfg.quietPeriod"] <Hint Text="@L["cfg.quietPeriod.h"]" /></span>
+                    <input type="number" min="0" @bind="_model.QuietPeriodSeconds" />
+                </label>
+                <label>
+                    <span class="lbl">@L["cfg.quietPeriodMax"] <Hint Text="@L["cfg.quietPeriodMax.h"]" /></span>
+                    <input type="number" min="0" @bind="_model.QuietPeriodMaxWaitSeconds" />
+                </label>
+            </div>
         </section>
 
         <section class="form-section">
