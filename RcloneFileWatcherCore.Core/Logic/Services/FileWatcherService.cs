@@ -51,8 +51,13 @@ namespace RcloneFileWatcherCore.Logic.Services
             if (isFileWatcher)
                 watcher.Changed += OnChanged;
 
+            // FileSystemWatcher errors are environmental and usually transient (a backup creating a
+            // restricted temp dir, the OS event buffer overflowing during a burst, a path briefly
+            // unavailable). They don't mean the app failed — and the daily full sync reconciles any
+            // events missed during a buffer overflow — so log them as Warning, not Error, to keep
+            // them out of the kept-errors panel and the error emails.
             watcher.Error += (s, e) =>
-               _logger.Log(Enums.LogLevel.Error, $"Watcher error at {path}: {e.GetException()?.Message}", e.GetException());
+               _logger.Log(Enums.LogLevel.Warning, $"Watcher issue at {path}: {e.GetException()?.Message}", e.GetException());
 
             return watcher;
         }

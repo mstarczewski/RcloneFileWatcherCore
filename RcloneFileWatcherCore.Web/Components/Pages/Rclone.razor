@@ -46,7 +46,7 @@ else
             {
                 @if (path.RcloneCommand is not null)
                 {
-                    <pre class="cmd-line">@RcloneCommandBuilder.BuildPreview(path.RcloneCommand, path.RcloneFilesFromPath)</pre>
+                    <pre class="cmd-line">@RcloneCommandBuilder.BuildPreview(path.RcloneCommand, IncludeFromFor(path))</pre>
                 }
                 else
                 {
@@ -100,6 +100,14 @@ else
 }
 
 @code {
+    // What --include-from shows for a watched path: "-" (stdin) when the managed command pipes the
+    // changed-files list, otherwise the on-disk files-from file — matching what the app runs.
+    private static string IncludeFromFor(PathDTO p)
+    {
+        var c = p.RcloneCommand;
+        return c != null && c.IncludeFrom && c.IncludeFromStdin ? "-" : p.RcloneFilesFromPath;
+    }
+
     // Human-readable summary of when the full sync runs (daily time and/or at startup).
     private string FullSyncSchedule(ConfigDTO cfg)
     {
