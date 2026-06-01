@@ -132,6 +132,9 @@ Create a config file named `RcloneFileWatcherCoreConfig.cfg` in the executable f
 * `"RunOneTimeFullStartupSync"` -	Runs a full sync batch at startup
 * `"RunOneTimeFullStartupSyncBatch"` - Path to full sync batch script
 * `"RunStartupScriptEveryDayAt"` - Runs the startup script (full sync) once per day at the specified time.
+* `"CollapseDirectoryChanges"` – When `true`, a whole created/renamed/deleted directory is passed to rclone as a single `dir/**` rule instead of every file under it (efficient for bursts of thousands of files; rclone walks just that subtree). Default `false`. (Configuration → General)
+* `"QuietPeriodSeconds"` – Debounce: defer the live sync while changes keep arriving and run only once none has appeared for this many seconds (so a long copy is synced after it settles, not in many partial runs). `0` = off. (Configuration → General)
+* `"QuietPeriodMaxWaitSeconds"` – Safety cap for the quiet period: sync anyway once the oldest pending change has waited this long. `0` = no cap.
 
 > The config also supports the **managed** mode used by the GUI: per path `"Enabled"`, `"SyncMode"`
 > (`Script`/`Managed`) and an `"RcloneCommand"` object, plus top-level `"FullSyncMode"` and a
