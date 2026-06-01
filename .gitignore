@@ -367,3 +367,7 @@ gui-cert.pfx
 **/gui-cert.pfx
 gui-cert.crt
 **/gui-cert.crt
+
+# Generated test data
+testdata/
+**/testdata/

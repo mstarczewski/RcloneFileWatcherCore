@@ -47,8 +47,9 @@ namespace RcloneFileWatcherCore.Logic.Services
                         var maxWait = configDTO.QuietPeriodMaxWaitSeconds > 0 ? configDTO.QuietPeriodMaxWaitSeconds : int.MaxValue;
                         if (quietS < configDTO.QuietPeriodSeconds && waitedS < maxWait)
                         {
+                            var capText = configDTO.QuietPeriodMaxWaitSeconds > 0 ? $"{configDTO.QuietPeriodMaxWaitSeconds}s" : "none";
                             _logger.Log(Enums.LogLevel.Information,
-                                $"Deferring sync (quiet period): {count} change(s) queued, last {quietS:F0}s ago (<{configDTO.QuietPeriodSeconds}s), waited {waitedS:F0}s.");
+                                $"Deferring sync (quiet period): {count} change(s) queued; newest change {quietS:F0}s ago (need {configDTO.QuietPeriodSeconds}s of quiet); oldest has waited {waitedS:F0}s (max-wait cap {capText}).");
                             return true;
                         }
                     }
