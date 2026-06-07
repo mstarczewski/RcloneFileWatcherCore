@@ -52,7 +52,7 @@
         };
         // Close the mobile nav drawer (CSS checkbox hack) after a nav link is clicked.
         // Delegated so it survives Blazor's enhanced-navigation DOM patches. Pure first-party
-        // JS — independent of the SignalR circuit, so it keeps working even if interactivity
+        // JS - independent of the SignalR circuit, so it keeps working even if interactivity
         // is unavailable.
         document.addEventListener('click', function (e) {
             var link = e.target.closest('.nav-menu a, .nav-logout button');

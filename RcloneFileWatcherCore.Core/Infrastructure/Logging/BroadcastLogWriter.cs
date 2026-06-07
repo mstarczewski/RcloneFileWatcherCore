@@ -16,7 +16,7 @@ namespace RcloneFileWatcherCore.Infrastructure.Logging
         private readonly Queue<string> _buffer;
         // Error/critical lines are kept in a separate buffer that the normal ring eviction does NOT
         // trim, so a problem stays visible in the GUI long after the rolling log has scrolled past
-        // it — until the user clears it explicitly. Bounded so it can't grow without limit.
+        // it - until the user clears it explicitly. Bounded so it can't grow without limit.
         private readonly Queue<string> _errors;
         private readonly object _lock = new object();
 

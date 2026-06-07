@@ -51,7 +51,7 @@
     private const int RenderIntervalMs = 200;
 
     // Errors/criticals are mirrored from the server's retained error buffer and never rolled off
-    // here either — they stay visible until the user clears them.
+    // here either - they stay visible until the user clears them.
     private const int MaxErrors = 5000;
 
     private readonly List<string> _lines = new();
@@ -116,7 +116,7 @@
         }
         catch (JSDisconnectedException)
         {
-            // The circuit was torn down (navigation/refresh) before the interop ran — ignore.
+            // The circuit was torn down (navigation/refresh) before the interop ran - ignore.
         }
     }
 

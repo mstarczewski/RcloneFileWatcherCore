@@ -45,7 +45,7 @@ namespace RcloneFileWatcherCore.Status
 
             // Take a bounded slice without materializing the whole (possibly huge) queue, then
             // sort just the sample so the preview is stable and readable. Total uses the dictionary's
-            // own count; it may differ slightly from the sample under concurrent writes — fine for a
+            // own count; it may differ slightly from the sample under concurrent writes - fine for a
             // live preview.
             var total = _fileDTOs.Count;
             var sample = _fileDTOs.Values

@@ -92,7 +92,7 @@ namespace RcloneFileWatcherCore.Logic.Services
                         }
                         else if (cmd.IncludeFrom && cmd.IncludeFromStdin)
                         {
-                            // Pipe the list to rclone via stdin (--include-from -) — no file on disk.
+                            // Pipe the list to rclone via stdin (--include-from -) - no file on disk.
                             _rcloneRunner.ExecuteCommand(cmd, "-", files);
                         }
                         else

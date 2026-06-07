@@ -8,7 +8,7 @@ namespace RcloneFileWatcherCore.Infrastructure.Logging
     {
         // Only the writer reference is shared mutable state; each writer is itself thread-safe
         // (FileLogWriter locks, BroadcastLogWriter locks, Console is synchronized), so we publish
-        // the reference with volatile and don't hold a lock across Write — a slow disk flush in the
+        // the reference with volatile and don't hold a lock across Write - a slow disk flush in the
         // file sink no longer blocks the GUI broadcast or the console.
         private volatile ILogWriter _logWriter;
 

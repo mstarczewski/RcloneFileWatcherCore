@@ -13,7 +13,7 @@ namespace RcloneFileWatcherCore.Web
     /// Supplies the TLS certificate Kestrel serves when <c>Gui:Urls</c> contains an https endpoint.
     /// Uses an explicit PFX (<c>Gui:CertPath</c> / <c>Gui:CertPassword</c>) when given; otherwise
     /// generates and persists a self-signed certificate next to the app and exports its public part
-    /// (<c>gui-cert.crt</c>) so a reverse proxy (e.g. Caddy) can be told to trust it — which lets the
+    /// (<c>gui-cert.crt</c>) so a reverse proxy (e.g. Caddy) can be told to trust it - which lets the
     /// proxy↔backend hop be encrypted too instead of plain HTTP.
     /// </summary>
     public static class HttpsSetup

@@ -63,7 +63,7 @@ namespace RcloneFileWatcherCore.Logic.Services
                 process.WaitForExit();
 
                 // rclone writes its normal NOTICE/INFO output (including "Successfully updated")
-                // to stderr, so stderr is NOT an error signal — surface it as info and judge the
+                // to stderr, so stderr is NOT an error signal - surface it as info and judge the
                 // outcome by the exit code plus the success marker found in either stream.
                 if (error.Length > 0)
                     _logger.Log(LogLevel.Information, $"rclone selfupdate: {error.ToString().Trim()}");

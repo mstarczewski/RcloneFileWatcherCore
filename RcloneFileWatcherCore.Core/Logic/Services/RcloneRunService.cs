@@ -67,7 +67,7 @@ namespace RcloneFileWatcherCore.Logic.Services
             using (var process = new Process { StartInfo = startInfo })
             {
                 // Capture the script's output (the rclone it runs) so it shows in the GUI log too,
-                // matching managed mode — previously script-mode output was lost.
+                // matching managed mode - previously script-mode output was lost.
                 process.OutputDataReceived += (s, e) => { if (e.Data != null) LogRcloneLine(e.Data); };
                 process.ErrorDataReceived += (s, e) => { if (e.Data != null) LogRcloneLine(e.Data); };
 
@@ -193,7 +193,7 @@ namespace RcloneFileWatcherCore.Logic.Services
         {
             try
             {
-                // The file name carries {datetime}, so it's unique per run — wait for rclone to
+                // The file name carries {datetime}, so it's unique per run - wait for rclone to
                 // create it, then read it from the start until the process exits.
                 var waited = 0;
                 while (!File.Exists(path) && !ct.IsCancellationRequested && waited < 5000)
@@ -235,7 +235,7 @@ namespace RcloneFileWatcherCore.Logic.Services
         }
 
         // rclone prints its level as a word followed by a colon, e.g. "... ERROR : msg" or
-        // "... CRITICAL: msg" (spacing varies) — match the word + colon rather than " LEVEL ".
+        // "... CRITICAL: msg" (spacing varies) - match the word + colon rather than " LEVEL ".
         private static readonly System.Text.RegularExpressions.Regex RcloneLevel =
             new System.Text.RegularExpressions.Regex(
                 @"\b(ERROR|CRITICAL|FATAL|WARNING|NOTICE|INFO|DEBUG)\b\s*:",

@@ -133,7 +133,7 @@ internal sealed class TrayContext : ApplicationContext
         }
         catch
         {
-            // No bundled web app, or it's already running as a service — just monitor the URL.
+            // No bundled web app, or it's already running as a service - just monitor the URL.
         }
     }
 

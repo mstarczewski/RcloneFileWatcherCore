@@ -15,7 +15,7 @@ namespace RcloneFileWatcherCore.Notifications
 
     /// <summary>
     /// Email-on-error settings, persisted (separately from the main config) in notifications.json.
-    /// The SMTP password is stored encrypted at rest (Data Protection) — only the protected blob
+    /// The SMTP password is stored encrypted at rest (Data Protection) - only the protected blob
     /// is written; the plaintext lives in memory at run time.
     /// </summary>
     public class NotificationSettings
@@ -40,7 +40,7 @@ namespace RcloneFileWatcherCore.Notifications
         public string User { get; set; }
         public string From { get; set; }
 
-        /// <summary>Plaintext password — only in memory, never serialized.</summary>
+        /// <summary>Plaintext password - only in memory, never serialized.</summary>
         [JsonIgnore]
         public string Password { get; set; }
 

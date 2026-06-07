@@ -76,7 +76,7 @@ namespace RcloneFileWatcherCore.Logic.Rclone
 
         private static void AddFlag(List<string> args, string flag, string value)
         {
-            // Note: the value is intentionally NOT trimmed — flags like --suffix rely on a
+            // Note: the value is intentionally NOT trimmed - flags like --suffix rely on a
             // leading space (e.g. " [2024-01-01]"), as in the README examples.
             if (!string.IsNullOrWhiteSpace(value))
             {

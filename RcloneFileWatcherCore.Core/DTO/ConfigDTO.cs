@@ -13,14 +13,14 @@ namespace RcloneFileWatcherCore.DTO
 
         /// <summary>
         /// When true, a whole newly-created/renamed/deleted directory is passed to rclone as a single
-        /// "<c>dir/**</c>" include rule instead of listing every file under it — collapsing thousands
+        /// "<c>dir/**</c>" include rule instead of listing every file under it - collapsing thousands
         /// of per-file entries into one (rclone then walks only that subtree). Off by default.
         /// </summary>
         public bool CollapseDirectoryChanges { get; set; }
 
         /// <summary>
         /// Quiet-period debounce: when &gt; 0, a live sync is deferred while changes are still
-        /// arriving — it runs only once no new change has appeared for this many seconds (so a long
+        /// arriving - it runs only once no new change has appeared for this many seconds (so a long
         /// copy is synced after it settles, not chopped into many partial runs). 0 = off.
         /// </summary>
         public int QuietPeriodSeconds { get; set; }
@@ -37,7 +37,7 @@ namespace RcloneFileWatcherCore.DTO
         /// <summary>Whether the full sync runs an external script or managed rclone command(s).</summary>
         public SyncMode FullSyncMode { get; set; } = SyncMode.Script;
 
-        /// <summary>Full-sync script (Script mode) — runs the whole-tree reconcile.</summary>
+        /// <summary>Full-sync script (Script mode) - runs the whole-tree reconcile.</summary>
         public string RunOneTimeFullStartupSyncBatch { get; set; }
 
         /// <summary>Managed full-sync rclone commands (Managed mode), run in order. Each is a

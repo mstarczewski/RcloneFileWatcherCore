@@ -93,7 +93,7 @@ namespace RcloneFileWatcherCore.Notifications
             try { return _protector.Unprotect(protectedValue); }
             catch (Exception ex)
             {
-                // Most likely the key ring changed/moved — the password must be re-entered in the GUI.
+                // Most likely the key ring changed/moved - the password must be re-entered in the GUI.
                 _logger.Log(LogLevel.Warning, "Could not decrypt the stored SMTP password (key ring changed?); re-enter it in the GUI", ex);
                 return null;
             }

@@ -25,7 +25,7 @@ The configuration is optimized for Windows and Linux. On Windows, it is recommen
 ## Web GUI preview
 
 The optional cross-platform web GUI (shown in English; Polish and German are also built in). The
-slideshow cycles through the main pages — **Dashboard**, **Configuration**, **Rclone** command
+slideshow cycles through the main pages - **Dashboard**, **Configuration**, **Rclone** command
 preview, **Logs** (with kept errors), and **Security**:
 
 ![RcloneFileWatcher web GUI](docs/screenshots/gui-slideshow.gif)
@@ -38,9 +38,9 @@ preview, **Logs** (with kept errors), and **Security**:
 - Two ways to run rclone per watched path:
   - **Script mode** – run your own `.bat`/`.sh` (the original behavior)
   - **Managed mode** – build the rclone command from fields; the app runs rclone directly and injects `--include-from` automatically
-- Changed-file list passed to rclone **via stdin** (`--include-from -`) — no on-disk exchange file needed (handles very large lists)
+- Changed-file list passed to rclone **via stdin** (`--include-from -`) - no on-disk exchange file needed (handles very large lists)
 - Live rclone output captured into the log (both managed and script mode); `{datetime}`/`{date}`/`{time}`/`{year}` placeholders substituted at run time
-- Optional full-sync at startup and/or daily at a set time — **also configurable as managed commands**
+- Optional full-sync at startup and/or daily at a set time - **also configurable as managed commands**
 - Enable/disable individual watched paths or full-sync commands without deleting them
 - Optionally auto-updates the rclone binary
 - Cross-platform **web GUI** (Blazor Server) for configuration, live status/logs and rclone command building:
@@ -50,7 +50,7 @@ preview, **Logs** (with kept errors), and **Security**:
   - Warnings when a command has `--dry-run` enabled or a sync is disabled
   - GUI-managed password (hashed, runtime on/off), light/dark theme, and English/Polish/German UI
 - Hot-reload: configuration changes apply **without restarting** (the watcher is rebuilt live)
-- **Email alerts on errors** — batched (first error opens a delay window so a burst becomes one mail), optionally **OpenPGP-encrypted** per recipient (public key fetched from keys.openpgp.org or pasted); SMTP password stored encrypted at rest
+- **Email alerts on errors** - batched (first error opens a delay window so a burst becomes one mail), optionally **OpenPGP-encrypted** per recipient (public key fetched from keys.openpgp.org or pasted); SMTP password stored encrypted at rest
 
 ---
 
@@ -138,7 +138,7 @@ Create a config file named `RcloneFileWatcherCoreConfig.cfg` in the executable f
 
 > The config also supports the **managed** mode used by the GUI: per path `"Enabled"`, `"SyncMode"`
 > (`Script`/`Managed`) and an `"RcloneCommand"` object, plus top-level `"FullSyncMode"` and a
-> `"FullSyncCommands"` list. You don't need to hand-write these — the **Configuration** page builds
+> `"FullSyncCommands"` list. You don't need to hand-write these - the **Configuration** page builds
 > and saves them for you (and can import an existing script into managed fields).
 
 ### Example rclone script (Linux) (`rclone_livesync_shared.sh`)
@@ -236,7 +236,7 @@ browser.
 
 The GUI is localized (English by default, plus Polish and German) with a light/dark theme toggle;
 language is switchable from the top bar and new languages can be added by dropping a
-`locales/<culture>.json` file next to the binary — no recompile.
+`locales/<culture>.json` file next to the binary - no recompile.
 
 ### Pages
 
@@ -270,13 +270,13 @@ Each watched path (and the full sync) runs rclone in one of two modes:
     `--retries`, `--backup-dir`, `--suffix`, `--log-file`, `--create-empty-src-dirs`, `--use-mmap`,
     `--fast-list`, `--update`, `--dry-run`; anything else goes in *extra arguments*.
   - Date/time placeholders are substituted at run time: `{datetime}` → `yyyy-MM-dd-HH-mm-ss`,
-    `{date}`, `{time}`, `{year}` — e.g. `--suffix " [{datetime}]"`,
+    `{date}`, `{time}`, `{year}` - e.g. `--suffix " [{datetime}]"`,
     `--backup-dir remote:$Archive/Shared/{year}`.
 
 ### Authentication
 
 Access control is managed entirely from the **Security** page (no setting needed): toggle the
-password requirement on/off and set the password at runtime — the change takes effect immediately,
+password requirement on/off and set the password at runtime - the change takes effect immediately,
 no restart. The password is stored **hashed** (PBKDF2) in `gui-auth.json` next to the binary (this
 file is gitignored and must never be published). Minimum policy: 8+ characters with a letter and a
 digit. With no password set, access is open (intended for localhost). When exposing the GUI on a
@@ -290,12 +290,12 @@ and cookie travel in clear text).
 * `Gui:OpenBrowser` – `true` to open the browser on startup (desktop convenience; keep `false`
   for headless/service deployments).
 
-### HTTPS (optional — encrypt the proxy → backend hop)
+### HTTPS (optional - encrypt the proxy → backend hop)
 
 By default the GUI serves plain HTTP and TLS terminates at the reverse proxy. To encrypt the
-proxy ↔ backend hop too, set an https endpoint — e.g. `Gui:Urls=https://0.0.0.0:5005`. With no
+proxy ↔ backend hop too, set an https endpoint - e.g. `Gui:Urls=https://0.0.0.0:5005`. With no
 certificate configured the app **generates and persists a self-signed one** (`gui-cert.pfx`) next
-to the binary and exports its public part to **`gui-cert.crt`**. Tell the proxy to trust it — Caddy:
+to the binary and exports its public part to **`gui-cert.crt`**. Tell the proxy to trust it - Caddy:
 
 ```caddyfile
 reverse_proxy https://127.0.0.1:5005 {
@@ -311,7 +311,7 @@ hostname the proxy dials. `gui-cert.pfx`/`gui-cert.crt` are gitignored.
 
 ### Deployment
 
-The web GUI **must be deployed as a folder** — the published output (the `.dll`/apphost together
+The web GUI **must be deployed as a folder** - the published output (the `.dll`/apphost together
 with `wwwroot/` and `locales/` beside it), not a single file. Run it with `dotnet
 RcloneFileWatcherCore.Web.dll` or the platform apphost, with the working directory set to that
 folder. On Linux use systemd; on Windows use a service manager such as NSSM.
@@ -324,8 +324,8 @@ folder), **`publish-web-linux.cmd`** (Debian/Linux web folder), **`publish-tray.
 ## Windows tray (optional)
 
 `app-tray-win-x64.zip` is a small **system-tray companion** (Windows only). It shows a coloured dot
-near the clock reflecting the watcher state — **green** syncing, **gray** idle, **red** errors,
-**hollow** offline — with a right-click menu (*Open GUI* / *Re-check* / *Exit*). It reads the web
+near the clock reflecting the watcher state - **green** syncing, **gray** idle, **red** errors,
+**hollow** offline - with a right-click menu (*Open GUI* / *Re-check* / *Exit*). It reads the web
 app's `/api/status`. Drop `RcloneFileWatcherCore.Tray.exe` into the published web folder and it
 launches the web app on start (and stops it on exit); or run it standalone pointing at a URL:
 `RcloneFileWatcherCore.Tray.exe http://localhost:5005`. Framework-dependent build → needs the

@@ -339,7 +339,7 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 
-# Local production config/scripts kept for reference only — must never be published
+# Local production config/scripts kept for reference only - must never be published
 Examples/
 
 # Runtime config written by the app / GUI at the working directory (not the tracked
@@ -347,7 +347,7 @@ Examples/
 /RcloneFileWatcherCoreConfig.cfg
 /RcloneFileWatcherCore.Web/RcloneFileWatcherCoreConfig.cfg
 
-# GUI auth state (enabled flag + hashed password) — never publish
+# GUI auth state (enabled flag + hashed password) - never publish
 gui-auth.json
 
 # Keep the shared web GUI publish profile (overrides the global *.pubxml ignore)

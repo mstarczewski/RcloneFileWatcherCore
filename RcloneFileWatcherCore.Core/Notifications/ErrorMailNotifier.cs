@@ -12,7 +12,7 @@ namespace RcloneFileWatcherCore.Notifications
     /// <summary>
     /// Watches the log stream for Error/Critical lines and emails them. The first error after a quiet
     /// period opens a batching window (NotificationSettings.DelaySeconds); every error in that window
-    /// is collected and sent as one email when the window closes — so a burst of failures produces a
+    /// is collected and sent as one email when the window closes - so a burst of failures produces a
     /// single message instead of a flood. Send failures are logged at Warning level (never Error) so
     /// a failing mail server can't feed itself a new error and loop.
     /// </summary>

@@ -29,7 +29,7 @@ jobs:
   #
   # This job also gates the whole workflow: it runs (and so do the jobs that need it) only for a
   # version tag, a manual dispatch, or a push to master whose head commit contains "[release]".
-  # A plain master push without that marker skips everything — no accidental releases.
+  # A plain master push without that marker skips everything - no accidental releases.
   version:
     runs-on: ubuntu-latest
     if: >-
@@ -238,9 +238,9 @@ jobs:
             `${{ needs.version.outputs.version }}`
 
             ### Artifacts
-            - `app-win-x64.zip` / `app-linux-x64.zip` — headless console app (single file on Windows)
-            - `app-web-win-x64.zip` / `app-web-linux-x64.zip` — web GUI (run as a folder: `dotnet RcloneFileWatcherCore.Web.dll`)
-            - `app-tray-win-x64.zip` — Windows system-tray companion (drop the exe into the web folder to auto-launch it)
+            - `app-win-x64.zip` / `app-linux-x64.zip` - headless console app (single file on Windows)
+            - `app-web-win-x64.zip` / `app-web-linux-x64.zip` - web GUI (run as a folder: `dotnet RcloneFileWatcherCore.Web.dll`)
+            - `app-tray-win-x64.zip` - Windows system-tray companion (drop the exe into the web folder to auto-launch it)
           files: |
             artifacts/app-win-x64.zip
             artifacts/app-linux-x64.zip

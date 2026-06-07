@@ -64,7 +64,7 @@ namespace RcloneFileWatcherCore.Logic.Services
             }
             catch (Exception ex)
             {
-                // Most commonly the file doesn't exist at that path (Win32Exception) — report as unavailable.
+                // Most commonly the file doesn't exist at that path (Win32Exception) - report as unavailable.
                 _logger.Log(LogLevel.Debug, $"rclone version probe failed for '{exe}': {ex.Message}");
                 return new RcloneVersionInfo { Path = exe, Available = false, Error = ex.Message };
             }

@@ -10,7 +10,7 @@ namespace RcloneFileWatcherCore.Web.Localization
     /// <summary>
     /// Translation lookup keyed by the current UI culture. English is baked in as the always
     /// available default/fallback (the app works even with no translation files). Additional
-    /// languages are discovered at startup from JSON files in the locales folder — drop a
+    /// languages are discovered at startup from JSON files in the locales folder - drop a
     /// <c>pl.json</c> / <c>de.json</c> (or <c>pt-BR.json</c>) and that language appears in the
     /// switcher automatically, no recompilation needed. An <c>en.json</c>, if present, may
     /// override individual baked-in English strings.
@@ -97,7 +97,7 @@ namespace RcloneFileWatcherCore.Web.Localization
             }
         }
 
-        // English baseline — the guaranteed fallback. Keys here define the full string set.
+        // English baseline - the guaranteed fallback. Keys here define the full string set.
         private static readonly Dictionary<string, string> English = new()
         {
             ["nav.dashboard"] = "Dashboard",

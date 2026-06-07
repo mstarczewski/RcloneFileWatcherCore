@@ -196,7 +196,7 @@ else
     }
 
     // True when any managed rclone command (per-path or full sync) has --dry-run enabled, so
-    // nothing it runs will actually transfer — surfaced as a dashboard warning.
+    // nothing it runs will actually transfer - surfaced as a dashboard warning.
     private bool DryRunActive()
     {
         var cfg = ConfigService.Current;
@@ -210,7 +210,7 @@ else
     }
 
     // Number of disabled syncs (watched paths + managed full-sync commands) kept in the config
-    // but not running — surfaced as a dashboard warning.
+    // but not running - surfaced as a dashboard warning.
     private int DisabledCount()
     {
         var cfg = ConfigService.Current;
@@ -234,7 +234,7 @@ else
     }
 
     // Probe each distinct rclone path referenced by the config (managed commands + auto-update).
-    // Done once on load / on demand — NOT on the status poll — since each probe spawns a process.
+    // Done once on load / on demand - NOT on the status poll - since each probe spawns a process.
     private async Task RefreshProbesAsync()
     {
         if (_probing)

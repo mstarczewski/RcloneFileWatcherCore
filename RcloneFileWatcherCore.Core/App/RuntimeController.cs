@@ -15,8 +15,8 @@ namespace RcloneFileWatcherCore.App
 {
     /// <summary>
     /// Owns the lifecycle of the config-dependent runtime graph (file watcher + scheduler and
-    /// the rclone job services they drive). Building the graph here — rather than in the DI
-    /// container — lets the whole graph be torn down and rebuilt against a new configuration,
+    /// the rclone job services they drive). Building the graph here - rather than in the DI
+    /// container - lets the whole graph be torn down and rebuilt against a new configuration,
     /// which is how config changes are applied without restarting the process.
     /// </summary>
     public class RuntimeController : IRuntimeController, IDisposable

@@ -251,7 +251,7 @@
     protected override void OnInitialized() => LoadFromCurrent();
 
     // After an action sets a status message (which renders at the top of the page), scroll the
-    // window up so the result is visible — the Save/Import buttons sit far below the fold.
+    // window up so the result is visible - the Save/Import buttons sit far below the fold.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (_scrollPending)
@@ -263,7 +263,7 @@
             }
             catch (JSDisconnectedException)
             {
-                // Circuit gone before the interop ran — ignore.
+                // Circuit gone before the interop ran - ignore.
             }
         }
     }

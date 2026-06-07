@@ -50,7 +50,7 @@ builder.Services.AddSingleton(new Loc(Path.Combine(builder.Environment.ContentRo
 // GUI access control is managed at runtime in the Security page (stored hashed in
 // gui-auth.json). Cookie auth + a dynamic policy are always registered; the policy reads the
 // current on/off state per request, so the toggle takes effect without a restart. By default
-// (no gui-auth.json) access is open — set a password in the Security page to require login.
+// (no gui-auth.json) access is open - set a password in the Security page to require login.
 builder.Services.AddSingleton<IAuthService>(
     new AuthService(Path.Combine(builder.Environment.ContentRootPath, "gui-auth.json")));
 
@@ -84,7 +84,7 @@ var localizationOptions = new RequestLocalizationOptions()
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures);
 // English is the default; only an explicit choice (culture cookie set by the language switch)
-// changes it — do not auto-negotiate from the browser's Accept-Language header.
+// changes it - do not auto-negotiate from the browser's Accept-Language header.
 localizationOptions.RequestCultureProviders = new List<IRequestCultureProvider>
 {
     new CookieRequestCultureProvider()
@@ -148,7 +148,7 @@ app.MapPost("/logout", async (HttpContext ctx) =>
     return Results.LocalRedirect("/");
 }).DisableAntiforgery();
 
-// Lightweight status for the Windows tray companion (anonymous — only non-sensitive booleans/counts).
+// Lightweight status for the Windows tray companion (anonymous - only non-sensitive booleans/counts).
 app.MapGet("/api/status", (RcloneFileWatcherCore.Status.IStatusService status, RcloneFileWatcherCore.Infrastructure.Logging.BroadcastLogWriter logBuffer) =>
 {
     var s = status.GetStatus();
