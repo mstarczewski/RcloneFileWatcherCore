@@ -91,6 +91,36 @@ else
         }
     </div>
 
+    <div class="section-head">
+        <h2>@L["dash.queuePreview"]</h2>
+        <button class="btn btn-sm btn-secondary" @onclick="ToggleQueue">
+            <Icon Name="logs" Size="14" /> @(_showQueue ? L["dash.queueToggleHide"] : L["dash.queueToggleShow"])
+        </button>
+    </div>
+    @if (_showQueue)
+    {
+        @if (_queue is null)
+        {
+            <p class="muted">@L["dash.loading"]</p>
+        }
+        else if (_queue.Total == 0)
+        {
+            <p class="muted">@L["dash.queueEmpty"]</p>
+        }
+        else
+        {
+            <p class="muted">@L.F("dash.queueShowing", _queue.Sample.Count, _queue.Total)</p>
+            <div class="queue-preview">
+                <ul>
+                    @foreach (var change in _queue.Sample)
+                    {
+                        <li><span class="queue-change">@change.Change</span>@change.Path</li>
+                    }
+                </ul>
+            </div>
+        }
+    }
+
     @if (_status.WatchedPaths is { Count: > 0 })
     {
         <h2>@L["dash.watchedDirs"]</h2>
@@ -154,6 +184,16 @@ else
 
     private List<RcloneVersionInfo> _rcloneProbes;
     private bool _probing;
+
+    private const int QueueSampleSize = 200;
+    private bool _showQueue;
+    private QueueSnapshot _queue;
+
+    private void ToggleQueue()
+    {
+        _showQueue = !_showQueue;
+        _queue = _showQueue ? StatusService.GetQueuedSample(QueueSampleSize) : null;
+    }
 
     // True when any managed rclone command (per-path or full sync) has --dry-run enabled, so
     // nothing it runs will actually transfer — surfaced as a dashboard warning.
@@ -250,6 +290,8 @@ else
             while (await _timer.WaitForNextTickAsync(ct))
             {
                 _status = StatusService.GetStatus();
+                if (_showQueue)
+                    _queue = StatusService.GetQueuedSample(QueueSampleSize);
                 await InvokeAsync(StateHasChanged);
             }
         }

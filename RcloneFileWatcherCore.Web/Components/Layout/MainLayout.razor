@@ -3,12 +3,25 @@
 @inject NavigationManager Nav
 @inject Loc L
 
+@* The mobile nav drawer is a pure CSS toggle (checkbox hack): the hidden checkbox holds the
+   open/closed state and the <label>s flip it. No Blazor interactivity / SignalR is involved, so
+   the menu works even when the layout is statically rendered or the circuit is unavailable
+   (e.g. blocked by an ad/privacy shield). On desktop the toggle is hidden and the sidebar is
+   always visible. *@
 <div class="page">
+    <input type="checkbox" id="rfwNavToggle" class="nav-cb" autocomplete="off" aria-hidden="true" />
     <div class="sidebar">
         <NavMenu />
     </div>
+    <label for="rfwNavToggle" class="nav-scrim" aria-hidden="true"></label>
     <main>
         <div class="topbar">
+            <label for="rfwNavToggle" class="iconbtn nav-toggle" title="@L["nav.menu"]" aria-label="@L["nav.menu"]">
+                <span class="nav-ico nav-ico-menu"><Icon Name="menu" /></span>
+                <span class="nav-ico nav-ico-x"><Icon Name="x" /></span>
+            </label>
+            <span class="topbar-brand">RcloneFileWatcher</span>
+            <span class="spacer"></span>
             <select class="lang-select" title="@L["lang.label"]"
                     onchange="if(this.value){window.location.href=this.value;}">
                 @foreach (var lang in L.Languages)

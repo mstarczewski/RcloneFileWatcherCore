@@ -63,6 +63,47 @@ main {
     border-bottom: 1px solid var(--border);
 }
 
+.topbar .spacer {
+    flex: 1;
+}
+
+/* Hidden checkbox that drives the mobile nav drawer (CSS-only, no JS to open/close). Kept
+   off-screen rather than display:none so its :checked state still toggles the drawer. */
+.nav-cb {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    margin: 0;
+}
+
+/* Hamburger toggle + compact brand: only shown on small screens (see media query below). */
+.nav-toggle {
+    display: none;
+    cursor: pointer;
+}
+
+.nav-toggle .nav-ico {
+    display: inline-flex;
+}
+
+/* Show the "menu" glyph when closed, the "x" glyph when the drawer is open. */
+.nav-toggle .nav-ico-x {
+    display: none;
+}
+
+.topbar-brand {
+    display: none;
+    font-weight: 600;
+}
+
+/* Dimming scrim behind the off-canvas drawer on mobile; clicking it closes the drawer
+   (it's a <label> for the toggle checkbox). Inert/hidden on desktop. */
+.nav-scrim {
+    display: none;
+}
+
 .iconbtn {
     background: var(--panel-2);
     color: var(--text);
@@ -643,3 +684,116 @@ textarea {
     text-align: left;
     font: inherit;
 }
+
+/* Queue preview: a scrollable monospace box listing a sample of pending changes. */
+.queue-preview {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 0.6rem;
+    max-height: 40vh;
+    overflow: auto;
+}
+
+.queue-preview ul {
+    list-style: none;
+    margin: 0;
+    padding: 0.4rem 0;
+    font-family: "Cascadia Code", "Consolas", monospace;
+    font-size: 0.8rem;
+}
+
+.queue-preview li {
+    padding: 0.15rem 0.9rem;
+    white-space: pre;
+    border-bottom: none;
+}
+
+.queue-change {
+    display: inline-block;
+    width: 4.5rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.03em;
+}
+
+/* ---- Responsive: collapse the sidebar into an off-canvas drawer on phones/tablets ---- */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 240px;
+        max-width: 82vw;
+        z-index: 1000;
+        overflow-y: auto;
+        transform: translateX(-100%);
+        transition: transform 0.22s ease;
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .nav-cb:checked ~ .sidebar {
+        transform: translateX(0);
+    }
+
+    .nav-cb:checked ~ .nav-scrim {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 900;
+        background: rgba(0, 0, 0, 0.5);
+    }
+
+    /* Swap hamburger → X while the drawer is open. */
+    .nav-cb:checked ~ main .nav-toggle .nav-ico-menu {
+        display: none;
+    }
+
+    .nav-cb:checked ~ main .nav-toggle .nav-ico-x {
+        display: inline-flex;
+    }
+
+    .nav-toggle {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .topbar-brand {
+        display: inline;
+    }
+
+    .topbar {
+        justify-content: flex-start;
+        padding: 0.5rem 0.9rem;
+    }
+
+    .content {
+        padding: 1rem 0.9rem;
+    }
+
+    h1 {
+        font-size: 1.3rem;
+    }
+
+    .actions {
+        flex-wrap: wrap;
+    }
+
+    .actions .btn {
+        flex: 1 1 auto;
+        text-align: center;
+    }
+
+    .cards {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.7rem;
+    }
+
+    .log-view {
+        font-size: 0.75rem;
+        padding: 0.7rem;
+    }
+}
+

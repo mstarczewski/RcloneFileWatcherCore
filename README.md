@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/mstarczewski/RcloneFileWatcherCore/actions/workflows/release.yml/badge.svg)](https://github.com/mstarczewski/RcloneFileWatcherCore/actions)
 [![Latest Release](https://img.shields.io/github/v/release/mstarczewski/RcloneFileWatcherCore)](https://github.com/mstarczewski/RcloneFileWatcherCore/releases)
-[![Downloads](https://img.shields.io/github/downloads/mstarczewski/RcloneFileWatcherCore/latest/total)](https://github.com/mstarczewski/RcloneFileWatcherCore/releases)
+[![Downloads](https://img.shields.io/github/downloads/mstarczewski/RcloneFileWatcherCore/total)](https://github.com/mstarczewski/RcloneFileWatcherCore/releases)
 [![Windows](https://img.shields.io/badge/Platform-Windows-blue?logo=windows)](https://github.com/mstarczewski/RcloneFileWatcherCore)
 [![Linux](https://img.shields.io/badge/Platform-Linux-green?logo=linux)](https://github.com/mstarczewski/RcloneFileWatcherCore)
 [![Mac](https://img.shields.io/badge/Platform-macOS-black?logo=apple)](https://github.com/mstarczewski/RcloneFileWatcherCore)
