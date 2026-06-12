@@ -56,26 +56,22 @@ main {
 
 .topbar {
     display: flex;
-    justify-content: flex-end;
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 2rem;
     border-bottom: 1px solid var(--border);
 }
 
-.topbar .spacer {
+/* Generic flex spacer: absorbs the free space and pushes the following items to the far edge. */
+.spacer {
     flex: 1;
 }
 
-/* Hidden checkbox that drives the mobile nav drawer (CSS-only, no JS to open/close). Kept
-   off-screen rather than display:none so its :checked state still toggles the drawer. */
+/* Hidden checkbox that drives the mobile nav drawer (CSS-only, no JS to open/close). Removed
+   from layout and tab order entirely on desktop; on mobile it becomes a visually-hidden but
+   focusable control so the drawer can be operated from the keyboard (see the media query). */
 .nav-cb {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
-    margin: 0;
+    display: none;
 }
 
 /* Hamburger toggle + compact brand: only shown on small screens (see media query below). */
@@ -96,6 +92,11 @@ main {
 .topbar-brand {
     display: none;
     font-weight: 600;
+    /* Shrink and ellipsize instead of forcing the topbar wider than narrow phones. */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Dimming scrim behind the off-canvas drawer on mobile; clicking it closes the drawer
@@ -319,10 +320,6 @@ code {
     gap: 1rem;
     flex-wrap: wrap;
     margin-top: 0.5rem;
-}
-
-.toolbar .spacer {
-    flex: 1;
 }
 
 .toolbar label {
@@ -685,33 +682,29 @@ textarea {
     font: inherit;
 }
 
-/* Queue preview: a scrollable monospace box listing a sample of pending changes. */
+/* Queue preview reuses the .log-view code-box shell (markup: class="log-view queue-preview");
+   only the deltas from a plain log box live here. Spacing comes from the list items, not the
+   container, hence padding 0. */
 .queue-preview {
-    background: var(--code-bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
     margin-top: 0.6rem;
     max-height: 40vh;
-    overflow: auto;
+    padding: 0;
 }
 
 .queue-preview ul {
     list-style: none;
     margin: 0;
     padding: 0.4rem 0;
-    font-family: "Cascadia Code", "Consolas", monospace;
-    font-size: 0.8rem;
 }
 
 .queue-preview li {
     padding: 0.15rem 0.9rem;
-    white-space: pre;
-    border-bottom: none;
 }
 
 .queue-change {
     display: inline-block;
-    width: 4.5rem;
+    /* Wide enough for the longest localized label (pl "Zmiana nazwy"). */
+    width: 6rem;
     color: var(--muted);
     text-transform: uppercase;
     font-size: 0.7rem;
@@ -729,13 +722,17 @@ textarea {
         max-width: 82vw;
         z-index: 1000;
         overflow-y: auto;
+        /* Keep drawer scrolling from chaining into the page underneath. */
+        overscroll-behavior: contain;
         transform: translateX(-100%);
         transition: transform 0.22s ease;
-        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.35);
     }
 
+    /* Shadow only while open - when closed the drawer's right edge sits exactly at x=0 and an
+       unconditional shadow would bleed a gray strip into the viewport. */
     .nav-cb:checked ~ .sidebar {
         transform: translateX(0);
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.35);
     }
 
     .nav-cb:checked ~ .nav-scrim {
@@ -744,6 +741,28 @@ textarea {
         inset: 0;
         z-index: 900;
         background: rgba(0, 0, 0, 0.5);
+    }
+
+    /* On mobile the checkbox stays focusable (visually hidden, not display:none) so the drawer
+       can be toggled from the keyboard; the hamburger renders its focus ring. */
+    .nav-cb {
+        display: inline;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+        margin: 0;
+    }
+
+    .nav-cb:focus-visible ~ main .nav-toggle {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
+    /* Lock the page scroll while the drawer is open. */
+    body:has(.nav-cb:checked) {
+        overflow: hidden;
     }
 
     /* Swap hamburger → X while the drawer is open. */
@@ -765,7 +784,10 @@ textarea {
     }
 
     .topbar {
-        justify-content: flex-start;
+        /* Above the drawer scrim (z-index 900, below the drawer itself at 1000) so the brand and
+           the language/theme controls stay visible and usable while the drawer is open. */
+        position: relative;
+        z-index: 950;
         padding: 0.5rem 0.9rem;
     }
 

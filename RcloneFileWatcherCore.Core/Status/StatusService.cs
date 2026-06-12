@@ -43,18 +43,18 @@ namespace RcloneFileWatcherCore.Status
             if (max < 0)
                 max = 0;
 
-            // Take a bounded slice without materializing the whole (possibly huge) queue, then
-            // sort just the sample so the preview is stable and readable. Total uses the dictionary's
-            // own count; it may differ slightly from the sample under concurrent writes - fine for a
-            // live preview.
+            // Enumerate the dictionary directly - its enumerator is lock-free and streams entries,
+            // unlike .Values, which takes every internal lock and copies the whole (possibly huge)
+            // queue before Take could bound it. Then sort just the sample so the preview is stable
+            // and readable. Total uses the dictionary's own count; it may differ slightly from the
+            // sample under concurrent writes - fine for a live preview.
             var total = _fileDTOs.Count;
-            var sample = _fileDTOs.Values
+            var sample = _fileDTOs
                 .Take(max)
-                .Select(dto => new QueuedChange
+                .Select(kv => new QueuedChange
                 {
-                    Path = dto.PathPreparedToSync,
-                    SourcePath = dto.SourcePath,
-                    Change = dto.WatcherChangeTypes.ToString()
+                    Path = kv.Value.PathPreparedToSync,
+                    Change = kv.Value.WatcherChangeTypes
                 })
                 .OrderBy(c => c.Path, StringComparer.OrdinalIgnoreCase)
                 .ToList();

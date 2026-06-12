@@ -44,8 +44,35 @@ namespace RcloneFileWatcherCore.Infrastructure.Logging
                         _errors.Dequeue();
                     _errors.Enqueue(message);
                 }
+
+                // Raised under the lock so it is atomic with the append: together with Subscribe
+                // (which snapshots the backlog and adds the handler under the same lock) every line
+                // reaches a subscriber exactly once - in the backlog XOR via the event. Handlers
+                // must therefore be non-blocking (post the work and return).
+                MessageWritten?.Invoke(message);
             }
-            MessageWritten?.Invoke(message);
+        }
+
+        /// <summary>
+        /// Atomically subscribes <paramref name="handler"/> and returns the current backlog
+        /// (recent lines + retained errors). Because Write appends and raises under the same lock,
+        /// a line written while a subscriber attaches is never lost and never delivered twice.
+        /// </summary>
+        public (IReadOnlyList<string> Recent, IReadOnlyList<string> Errors) Subscribe(Action<string> handler)
+        {
+            lock (_lock)
+            {
+                MessageWritten += handler;
+                return (_buffer.ToArray(), _errors.ToArray());
+            }
+        }
+
+        public void Unsubscribe(Action<string> handler)
+        {
+            lock (_lock)
+            {
+                MessageWritten -= handler;
+            }
         }
 
         public IReadOnlyList<string> GetRecent()

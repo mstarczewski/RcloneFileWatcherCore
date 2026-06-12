@@ -1,5 +1,6 @@
 @page "/"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using System.IO
 @using System.Threading
 @using System.Linq
 @using System.Collections.Generic
@@ -99,22 +100,18 @@ else
     </div>
     @if (_showQueue)
     {
-        @if (_queue is null)
-        {
-            <p class="muted">@L["dash.loading"]</p>
-        }
-        else if (_queue.Total == 0)
+        @if (_queue.Total == 0)
         {
             <p class="muted">@L["dash.queueEmpty"]</p>
         }
         else
         {
             <p class="muted">@L.F("dash.queueShowing", _queue.Sample.Count, _queue.Total)</p>
-            <div class="queue-preview">
+            <div class="log-view queue-preview">
                 <ul>
                     @foreach (var change in _queue.Sample)
                     {
-                        <li><span class="queue-change">@change.Change</span>@change.Path</li>
+                        <li><span class="queue-change">@ChangeLabel(change.Change)</span>@change.Path</li>
                     }
                 </ul>
             </div>
@@ -194,6 +191,17 @@ else
         _showQueue = !_showQueue;
         _queue = _showQueue ? StatusService.GetQueuedSample(QueueSampleSize) : null;
     }
+
+    // The change kind shown in the queue preview, localized like the rest of the page; raw enum
+    // text is the fallback for combined/unexpected flag values.
+    private string ChangeLabel(WatcherChangeTypes change) => change switch
+    {
+        WatcherChangeTypes.Created => L["dash.change.created"],
+        WatcherChangeTypes.Changed => L["dash.change.changed"],
+        WatcherChangeTypes.Deleted => L["dash.change.deleted"],
+        WatcherChangeTypes.Renamed => L["dash.change.renamed"],
+        _ => change.ToString()
+    };
 
     // True when any managed rclone command (per-path or full sync) has --dry-run enabled, so
     // nothing it runs will actually transfer - surfaced as a dashboard warning.
@@ -290,7 +298,9 @@ else
             while (await _timer.WaitForNextTickAsync(ct))
             {
                 _status = StatusService.GetStatus();
-                if (_showQueue)
+                // Skip the rebuild in the common idle state (queue was and stays empty) - there
+                // is nothing new to show, so don't allocate a fresh snapshot every tick.
+                if (_showQueue && (_status.PendingChanges > 0 || _queue?.Total != 0))
                     _queue = StatusService.GetQueuedSample(QueueSampleSize);
                 await InvokeAsync(StateHasChanged);
             }

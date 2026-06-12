@@ -50,16 +50,22 @@
             const el = document.getElementById(id);
             if (el) { el.scrollTop = el.scrollHeight; }
         };
-        // Close the mobile nav drawer (CSS checkbox hack) after a nav link is clicked.
-        // Delegated so it survives Blazor's enhanced-navigation DOM patches. Pure first-party
-        // JS - independent of the SignalR circuit, so it keeps working even if interactivity
-        // is unavailable.
+        // Close the mobile nav drawer (CSS checkbox hack) after any sidebar link/button is
+        // clicked - scoped to the .sidebar container (owned by MainLayout) so new drawer entries
+        // keep working without touching this code. Delegated so it survives Blazor's
+        // enhanced-navigation DOM patches. Pure first-party JS - independent of the SignalR
+        // circuit, so it keeps working even if interactivity is unavailable.
+        function rfwCloseNav() {
+            var cb = document.getElementById('rfwNavToggle');
+            if (cb) { cb.checked = false; }
+        }
         document.addEventListener('click', function (e) {
-            var link = e.target.closest('.nav-menu a, .nav-logout button');
-            if (link) {
-                var cb = document.getElementById('rfwNavToggle');
-                if (cb) { cb.checked = false; }
-            }
+            if (e.target.closest('.sidebar a, .sidebar button')) { rfwCloseNav(); }
+        });
+        // Reset the drawer when the layout switches to desktop (where the checkbox has no visible
+        // effect), so it doesn't slide back open with its scrim when the viewport shrinks again.
+        window.matchMedia('(min-width: 769px)').addEventListener('change', function (e) {
+            if (e.matches) { rfwCloseNav(); }
         });
     </script>
     <script src="_framework/blazor.web.js"></script>

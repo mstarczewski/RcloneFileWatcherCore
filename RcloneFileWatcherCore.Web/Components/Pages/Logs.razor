@@ -63,10 +63,12 @@
 
     protected override void OnInitialized()
     {
-        _lines.AddRange(LogBuffer.GetRecent());
-        _keptErrors.AddRange(LogBuffer.GetErrors());
+        // Subscribe and read the backlog in one atomic step (see BroadcastLogWriter.Subscribe):
+        // a line written while the page is opening is neither lost nor shown twice.
+        var (recent, errors) = LogBuffer.Subscribe(OnMessage);
+        _lines.AddRange(recent);
+        _keptErrors.AddRange(errors);
         ApplyFilter();
-        LogBuffer.MessageWritten += OnMessage;
     }
 
     private void OnMessage(string message)
@@ -165,6 +167,6 @@
 
     public void Dispose()
     {
-        LogBuffer.MessageWritten -= OnMessage;
+        LogBuffer.Unsubscribe(OnMessage);
     }
 }

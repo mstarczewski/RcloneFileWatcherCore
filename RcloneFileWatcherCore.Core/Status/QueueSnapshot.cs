@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace RcloneFileWatcherCore.Status
 {
@@ -18,10 +19,7 @@ namespace RcloneFileWatcherCore.Status
         /// <summary>Path as it will be passed to rclone (relative, dirs end with /**).</summary>
         public string Path { get; set; }
 
-        /// <summary>Watched root the change belongs to.</summary>
-        public string SourcePath { get; set; }
-
-        /// <summary>Change kind (Created/Changed/Deleted/Renamed).</summary>
-        public string Change { get; set; }
+        /// <summary>Change kind; the UI maps it to a localized label.</summary>
+        public WatcherChangeTypes Change { get; set; }
     }
 }
