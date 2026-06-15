@@ -1,4 +1,5 @@
 ﻿using RcloneFileWatcherCore.DTO;
+using RcloneFileWatcherCore.Enums;
 using RcloneFileWatcherCore.Logic.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -55,8 +56,10 @@ namespace RcloneFileWatcherCore.Config
                 SyncIntervalSeconds = 60,
                 RunOneTimeFullStartupSync = true,
                 RunOneTimeFullStartupSyncBatch = @"rclone_startupsync.bat",
-                RunStartupScriptEveryDayAt = "05:30"
-
+                FullSyncSchedule = new List<FullSyncScheduleEntry>
+                {
+                    new FullSyncScheduleEntry { Days = ScheduleDays.EveryDay, Time = "05:30" }
+                }
             };
             var options = new JsonSerializerOptions()
             {

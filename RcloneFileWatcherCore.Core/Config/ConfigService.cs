@@ -13,7 +13,7 @@ namespace RcloneFileWatcherCore.Config
 
         public ConfigService(ConfigDTO initial, string filePath, ILogger logger)
         {
-            _current = initial ?? new ConfigDTO();
+            _current = ConfigNormalizer.Normalize(initial ?? new ConfigDTO());
             FilePath = filePath;
             _logger = logger;
         }
@@ -32,6 +32,7 @@ namespace RcloneFileWatcherCore.Config
             if (config == null)
                 throw new ArgumentNullException(nameof(config));
 
+            ConfigNormalizer.Normalize(config);
             ConfigWriter.Save(FilePath, config);
 
             lock (_lock)

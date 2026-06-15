@@ -40,7 +40,7 @@ preview, **Logs** (with kept errors), and **Security**:
   - **Managed mode** – build the rclone command from fields; the app runs rclone directly and injects `--include-from` automatically
 - Changed-file list passed to rclone **via stdin** (`--include-from -`) - no on-disk exchange file needed (handles very large lists)
 - Live rclone output captured into the log (both managed and script mode); `{datetime}`/`{date}`/`{time}`/`{year}` placeholders substituted at run time
-- Optional full-sync at startup and/or daily at a set time - **also configurable as managed commands**
+- Optional full-sync at startup and/or on a **weekly schedule** (pick weekdays + times, several runs a day) - **also configurable as managed commands**
 - Enable/disable individual watched paths or full-sync commands without deleting them
 - Optionally auto-updates the rclone binary
 - Cross-platform **web GUI** (Blazor Server) for configuration, live status/logs and rclone command building:
@@ -110,7 +110,10 @@ Create a config file named `RcloneFileWatcherCoreConfig.cfg` in the executable f
   "SyncIntervalSeconds": 30,
   "RunOneTimeFullStartupSync": true,
   "RunOneTimeFullStartupSyncBatch": "rclone_fullsync.sh",
-  "RunStartupScriptEveryDayAt": "05:30"
+  "FullSyncSchedule": [
+    { "Days": 31, "Time": "06:00" },
+    { "Days": 96, "Time": "03:00" }
+  ]
 }
 
 ```
@@ -131,7 +134,7 @@ Create a config file named `RcloneFileWatcherCoreConfig.cfg` in the executable f
 * `"SyncIntervalSeconds"` -	Interval between sync attempts (if changes detected)
 * `"RunOneTimeFullStartupSync"` -	Runs a full sync batch at startup
 * `"RunOneTimeFullStartupSyncBatch"` - Path to full sync batch script
-* `"RunStartupScriptEveryDayAt"` - Runs the startup script (full sync) once per day at the specified time.
+* `"FullSyncSchedule"` – Weekly schedule for the automatic full sync: a list of `{ "Days": <bitmask>, "Time": "HH:mm" }` entries. Each entry fires on its selected weekdays at its time (local). `"Days"` is a bit set: Mon=1, Tue=2, Wed=4, Thu=8, Fri=16, Sat=32, Sun=64 (so weekdays=31, weekend=96, every day=127). Add several entries for several runs a day. Empty list = no scheduled full sync (startup/manual still work). Edit it visually under **Configuration → Full sync** - you don't need to compute the bitmask by hand. (Replaces the old single `RunStartupScriptEveryDayAt`, which is migrated automatically.)
 * `"CollapseDirectoryChanges"` – When `true`, a whole created/renamed/deleted directory is passed to rclone as a single `dir/**` rule instead of every file under it (efficient for bursts of thousands of files; rclone walks just that subtree). Default `false`. (Configuration → General)
 * `"QuietPeriodSeconds"` – Debounce: defer the live sync while changes keep arriving and run only once none has appeared for this many seconds (so a long copy is synced after it settles, not in many partial runs). `0` = off. (Configuration → General)
 * `"QuietPeriodMaxWaitSeconds"` – Safety cap for the quiet period: sync anyway once the oldest pending change has waited this long. `0` = no cap.
@@ -351,4 +354,4 @@ pushes to `master` (without `[release]`) do **not** create a release.
 
 * On Linux, you can run it as a background service using systemd or nohup.
 * On Windows, you can run this tool as a service using **[NSSM](https://nssm.cc/)** – the Non-Sucking Service Manager.
-* It is recommended to run  `RcloneFileWatcherCore` in the background continuously, and setup `RunStartupScriptEveryDayAt` a full rclone sync once per day to ensure data consistency. Ideally, the full sync should result in no changes if the watcher worked correctly.
+* It is recommended to run  `RcloneFileWatcherCore` in the background continuously, and schedule a full rclone sync (Configuration → Full sync, or `FullSyncSchedule`) at least once per day to ensure data consistency. Ideally, the full sync should result in no changes if the watcher worked correctly.

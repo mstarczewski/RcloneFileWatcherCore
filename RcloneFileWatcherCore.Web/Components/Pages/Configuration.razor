@@ -1,6 +1,7 @@
 @page "/config"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using System.Collections.Generic
+@using System.Globalization
 @using System.Linq
 @using System.IO
 @using System.Text.Json
@@ -114,16 +115,47 @@
                     @L["cfg.fullSyncStartup"] <Hint Text="@L["cfg.fullSyncStartup.h"]" />
                 </label>
                 <label>
-                    <span class="lbl">@L["cfg.fullSyncDaily"] <Hint Text="@L["cfg.fullSyncDaily.h"]" /></span>
-                    <input @bind="_model.RunStartupScriptEveryDayAt" placeholder="05:30" />
-                </label>
-                <label>
                     <span class="lbl">@L["cfg.runMode"] <Hint Text="@L["cfg.runMode.h"]" /></span>
                     <select @bind="_model.FullSyncMode">
                         <option value="@SyncMode.Script">@L["cfg.modeScript"]</option>
                         <option value="@SyncMode.Managed">@L["cfg.modeManaged"]</option>
                     </select>
                 </label>
+            </div>
+
+            <div class="schedule">
+                <div class="section-head">
+                    <h3 class="subhead">@L["cfg.fullSyncSchedule"] <Hint Text="@L["cfg.fullSyncSchedule.h"]" /></h3>
+                    <button type="button" class="btn btn-sm" @onclick="AddSchedule">@L["cfg.addSchedule"]</button>
+                </div>
+                @if (_model.FullSyncSchedule.Count == 0)
+                {
+                    <p class="muted">@L["cfg.noSchedule"]</p>
+                }
+                @for (var i = 0; i < _model.FullSyncSchedule.Count; i++)
+                {
+                    var entry = _model.FullSyncSchedule[i];
+                    var si = i;
+                    <div class="schedule-row" @key="entry">
+                        <input class="schedule-time" @bind="entry.Time" placeholder="05:30" aria-label="@L["cfg.scheduleTime"]" />
+                        <div class="daychips">
+                            @foreach (var (flag, label) in DayChips())
+                            {
+                                <label class="daychip @(HasDay(entry.Days, flag) ? "on" : "")">
+                                    <input type="checkbox" checked="@HasDay(entry.Days, flag)"
+                                           @onchange="e => ToggleDay(entry, flag, e.Value is true)" />
+                                    <span>@label</span>
+                                </label>
+                            }
+                        </div>
+                        <div class="schedule-actions">
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="() => entry.Days = ScheduleDays.EveryDay">@L["sched.everyDay"]</button>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="() => entry.Days = ScheduleDays.Weekdays">@L["sched.weekdays"]</button>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="() => entry.Days = ScheduleDays.Weekend">@L["sched.weekend"]</button>
+                            <button type="button" class="btn btn-sm btn-danger" @onclick="() => RemoveSchedule(si)">@L["cfg.remove"]</button>
+                        </div>
+                    </div>
+                }
             </div>
 
             @if (_model.FullSyncMode == SyncMode.Script)
@@ -274,6 +306,7 @@
         _model.Path ??= new List<PathDTO>();
         _model.UpdateRclone ??= new UpdateRcloneDTO();
         _model.FullSyncCommands ??= new List<RcloneCommandDTO>();
+        _model.FullSyncSchedule ??= new List<FullSyncScheduleEntry>();
         _excludeRaw = _model.Path
             .Select(p => string.Join("\n", p.ExcludeContains ?? new List<string>()))
             .ToList();
@@ -478,9 +511,11 @@
         if (_model.SyncIntervalSeconds < 1)
             _errors.Add(L["cfg.vInterval"]);
 
-        if (!string.IsNullOrWhiteSpace(_model.RunStartupScriptEveryDayAt)
-            && !TimeSpan.TryParse(_model.RunStartupScriptEveryDayAt, out _))
-            _errors.Add(L["cfg.vTime"]);
+        if (_model.FullSyncSchedule.Any(s => !FullSyncScheduleEntry.TryParseTime(s.Time, out _)))
+            _errors.Add(L["cfg.vScheduleTime"]);
+
+        if (_model.FullSyncSchedule.Any(s => s.Days == ScheduleDays.None))
+            _errors.Add(L["cfg.vScheduleDays"]);
 
         // Full sync at startup needs something to run: a script (Script mode) or at least one
         // managed command (Managed mode).
@@ -513,6 +548,26 @@
         }
 
         return _errors.Count == 0;
+    }
+
+    private void AddSchedule()
+        => _model.FullSyncSchedule.Add(new FullSyncScheduleEntry { Days = ScheduleDays.EveryDay, Time = "05:30" });
+
+    private void RemoveSchedule(int index)
+        => _model.FullSyncSchedule.RemoveAt(index);
+
+    private static bool HasDay(ScheduleDays days, ScheduleDays flag) => ScheduleWeek.Has(days, flag);
+
+    private static void ToggleDay(FullSyncScheduleEntry entry, ScheduleDays flag, bool on)
+        => entry.Days = on ? entry.Days | flag : entry.Days & ~flag;
+
+    // Day chips in the shared Monday-first order, labelled with the current culture's abbreviated
+    // day names (the schedule summary on the Rclone page uses the same ScheduleWeek.Ordered list).
+    private static IEnumerable<(ScheduleDays Flag, string Label)> DayChips()
+    {
+        var names = CultureInfo.CurrentUICulture.DateTimeFormat.AbbreviatedDayNames;
+        foreach (var (day, flag) in ScheduleWeek.Ordered)
+            yield return (flag, names[(int)day]);
     }
 
     private static ConfigDTO Clone(ConfigDTO src)

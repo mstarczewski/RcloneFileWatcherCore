@@ -36,7 +36,7 @@ namespace RcloneFileWatcherCore.Config
                     return null;
                 }
                 _logger.EnabledLevels = LogLevelParser.Parse(config.LogLevel);
-                return config;
+                return ConfigNormalizer.Normalize(config);
             }
             catch (Exception ex)
             {

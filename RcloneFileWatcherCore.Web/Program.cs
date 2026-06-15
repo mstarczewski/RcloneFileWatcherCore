@@ -14,6 +14,10 @@ using System.Security.Claims;
 
 const string ConfigFileName = "RcloneFileWatcherCoreConfig.cfg";
 
+// How long a "remember me" login is kept (persistent cookie). One source of truth for both the
+// cookie lifetime and the number shown in the login label, so they can't drift.
+const int RememberMeDays = 30;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Bind to localhost by default; override with the "Gui:Urls" setting (appsettings / env /
@@ -114,7 +118,7 @@ app.MapGet("/login", (string error, HttpContext ctx) =>
     var auth = ctx.RequestServices.GetRequiredService<IAuthService>();
     if (!auth.Enabled)
         return Results.LocalRedirect("/");
-    return Results.Content(LoginPage.Render(error != null, ctx.RequestServices.GetRequiredService<Loc>()), "text/html");
+    return Results.Content(LoginPage.Render(error != null, ctx.RequestServices.GetRequiredService<Loc>(), RememberMeDays), "text/html");
 });
 
 app.MapPost("/login", async (HttpContext ctx) =>
@@ -134,7 +138,17 @@ app.MapPost("/login", async (HttpContext ctx) =>
         var identity = new ClaimsIdentity(
             new[] { new Claim(ClaimTypes.Name, "admin") },
             CookieAuthenticationDefaults.AuthenticationScheme);
-        await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+
+        // "Remember me": issue a persistent cookie that survives a browser restart and lasts 30 days
+        // (still sliding). Unchecked keeps the default - a session cookie cleared when the browser
+        // closes, with the global 12h sliding window.
+        var props = new AuthenticationProperties();
+        if (form["remember"].ToString() == "true")
+        {
+            props.IsPersistent = true;
+            props.ExpiresUtc = DateTimeOffset.UtcNow.AddDays(RememberMeDays);
+        }
+        await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity), props);
         return Results.LocalRedirect("/");
     }
 
@@ -238,10 +252,11 @@ internal sealed class LoginThrottle
 
 internal static class LoginPage
 {
-    public static string Render(bool error, Loc loc)
+    public static string Render(bool error, Loc loc, int rememberDays)
     {
         var lang = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
         var errorHtml = error ? $"<div class=\"alert alert-err\">{loc["login.wrong"]}</div>" : "";
+        var rememberLabel = loc.F("login.remember", rememberDays);
         return $$"""
 <!DOCTYPE html>
 <html lang="{{lang}}">
@@ -258,6 +273,10 @@ internal static class LoginPage
         <form method="post" action="/login">
             <label>{{loc["login.password"]}}
                 <input type="password" name="password" autofocus />
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" name="remember" value="true" />
+                {{rememberLabel}}
             </label>
             <button class="btn" type="submit">{{loc["login.submit"]}}</button>
         </form>

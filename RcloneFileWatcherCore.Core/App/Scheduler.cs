@@ -17,7 +17,6 @@ namespace RcloneFileWatcherCore.App
         private readonly Dictionary<Enums.ProcessCode, IRcloneJobService> _processDictionary;
         private readonly object _jobGate;
         private DateTime? _nextfullSyncAfter;
-        private TimeSpan _scheduledTime;
 
         public Scheduler(ILogger logger, Dictionary<Enums.ProcessCode, IRcloneJobService> processDictionary, ConfigDTO configDTO, object jobGate)
         {
@@ -29,18 +28,20 @@ namespace RcloneFileWatcherCore.App
             _timer = new Timer(intervalMs);
             _timer.Elapsed += OnTimedEvent;
             _timer.AutoReset = false;
-            SetUpScheduledTime(_configDTO.RunStartupScriptEveryDayAt);
+            LogInvalidScheduleTimes();
+            _nextfullSyncAfter = FullSyncScheduleCalculator.NextOccurrence(_configDTO.FullSyncSchedule, DateTime.Now);
         }
-        private void SetUpScheduledTime(string runStartupScriptEveryDayAt)
+
+        // Surface a bad hand-edited schedule time once at startup; the calculator silently skips
+        // unparseable entries so one typo can't stop the others from firing.
+        private void LogInvalidScheduleTimes()
         {
-            if (TimeSpan.TryParse(runStartupScriptEveryDayAt, out var scheduledTime))
+            if (_configDTO?.FullSyncSchedule == null)
+                return;
+            foreach (var entry in _configDTO.FullSyncSchedule)
             {
-                _scheduledTime = scheduledTime;
-                _nextfullSyncAfter = DateTime.Today.Add(scheduledTime) <= DateTime.Now ? DateTime.Today.AddDays(1).Add(scheduledTime) : DateTime.Today.Add(scheduledTime);
-            }
-            else
-            {
-                _logger.Log(Enums.LogLevel.Error, $"Invalid time format for RunStartupScriptEveryDayAt: {_configDTO.RunStartupScriptEveryDayAt}");
+                if (entry != null && entry.Days != Enums.ScheduleDays.None && !FullSyncScheduleEntry.TryParseTime(entry.Time, out _))
+                    _logger.Log(Enums.LogLevel.Error, $"Invalid full-sync schedule time, entry ignored: {entry.Time}");
             }
         }
 
@@ -91,10 +92,15 @@ namespace RcloneFileWatcherCore.App
 
         private void TryFullSyncRclone()
         {
-            if (_nextfullSyncAfter <= DateTime.Now && _processDictionary.TryGetValue(Enums.ProcessCode.FullSyncRclone, out var fullsyncProcess))
+            if (_nextfullSyncAfter is DateTime due && due <= DateTime.Now
+                && _processDictionary.TryGetValue(Enums.ProcessCode.FullSyncRclone, out var fullsyncProcess))
             {
-                _logger.Log(Enums.LogLevel.Information, $"Running full sync as per schedule {_scheduledTime.ToString(@"hh\:mm")}.");
-                _nextfullSyncAfter = DateTime.Today.AddDays(1).Add(_scheduledTime);
+                _logger.Log(Enums.LogLevel.Information, $"Running full sync as per schedule ({due:yyyy-MM-dd HH:mm}).");
+                // Advance to the next slot BEFORE running. NextOccurrence is strictly-after, so
+                // computing from now excludes the slot we're about to run. Doing this first means a
+                // throwing or long-running full sync can't busy-loop (re-fire every tick) and a
+                // second slot later today still fires on a later tick instead of being skipped.
+                _nextfullSyncAfter = FullSyncScheduleCalculator.NextOccurrence(_configDTO.FullSyncSchedule, DateTime.Now);
                 fullsyncProcess.Execute(_configDTO);
             }
         }

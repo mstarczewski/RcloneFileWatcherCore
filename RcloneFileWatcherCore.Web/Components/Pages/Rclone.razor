@@ -5,6 +5,7 @@
 @using RcloneFileWatcherCore.DTO
 @using RcloneFileWatcherCore.Enums
 @using RcloneFileWatcherCore.Logic.Rclone
+@using RcloneFileWatcherCore.Web.Localization
 @implements IDisposable
 @inject IConfigService ConfigService
 @inject Loc L
@@ -108,12 +109,16 @@ else
         return c != null && c.IncludeFrom && c.IncludeFromStdin ? "-" : p.RcloneFilesFromPath;
     }
 
-    // Human-readable summary of when the full sync runs (daily time and/or at startup).
+    // Human-readable summary of when the full sync runs (each scheduled slot and/or at startup).
     private string FullSyncSchedule(ConfigDTO cfg)
     {
         var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(cfg.RunStartupScriptEveryDayAt))
-            parts.Add(L.F("rcl.dailyAt", cfg.RunStartupScriptEveryDayAt));
+        foreach (var entry in cfg.FullSyncSchedule ?? new List<FullSyncScheduleEntry>())
+        {
+            if (entry.Days == ScheduleDays.None || string.IsNullOrWhiteSpace(entry.Time))
+                continue;
+            parts.Add(L.F("sched.at", ScheduleDisplay.Days(entry.Days, L), entry.Time));
+        }
         if (cfg.RunOneTimeFullStartupSync)
             parts.Add(L["rcl.atStartup"]);
         return parts.Count > 0 ? string.Join(" · ", parts) : L["rcl.manualOnly"];

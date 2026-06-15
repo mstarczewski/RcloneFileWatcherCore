@@ -1,5 +1,6 @@
 ﻿using RcloneFileWatcherCore.Enums;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace RcloneFileWatcherCore.DTO
 {
@@ -32,7 +33,23 @@ namespace RcloneFileWatcherCore.DTO
         /// </summary>
         public int QuietPeriodMaxWaitSeconds { get; set; } = 300;
         public bool RunOneTimeFullStartupSync { get; set; } = true;
-        public string RunStartupScriptEveryDayAt { get; set; } = "05:30";
+
+        /// <summary>
+        /// Legacy single daily full-sync time (HH:mm). Superseded by <see cref="FullSyncSchedule"/>;
+        /// kept only so old config files still load. On load it is migrated into a single
+        /// every-day schedule entry and then cleared (see ConfigNormalizer). Do not read it
+        /// directly - use <see cref="FullSyncSchedule"/>. Still deserialized for migration, but
+        /// not written back once cleared (WhenWritingDefault), so it ages out of saved configs.
+        /// </summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public string RunStartupScriptEveryDayAt { get; set; }
+
+        /// <summary>
+        /// Weekly full-sync schedule: each entry fires on its selected weekdays at its time of day
+        /// (local time). Empty = no scheduled full sync (the startup sync and the manual button
+        /// still work). Several entries give several runs per day/week.
+        /// </summary>
+        public List<FullSyncScheduleEntry> FullSyncSchedule { get; set; }
 
         /// <summary>Whether the full sync runs an external script or managed rclone command(s).</summary>
         public SyncMode FullSyncMode { get; set; } = SyncMode.Script;
@@ -49,6 +66,7 @@ namespace RcloneFileWatcherCore.DTO
             Path = new List<PathDTO>();
             UpdateRclone = new UpdateRcloneDTO();
             FullSyncCommands = new List<RcloneCommandDTO>();
+            FullSyncSchedule = new List<FullSyncScheduleEntry>();
         }
     }
 }
